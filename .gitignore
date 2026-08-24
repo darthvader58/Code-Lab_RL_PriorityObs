@@ -1,1 +1,17 @@
-observedclusters_8months.geojson
+# large regenerable exports
+*.geojson
+*.czml
+cpr_decisions_*.csv
+observedclusters_*.geojson
+
+# OpenDAP caches and extraction outputs
+g5nr_cache_*/
+cache_*/
+*.log
+*.log.run*
+*.parquet
+
+# local/editor/OS junk
+.DS_Store
+__pycache__/
+.claude/
