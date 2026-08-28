@@ -1,3 +1,6 @@
 *.geojson filter=lfs diff=lfs merge=lfs -text
 *.geojson.gz filter=lfs diff=lfs merge=lfs -text
 *.iso filter=lfs diff=lfs merge=lfs -text
+*.zip filter=lfs diff=lfs merge=lfs -text
+geos5data_0.5deg.ipynb filter=lfs diff=lfs merge=lfs -text
+geos5data_0.5deg_2yr.ipynb filter=lfs diff=lfs merge=lfs -text
