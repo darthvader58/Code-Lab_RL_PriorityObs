@@ -99,10 +99,16 @@ def _wds(force=False):
         _WDS = xr.open_dataset(G5NR_URL, decode_times=True)
     return _WDS
 
+# np.isfinite() alone lets through a handful of G5NR cells that return a
+# large-but-technically-finite fill value (up to ~3.4e38, float32's max) for
+# missing data -- caught 640 rows in the 8mo dataset, e.g. a "cloud fraction"
+# of 1.3e35. No MSI/label variable here is ever physically close to 1e6.
+def _sane(a):
+    return a[np.isfinite(a) & (np.abs(a) < 1e6)]
 def _nanmax(a):
-    a = a[np.isfinite(a)]; return float(a.max()) if a.size else float("nan")
+    a = _sane(a); return float(a.max()) if a.size else float("nan")
 def _nanmean(a):
-    a = a[np.isfinite(a)]; return float(a.mean()) if a.size else float("nan")
+    a = _sane(a); return float(a.mean()) if a.size else float("nan")
 
 def reduce_decision(geom, sub, nlat, nlon):
     la = sub["lat"].values; lo = sub["lon"].values
