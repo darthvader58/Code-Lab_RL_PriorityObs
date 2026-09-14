@@ -101,10 +101,10 @@ threshold tested, the nadir-based positive rate is roughly half the swath-based 
 |---|---|---|
 | any precipitation | 98.5% | 97.4% |
 | ≥ 0.1 mm/hr | 66.3% | 48.6% |
-| ≥ 0.5 mm/hr | 40.7% | 21.5% |
+| ≥ 0.5 mm/hr | 40.7% | 21.4% |
 | ≥ 1 mm/hr | 28.9% | **13.0%** |
 | ≥ 5 mm/hr | 11.1% | 3.5% |
-| ≥ 10 mm/hr | 6.9% | 1.9% |
+| ≥ 10 mm/hr | 6.9% | 1.8% |
 
 At the 1 mm/hr operating threshold used for training, **13.0% of decisions are positive** — a
 workable minority class for a reward signal, and a realistic one, since it reflects only what the
@@ -123,12 +123,12 @@ perfect separation):
 | cloud optical thickness (mean) | **0.815** |
 | cloud optical thickness (peak) | 0.789 |
 | low-cloud optical thickness | 0.734 |
-| high-cloud optical thickness | 0.711 |
+| high-cloud optical thickness | 0.712 |
 | mid-level cloud fraction | 0.694 |
 | total cloud fraction | 0.651 |
 
-A logistic regression combining all eleven MSI-visible features reaches **ROC-AUC 0.838** and an
-average precision of 0.378 against the 13.0% base rate — a large, genuine lift over chance, using
+A logistic regression combining all eleven MSI-visible features reaches **ROC-AUC 0.837** and an
+average precision of 0.377 against the 13.0% base rate — a large, genuine lift over chance, using
 only information the agent is actually allowed to see. Cloud optical thickness carries the most
 signal, which lines up with the physical picture: optically thick cloud is where precipitation
 tends to form, so a passive imager measuring cloud thickness is measuring a real precursor of what
@@ -147,13 +147,14 @@ weather pattern repeated under many different satellite positions.
 
 ### 4.5 Data quality was checked and cleaned, not assumed
 
-A small number of readings (640 out of 351,639 rows, 0.18%) were found to contain corrupted values
+A small number of readings (710 out of 351,639 rows, 0.20%) were found to contain corrupted values
 — a handful of grid cells return an extreme numerical fill value in place of a true reading when
 data is missing, which is easy to miss because the value is technically a normal, finite number
-rather than an obvious error code. These were identified by checking every feature against its
-physically possible range (for example, cloud fraction can only be between 0 and 1) and set to
-missing rather than left in the dataset. The extraction code was also corrected so this cannot
-silently recur on any future run.
+rather than an obvious error code. These were identified by checking every feature *and label*
+against its physically possible range (for example, cloud fraction can only be between 0 and 1,
+and precipitation rate cannot exceed a generous 1 mm/s ceiling) and set to missing rather than
+left in the dataset. The extraction code was also corrected so this cannot silently recur on any
+future run.
 
 ---
 
