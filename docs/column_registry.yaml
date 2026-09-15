@@ -1,0 +1,203 @@
+# Registry for trackwise_decisions.parquet.
+# Tiers describe future observation eligibility, not whether a value is stored.
+columns:
+  - name: tautot_mean
+    tier: always
+    source_instrument: MSI-like GEOS-5 diagnostic proxy
+    daylight_only: true
+    notes: Column-total optical-thickness proxy; model TAUTOT is not a literal MSI retrieval.
+  - name: tauhgh_mean
+    tier: cpr_conditional
+    source_instrument: ATLID/CPR (excluded - not used in this RL problem)
+    daylight_only: false
+    notes: Not available from MSI; stored as idealized conditional information after a prior CPR action. ATLID could in principle provide this, but ATLID draws 310 W versus CPR's 308 W, so ATLID is not treated as always-on context.
+  - name: taulow_mean
+    tier: cpr_conditional
+    source_instrument: ATLID/CPR (excluded - not used in this RL problem)
+    daylight_only: false
+    notes: Not available from MSI; stored as idealized conditional information after a prior CPR action. ATLID could in principle provide this, but ATLID draws 310 W versus CPR's 308 W, so ATLID is not treated as always-on context.
+  - name: cldtot_mean
+    tier: always
+    source_instrument: MSI-like GEOS-5 diagnostic proxy
+    daylight_only: false
+    notes: Total cloud-fraction proxy; GEOS-5 Nature Run diagnostic, not a simulated retrieval.
+  - name: cldhgh_mean
+    tier: cpr_conditional
+    source_instrument: ATLID/CPR (excluded - not used in this RL problem)
+    daylight_only: false
+    notes: Not available from MSI; stored as idealized conditional information after a prior CPR action. ATLID could in principle provide this, but ATLID draws 310 W versus CPR's 308 W, so ATLID is not treated as always-on context.
+  - name: cldmid_mean
+    tier: cpr_conditional
+    source_instrument: ATLID/CPR (excluded - not used in this RL problem)
+    daylight_only: false
+    notes: Not available from MSI; stored as idealized conditional information after a prior CPR action. ATLID could in principle provide this, but ATLID draws 310 W versus CPR's 308 W, so ATLID is not treated as always-on context.
+  - name: cldlow_mean
+    tier: cpr_conditional
+    source_instrument: ATLID/CPR (excluded - not used in this RL problem)
+    daylight_only: false
+    notes: Not available from MSI; stored as idealized conditional information after a prior CPR action. ATLID could in principle provide this, but ATLID draws 310 W versus CPR's 308 W, so ATLID is not treated as always-on context.
+  - name: cldtmp_mean
+    tier: always
+    source_instrument: MSI-like GEOS-5 diagnostic proxy
+    daylight_only: false
+    notes: Cloud-top-temperature diagnostic proxy; not an EarthCARE retrieval.
+  - name: lwtup_mean
+    tier: always
+    source_instrument: BBR-like GEOS-5 diagnostic proxy
+    daylight_only: false
+    notes: Longwave-upward diagnostic proxy; not a simulated BBR retrieval.
+  - name: tautot_max
+    tier: always
+    source_instrument: MSI-like GEOS-5 diagnostic proxy
+    daylight_only: true
+    notes: Maximum column optical-thickness proxy; model TAUTOT and MSI topmost-cloud optical thickness diverge in multilayer scenes.
+  - name: prectot_swath
+    tier: target
+    source_instrument: CPR truth proxy
+    daylight_only: false
+    notes: Swath precipitation target; never an agent input.
+  - name: prectot_nadir
+    tier: target
+    source_instrument: CPR truth proxy
+    daylight_only: false
+    notes: Nadir precipitation target; never an agent input.
+  - name: preccon_swath
+    tier: target
+    source_instrument: CPR truth proxy
+    daylight_only: false
+    notes: Swath convective-precipitation target; never an agent input.
+  - name: preccon_nadir
+    tier: target
+    source_instrument: CPR truth proxy
+    daylight_only: false
+    notes: Nadir convective-precipitation target; never an agent input.
+  - name: iwp_swath
+    tier: target
+    source_instrument: CPR truth proxy
+    daylight_only: false
+    notes: Swath ice-water-path target; never an agent input.
+  - name: iwp_nadir
+    tier: target
+    source_instrument: CPR truth proxy
+    daylight_only: false
+    notes: Nadir ice-water-path target; never an agent input.
+  - name: lwp_swath
+    tier: target
+    source_instrument: CPR truth proxy
+    daylight_only: false
+    notes: Swath liquid-water-path target; never an agent input.
+  - name: lwp_nadir
+    tier: target
+    source_instrument: CPR truth proxy
+    daylight_only: false
+    notes: Nadir liquid-water-path target; never an agent input.
+  - name: n_swath_cells
+    tier: metadata
+    source_instrument: extraction geometry
+    daylight_only: false
+    notes: Number of cells in the imager swath reduction.
+  - name: n_nadir_cells
+    tier: metadata
+    source_instrument: extraction geometry
+    daylight_only: false
+    notes: Number of cells used for the nadir reduction.
+  - name: decision
+    tier: metadata
+    source_instrument: extraction index
+    daylight_only: false
+    notes: One-minute decision ID; missing IDs are retained as discontinuities.
+  - name: field
+    tier: metadata
+    source_instrument: G5NR metadata
+    daylight_only: false
+    notes: Weather-field identifier.
+  - name: g5_step
+    tier: metadata
+    source_instrument: G5NR metadata
+    daylight_only: false
+    notes: Thirty-minute G5NR weather-step identifier.
+  - name: time
+    tier: metadata
+    source_instrument: extraction metadata
+    daylight_only: false
+    notes: Saved decision timestamp.
+  - name: lat
+    tier: always
+    source_instrument: orbit geometry
+    daylight_only: false
+    notes: Saved decision-footprint centroid latitude; geographic memorization risk applies.
+  - name: lon
+    tier: metadata
+    source_instrument: orbit geometry
+    daylight_only: false
+    notes: Raw longitude retained for traceability; use sin_lon/cos_lon for cyclic modelling.
+  - name: solar_hour
+    tier: always
+    source_instrument: orbit geometry/timing
+    daylight_only: false
+    notes: Effectively a day/night sampling indicator for the sun-synchronous orbit, not a continuous diurnal clock.
+  - name: lwtup_fore
+    tier: always
+    source_instrument: BBR-like GEOS-5 diagnostic proxy
+    daylight_only: false
+    notes: Same-G5NR-step next-decision MSI-swath-style mean used as a geometric forward-region BBR proxy; not a true BBR footprint or retrieval.
+  - name: land_frac_nadir
+    tier: always
+    source_instrument: G5NR static constants plus orbit geometry
+    daylight_only: false
+    notes: Continuous 0-1 mean over 60 one-second nadir samples; frland + frlandice because frland excludes ice.
+  - name: ocean_frac_nadir
+    tier: always
+    source_instrument: G5NR static constants plus orbit geometry
+    daylight_only: false
+    notes: Continuous 0-1 mean over 60 one-second nadir samples; frocean + frlake.
+  - name: sin_lon
+    tier: always
+    source_instrument: derived geometry
+    daylight_only: false
+    notes: sin(lon in radians), avoiding the -180/+180 seam.
+  - name: cos_lon
+    tier: always
+    source_instrument: derived geometry
+    daylight_only: false
+    notes: cos(lon in radians), avoiding the -180/+180 seam.
+  - name: prectot_swath_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: prectot_nadir_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: preccon_swath_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: preccon_nadir_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: iwp_swath_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: iwp_nadir_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: lwp_swath_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: lwp_nadir_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.

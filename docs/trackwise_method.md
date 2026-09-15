@@ -1,7 +1,9 @@
 # The Track-Wise Method: What It Does and Why It Works
 
 **Applies to:** `geos5data_0.0625deg_30mn_trackwise.ipynb` and its extraction script
-`extract_trackwise.py`. This is the dataset used for training. It replaces the clustering approach
+`extract_trackwise.py`. This is the dataset-preparation output used to support later training. The
+enriched feature tiers and validation rules are documented in [`feature_set.md`](./feature_set.md).
+It replaces the clustering approach
 described in [`clustering_method.md`](./clustering_method.md), for the reasons given there — in
 short, clustering answers "where is the storm," and this project needs "should the radar fire right
 now." This document describes what the track-wise method does, and why it succeeds where clustering
@@ -24,10 +26,10 @@ storm has to be detected for a row to exist.
 sub-satellite point (the point directly beneath the satellite) is computed once per second across
 the full 8-month window. This is the true nadir path — not an approximation.
 
-**2. Fix a decision every 1 minute.** The RL agent makes a CPR on/off decision every minute of
-flight. That is the row rate of the dataset: one row per 1-minute interval, for the entire 8
-months, with no gaps and no sampling — every single decision the agent could ever face is
-represented.
+**2. Fix a decision every 1 minute.** The future RL agent makes a CPR on/off decision every minute
+of flight. That is the row rate of the dataset: one row per 1-minute interval across the 8-month
+window. The source contains 1,161 missing decision IDs represented by 49 discontinuities; those
+gaps are retained and are never bridged.
 
 **3. For each decision, fetch a small patch of weather data.** The G5NR weather simulation updates
 every 30 minutes at its finest available resolution (0.0625°, roughly 7 km). For each 1-minute
@@ -36,10 +38,12 @@ correct 30-minute weather snapshot — found by simple arithmetic (which 30-minu
 minute falls into), not by matching timestamps, which turned out to be an important distinction
 (see §5).
 
-**4. Reduce that patch to a handful of numbers — the features.** Everything MSI could plausibly
-measure — cloud optical thickness, cloud fraction (total, high, mid, low), cloud-top temperature,
-outgoing longwave radiation — is averaged over the imager's field of view at that moment. These
-averages become the agent's observation. Nothing about precipitation enters this set.
+**4. Reduce that patch to a handful of numbers — the diagnostics.** The table contains GEOS-5
+Nature Run diagnostics that act as MSI-like and BBR-like proxies, including cloud optical
+thickness, cloud fraction, cloud-top temperature, and outgoing longwave radiation. They are not
+simulated EarthCARE retrievals: no instrument forward model or retrieval chain has been applied.
+The future observation set is tiered; see [`feature_set.md`](./feature_set.md). Nothing about
+precipitation enters the always-available context set.
 
 **5. Separately, record what the radar would have measured — the label.** The CPR is a
 nadir-pointing instrument with a very narrow footprint, so its label is computed only from the
@@ -56,8 +60,7 @@ instrument sees, the same problem the original clustering approach had at a much
 what makes the dataset possible at all — see §3.
 
 Repeating this once a minute for 8 months of flight produces one table: 351,639 rows, each one a
-complete (MSI-visible conditions, radar truth) pair, at exactly the cadence the agent will actually
-operate at.
+complete (diagnostic-proxy context, radar-truth) pair at the intended decision cadence.
 
 ---
 
@@ -110,11 +113,12 @@ At the 1 mm/hr operating threshold used for training, **13.0% of decisions are p
 workable minority class for a reward signal, and a realistic one, since it reflects only what the
 CPR could physically have observed.
 
-### 4.3 The MSI-visible features genuinely predict the label
+### 4.3 The diagnostic proxies genuinely predict the label
 
-The entire premise of CPR gating only works if cloud properties visible to a passive imager are
-actually informative about precipitation the imager cannot directly measure. This was tested
-directly on the finished 8-month dataset, not assumed. Ranking individual features by how well they
+The entire premise of CPR gating only works if cloud properties available to a passive-imager-like
+context are informative about precipitation the imager cannot directly measure. This was tested
+directly on the finished 8-month dataset, not assumed. Ranking individual diagnostic proxies by
+how well they
 separate precipitating from non-precipitating decisions (ROC-AUC, where 0.5 is chance and 1.0 is
 perfect separation):
 
@@ -127,7 +131,7 @@ perfect separation):
 | mid-level cloud fraction | 0.694 |
 | total cloud fraction | 0.651 |
 
-A logistic regression combining all eleven MSI-visible features reaches **ROC-AUC 0.837** and an
+A logistic regression combining the candidate diagnostic features reaches **ROC-AUC 0.837** and an
 average precision of 0.377 against the 13.0% base rate — a large, genuine lift over chance, using
 only information the agent is actually allowed to see. Cloud optical thickness carries the most
 signal, which lines up with the physical picture: optically thick cloud is where precipitation
