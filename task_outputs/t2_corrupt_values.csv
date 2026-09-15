@@ -1,0 +1,25 @@
+decision,column,original_value,rule
+16368,iwp_swath,4.515667026174915e+27,finite target with abs(value) >= 1e6; extraction _sane rule
+223383,iwp_swath,33780100235264.0,finite target with abs(value) >= 1e6; extraction _sane rule
+223384,iwp_swath,33808554393600.0,finite target with abs(value) >= 1e6; extraction _sane rule
+223385,iwp_swath,33743595110400.0,finite target with abs(value) >= 1e6; extraction _sane rule
+224067,iwp_swath,2.7043212160108457e+32,finite target with abs(value) >= 1e6; extraction _sane rule
+225786,iwp_swath,2.7043212160108457e+32,finite target with abs(value) >= 1e6; extraction _sane rule
+225787,iwp_swath,2.7043212160108457e+32,finite target with abs(value) >= 1e6; extraction _sane rule
+225788,iwp_swath,2.7043212160108457e+32,finite target with abs(value) >= 1e6; extraction _sane rule
+243999,iwp_swath,1.1483855949816568e+37,finite target with abs(value) >= 1e6; extraction _sane rule
+223383,iwp_nadir,33750035464192.0,finite target with abs(value) >= 1e6; extraction _sane rule
+223384,iwp_nadir,33802111942656.0,finite target with abs(value) >= 1e6; extraction _sane rule
+223385,iwp_nadir,33740373884928.0,finite target with abs(value) >= 1e6; extraction _sane rule
+224067,iwp_nadir,1.031616730149057e+26,finite target with abs(value) >= 1e6; extraction _sane rule
+225787,iwp_nadir,2.7043212160108457e+32,finite target with abs(value) >= 1e6; extraction _sane rule
+225788,iwp_nadir,2.7043212160108457e+32,finite target with abs(value) >= 1e6; extraction _sane rule
+146697,lwp_swath,5.303523363684509e+19,finite target with abs(value) >= 1e6; extraction _sane rule
+146699,lwp_swath,2.432526174512835e+38,finite target with abs(value) >= 1e6; extraction _sane rule
+226087,lwp_swath,1.1483855949816568e+37,finite target with abs(value) >= 1e6; extraction _sane rule
+244083,lwp_swath,3.1089396670163134e+38,finite target with abs(value) >= 1e6; extraction _sane rule
+244084,lwp_swath,2.983805312725624e+38,finite target with abs(value) >= 1e6; extraction _sane rule
+244085,lwp_swath,2.431137235103177e+38,finite target with abs(value) >= 1e6; extraction _sane rule
+244083,lwp_nadir,4.9316436315031337e+30,finite target with abs(value) >= 1e6; extraction _sane rule
+244084,lwp_nadir,1.2956078736259029e+37,finite target with abs(value) >= 1e6; extraction _sane rule
+244085,lwp_nadir,1.3453437170937799e+32,finite target with abs(value) >= 1e6; extraction _sane rule

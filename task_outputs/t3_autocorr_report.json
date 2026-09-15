@@ -1,0 +1,107 @@
+{
+  "preccon_nadir": {
+    "lags": [
+      {
+        "lag": 1,
+        "valid_pair_count": 351575,
+        "acf": 0.11602368426716878
+      },
+      {
+        "lag": 2,
+        "valid_pair_count": 351522,
+        "acf": 0.056602306518739084
+      },
+      {
+        "lag": 3,
+        "valid_pair_count": 351469,
+        "acf": 0.03846988581347428
+      },
+      {
+        "lag": 5,
+        "valid_pair_count": 351395,
+        "acf": 0.024907080724189748
+      },
+      {
+        "lag": 10,
+        "valid_pair_count": 351224,
+        "acf": -0.0031900245097473317
+      },
+      {
+        "lag": 30,
+        "valid_pair_count": 350653,
+        "acf": -0.016144154444160397
+      }
+    ],
+    "e_folding_lag": 1
+  },
+  "prectot_nadir": {
+    "lags": [
+      {
+        "lag": 1,
+        "valid_pair_count": 351555,
+        "acf": 0.17117915784627902
+      },
+      {
+        "lag": 2,
+        "valid_pair_count": 351499,
+        "acf": 0.06029341850245908
+      },
+      {
+        "lag": 3,
+        "valid_pair_count": 351441,
+        "acf": 0.015995413217683815
+      },
+      {
+        "lag": 5,
+        "valid_pair_count": 351369,
+        "acf": 0.011163732430548723
+      },
+      {
+        "lag": 10,
+        "valid_pair_count": 351199,
+        "acf": 0.005937504602862925
+      },
+      {
+        "lag": 30,
+        "valid_pair_count": 350628,
+        "acf": -0.007795803137585221
+      }
+    ],
+    "e_folding_lag": 1
+  },
+  "tautot_mean": {
+    "lags": [
+      {
+        "lag": 1,
+        "valid_pair_count": 351557,
+        "acf": 0.6284512304959429
+      },
+      {
+        "lag": 2,
+        "valid_pair_count": 351501,
+        "acf": 0.37013502363541156
+      },
+      {
+        "lag": 3,
+        "valid_pair_count": 351445,
+        "acf": 0.22998631661376956
+      },
+      {
+        "lag": 5,
+        "valid_pair_count": 351367,
+        "acf": 0.06677239333957714
+      },
+      {
+        "lag": 10,
+        "valid_pair_count": 351194,
+        "acf": -0.05439556003232588
+      },
+      {
+        "lag": 30,
+        "valid_pair_count": 350623,
+        "acf": -0.0307138946079134
+      }
+    ],
+    "e_folding_lag": 3
+  }
+}

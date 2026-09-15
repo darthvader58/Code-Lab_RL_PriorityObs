@@ -1,0 +1,465 @@
+{
+  "status": {
+    "task1": "complete",
+    "task2": "complete",
+    "task3": "complete",
+    "task4": "complete",
+    "task5": "complete",
+    "task6": "complete",
+    "task7": "complete"
+  },
+  "source": {
+    "path": "/Users/shashwatraj/Desktop/FURI Spring 2025/Code-Lab_RL_PriorityObs/trackwise_decisions.parquet",
+    "shape": [
+      351639,
+      40
+    ],
+    "sha256": "4b92f01e24e231a5b5a1151060fef586f08e450e15c252fb23ef9ef772fd1466",
+    "source_replaced_intentionally": true
+  },
+  "task1_corrected": {
+    "rows": 351639,
+    "finite_values": 339859,
+    "final_row_nans": 1,
+    "gap_boundary_nans": 49,
+    "weather_step_boundary_nans": 11717,
+    "missing_next_lwtup_mean_nans": 13,
+    "total_nans": 11780,
+    "finite_max_abs_error_vs_formula": 0.0,
+    "field_g5_step_transition_disagreements": 0,
+    "field_g5_step_transition_agreements": 351638
+  },
+  "task2_validation": {
+    "nan_counts": {
+      "prectot_swath": 26,
+      "prectot_nadir": 24,
+      "preccon_swath": 10,
+      "preccon_nadir": 10,
+      "iwp_swath": 0,
+      "iwp_nadir": 0,
+      "lwp_swath": 0,
+      "lwp_nadir": 0
+    },
+    "zero_counts": {
+      "prectot_swath": 5323,
+      "prectot_nadir": 9204,
+      "preccon_swath": 183398,
+      "preccon_nadir": 209331,
+      "iwp_swath": 25816,
+      "iwp_nadir": 37026,
+      "lwp_swath": 13257,
+      "lwp_nadir": 19694
+    },
+    "corrupt_counts": {
+      "iwp_nadir": 6,
+      "iwp_swath": 9,
+      "lwp_nadir": 3,
+      "lwp_swath": 6
+    },
+    "corrupt_total": 24,
+    "invalid_entries_all_targets": 94,
+    "unique_decisions_any_invalid_target": 51,
+    "finite_corrupt_entries": 24,
+    "unique_decisions_with_finite_corrupt_values": 15,
+    "validity_flags_match_source_rule": true,
+    "rule": "finite target with abs(value) >= 1e6 is invalid; invalid values become NaN in final merge; no imputation"
+  },
+  "task3_autocorrelation": {
+    "preccon_nadir": {
+      "lags": [
+        {
+          "lag": 1,
+          "valid_pair_count": 351575,
+          "acf": 0.11602368426716878
+        },
+        {
+          "lag": 2,
+          "valid_pair_count": 351522,
+          "acf": 0.056602306518739084
+        },
+        {
+          "lag": 3,
+          "valid_pair_count": 351469,
+          "acf": 0.03846988581347428
+        },
+        {
+          "lag": 5,
+          "valid_pair_count": 351395,
+          "acf": 0.024907080724189748
+        },
+        {
+          "lag": 10,
+          "valid_pair_count": 351224,
+          "acf": -0.0031900245097473317
+        },
+        {
+          "lag": 30,
+          "valid_pair_count": 350653,
+          "acf": -0.016144154444160397
+        }
+      ],
+      "e_folding_lag": 1
+    },
+    "prectot_nadir": {
+      "lags": [
+        {
+          "lag": 1,
+          "valid_pair_count": 351555,
+          "acf": 0.17117915784627902
+        },
+        {
+          "lag": 2,
+          "valid_pair_count": 351499,
+          "acf": 0.06029341850245908
+        },
+        {
+          "lag": 3,
+          "valid_pair_count": 351441,
+          "acf": 0.015995413217683815
+        },
+        {
+          "lag": 5,
+          "valid_pair_count": 351369,
+          "acf": 0.011163732430548723
+        },
+        {
+          "lag": 10,
+          "valid_pair_count": 351199,
+          "acf": 0.005937504602862925
+        },
+        {
+          "lag": 30,
+          "valid_pair_count": 350628,
+          "acf": -0.007795803137585221
+        }
+      ],
+      "e_folding_lag": 1
+    },
+    "tautot_mean": {
+      "lags": [
+        {
+          "lag": 1,
+          "valid_pair_count": 351557,
+          "acf": 0.6284512304959429
+        },
+        {
+          "lag": 2,
+          "valid_pair_count": 351501,
+          "acf": 0.37013502363541156
+        },
+        {
+          "lag": 3,
+          "valid_pair_count": 351445,
+          "acf": 0.22998631661376956
+        },
+        {
+          "lag": 5,
+          "valid_pair_count": 351367,
+          "acf": 0.06677239333957714
+        },
+        {
+          "lag": 10,
+          "valid_pair_count": 351194,
+          "acf": -0.05439556003232588
+        },
+        {
+          "lag": 30,
+          "valid_pair_count": 350623,
+          "acf": -0.0307138946079134
+        }
+      ],
+      "e_folding_lag": 3
+    }
+  },
+  "task4_land_water": {
+    "rows": 351639,
+    "subpoints_per_decision": 60,
+    "decision_alignment_exact": true,
+    "duplicate_decisions": 0,
+    "axes_match_expected_grid": true,
+    "partition_min": 0.9992626197636127,
+    "partition_max": 1.000754363834858,
+    "partition_mean": 0.9996680653757684,
+    "partition_max_abs_error": 0.0007543638348579407,
+    "partition_exceptions_abs_gt_0.01": 0,
+    "frland_includes_ice": false,
+    "region_stats": {
+      "antarctica_lat_le_-60": {
+        "frland_plus_water_mean": 0.3810940218266994,
+        "all_four_mean": 0.9996456203020505,
+        "frland_mean": 0.0,
+        "frlandice_mean": 0.6185515984753511
+      },
+      "greenland": {
+        "frland_plus_water_mean": 0.5820208806811543,
+        "all_four_mean": 0.9997020247338853,
+        "frland_mean": 0.09151858894494289,
+        "frlandice_mean": 0.4176811440527308
+      }
+    },
+    "land_definition": "frland + frlandice (frland empirically excludes land ice)",
+    "water_definition": "frocean + frlake",
+    "land_frac_quantiles": {
+      "0.0": 0.0,
+      "0.01": 0.0,
+      "0.05": 0.0,
+      "0.1": 0.0,
+      "0.25": 0.0,
+      "0.5": 0.0,
+      "0.75": 0.9534140203769008,
+      "0.9": 0.9996259212493896,
+      "0.95": 0.9996287822723389,
+      "0.99": 0.9996287822723389,
+      "1.0": 0.9998703304988642
+    },
+    "land_frac_histogram_counts_10_bins": [
+      207132,
+      7149,
+      6384,
+      5870,
+      5559,
+      5709,
+      5752,
+      6053,
+      7525,
+      94506
+    ],
+    "land_frac_histogram_edges": [
+      0.0,
+      0.1,
+      0.2,
+      0.30000000000000004,
+      0.4,
+      0.5,
+      0.6000000000000001,
+      0.7000000000000001,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "land_mean": 0.33883288814535156,
+    "ocean_mean": 0.6608366341685645,
+    "mean_sum": 0.9996695223139163,
+    "mixed_surface_fraction_0.05_to_0.95": 0.17093382702146234,
+    "mixed_surface_definition": "0.05 < land_frac_nadir < 0.95; each decision averages 60 one-second nadir samples, so this is not necessarily an individual shoreline grid cell",
+    "land_mean_interpretation": "The orbit-sampled mean land fraction is 0.338833. This is plausible for a near-polar ground track, but it is not directly comparable to an area-weighted global land fraction because the orbit does not sample Earth uniformly by surface area.",
+    "constant_cache_marker_present": true,
+    "nadir_cache_marker_present": true
+  },
+  "task5_validation": {
+    "rows": 351639,
+    "sin_max_abs_error": 0.0,
+    "cos_max_abs_error": 0.0,
+    "unit_circle_max_abs_error": 2.220446049250313e-16,
+    "sin_in_range": true,
+    "cos_in_range": true,
+    "raw_lon_unchanged": true
+  },
+  "merge": {
+    "source_shape": [
+      351639,
+      27
+    ],
+    "final_shape": [
+      351639,
+      40
+    ],
+    "source_sha256_checked_before_merge": true,
+    "row_order_preserved": true,
+    "one_to_one_decision_merges": true,
+    "authorized_finite_target_cleanups": 24,
+    "invalid_entries_all_targets": 94,
+    "unique_decisions_any_invalid_target": 51,
+    "unique_decisions_with_finite_corrupt_values": 15,
+    "source_columns_preserved_in_order": true,
+    "added_columns": [
+      "lwtup_fore",
+      "land_frac_nadir",
+      "ocean_frac_nadir",
+      "sin_lon",
+      "cos_lon",
+      "prectot_swath_valid",
+      "prectot_nadir_valid",
+      "preccon_swath_valid",
+      "preccon_nadir_valid",
+      "iwp_swath_valid",
+      "iwp_nadir_valid",
+      "lwp_swath_valid",
+      "lwp_nadir_valid"
+    ],
+    "final_columns": [
+      "tautot_mean",
+      "tauhgh_mean",
+      "taulow_mean",
+      "cldtot_mean",
+      "cldhgh_mean",
+      "cldmid_mean",
+      "cldlow_mean",
+      "cldtmp_mean",
+      "lwtup_mean",
+      "tautot_max",
+      "prectot_swath",
+      "prectot_nadir",
+      "preccon_swath",
+      "preccon_nadir",
+      "iwp_swath",
+      "iwp_nadir",
+      "lwp_swath",
+      "lwp_nadir",
+      "n_swath_cells",
+      "n_nadir_cells",
+      "decision",
+      "field",
+      "g5_step",
+      "time",
+      "lat",
+      "lon",
+      "solar_hour",
+      "lwtup_fore",
+      "land_frac_nadir",
+      "ocean_frac_nadir",
+      "sin_lon",
+      "cos_lon",
+      "prectot_swath_valid",
+      "prectot_nadir_valid",
+      "preccon_swath_valid",
+      "preccon_nadir_valid",
+      "iwp_swath_valid",
+      "iwp_nadir_valid",
+      "lwp_swath_valid",
+      "lwp_nadir_valid"
+    ],
+    "final_reopens": true,
+    "lwtup_fore_finite_crosses_gap_or_weather_boundary": false,
+    "legitimate_zero_values_preserved": true
+  },
+  "final_parquet": {
+    "path": "/Users/shashwatraj/Desktop/FURI Spring 2025/Code-Lab_RL_PriorityObs/trackwise_decisions.parquet",
+    "shape": [
+      351639,
+      40
+    ],
+    "columns": [
+      "tautot_mean",
+      "tauhgh_mean",
+      "taulow_mean",
+      "cldtot_mean",
+      "cldhgh_mean",
+      "cldmid_mean",
+      "cldlow_mean",
+      "cldtmp_mean",
+      "lwtup_mean",
+      "tautot_max",
+      "prectot_swath",
+      "prectot_nadir",
+      "preccon_swath",
+      "preccon_nadir",
+      "iwp_swath",
+      "iwp_nadir",
+      "lwp_swath",
+      "lwp_nadir",
+      "n_swath_cells",
+      "n_nadir_cells",
+      "decision",
+      "field",
+      "g5_step",
+      "time",
+      "lat",
+      "lon",
+      "solar_hour",
+      "lwtup_fore",
+      "land_frac_nadir",
+      "ocean_frac_nadir",
+      "sin_lon",
+      "cos_lon",
+      "prectot_swath_valid",
+      "prectot_nadir_valid",
+      "preccon_swath_valid",
+      "preccon_nadir_valid",
+      "iwp_swath_valid",
+      "iwp_nadir_valid",
+      "lwp_swath_valid",
+      "lwp_nadir_valid"
+    ],
+    "dtypes": {
+      "tautot_mean": "float64",
+      "tauhgh_mean": "float64",
+      "taulow_mean": "float64",
+      "cldtot_mean": "float64",
+      "cldhgh_mean": "float64",
+      "cldmid_mean": "float64",
+      "cldlow_mean": "float64",
+      "cldtmp_mean": "float64",
+      "lwtup_mean": "float64",
+      "tautot_max": "float64",
+      "prectot_swath": "float64",
+      "prectot_nadir": "float64",
+      "preccon_swath": "float64",
+      "preccon_nadir": "float64",
+      "iwp_swath": "float64",
+      "iwp_nadir": "float64",
+      "lwp_swath": "float64",
+      "lwp_nadir": "float64",
+      "n_swath_cells": "int64",
+      "n_nadir_cells": "int64",
+      "decision": "int64",
+      "field": "int64",
+      "g5_step": "int64",
+      "time": "datetime64[ns, UTC]",
+      "lat": "float64",
+      "lon": "float64",
+      "solar_hour": "float64",
+      "lwtup_fore": "float64",
+      "land_frac_nadir": "float64",
+      "ocean_frac_nadir": "float64",
+      "sin_lon": "float64",
+      "cos_lon": "float64",
+      "prectot_swath_valid": "bool",
+      "prectot_nadir_valid": "bool",
+      "preccon_swath_valid": "bool",
+      "preccon_nadir_valid": "bool",
+      "iwp_swath_valid": "bool",
+      "iwp_nadir_valid": "bool",
+      "lwp_swath_valid": "bool",
+      "lwp_nadir_valid": "bool"
+    }
+  },
+  "registry": {
+    "entry_count": 40,
+    "unique_names": 40,
+    "covers_final_columns": true
+  },
+  "constraints": {
+    "no_reextraction": true,
+    "no_time_varying_weather_download": true,
+    "constants_collection_fetched_once_and_cached": true,
+    "task4_not_duplicated": true,
+        "source_replaced_with_validated_enriched_output": true,
+    "no_commit_or_push": true
+  },
+  "files_created_or_modified": [
+    "task_outputs/t1_lwtup_fore_corrected.parquet",
+    "task_outputs/t1_lwtup_fore_corrected_report.md",
+    "task_outputs/t1_lwtup_fore_corrected_report.json",
+    "task_outputs/t2_corrupt_values.csv",
+    "task_outputs/t2_validation_report.md",
+    "task_outputs/t2_validation_report.json",
+    "task_outputs/t3_autocorr_report.md",
+    "task_outputs/t3_autocorr_report.json",
+    "task_outputs/t4_land_water.parquet",
+    "task_outputs/t4_land_water_report.md",
+    "task_outputs/t4_land_water_report.json",
+    "task_outputs/t5_validation_report.md",
+    "task_outputs/t5_validation_report.json",
+        "trackwise_decisions.parquet",
+    "docs/column_registry.yaml",
+    "docs/feature_set.md",
+    "docs/trackwise_method.md"
+  ],
+  "unresolved_warnings": [
+    "lwtup_fore is a same-weather-step GEOS-5 forward-region proxy, not a true BBR retrieval or footprint.",
+    "Weak precipitation persistence at one-minute cadence does not establish that all sequential features are useless.",
+    "Same-minute decision-time causality and rollout availability masks remain future RL-environment responsibilities.",
+    "GEOS-5 diagnostics are idealized proxies; no instrument forward model or retrieval chain was applied."
+  ]
+}

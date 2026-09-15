@@ -1,0 +1,79 @@
+# Task 4 land/water validation
+
+{
+  "rows": 351639,
+  "subpoints_per_decision": 60,
+  "decision_alignment_exact": true,
+  "duplicate_decisions": 0,
+  "axes_match_expected_grid": true,
+  "partition_min": 0.9992626197636127,
+  "partition_max": 1.000754363834858,
+  "partition_mean": 0.9996680653757684,
+  "partition_max_abs_error": 0.0007543638348579407,
+  "partition_exceptions_abs_gt_0.01": 0,
+  "frland_includes_ice": false,
+  "region_stats": {
+    "antarctica_lat_le_-60": {
+      "frland_plus_water_mean": 0.3810940218266994,
+      "all_four_mean": 0.9996456203020505,
+      "frland_mean": 0.0,
+      "frlandice_mean": 0.6185515984753511
+    },
+    "greenland": {
+      "frland_plus_water_mean": 0.5820208806811543,
+      "all_four_mean": 0.9997020247338853,
+      "frland_mean": 0.09151858894494289,
+      "frlandice_mean": 0.4176811440527308
+    }
+  },
+  "land_definition": "frland + frlandice (frland empirically excludes land ice)",
+  "water_definition": "frocean + frlake",
+  "land_frac_quantiles": {
+    "0.0": 0.0,
+    "0.01": 0.0,
+    "0.05": 0.0,
+    "0.1": 0.0,
+    "0.25": 0.0,
+    "0.5": 0.0,
+    "0.75": 0.9534140203769008,
+    "0.9": 0.9996259212493896,
+    "0.95": 0.9996287822723389,
+    "0.99": 0.9996287822723389,
+    "1.0": 0.9998703304988642
+  },
+  "land_frac_histogram_counts_10_bins": [
+    207132,
+    7149,
+    6384,
+    5870,
+    5559,
+    5709,
+    5752,
+    6053,
+    7525,
+    94506
+  ],
+  "land_frac_histogram_edges": [
+    0.0,
+    0.1,
+    0.2,
+    0.30000000000000004,
+    0.4,
+    0.5,
+    0.6000000000000001,
+    0.7000000000000001,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "land_mean": 0.33883288814535156,
+  "ocean_mean": 0.6608366341685645,
+  "mean_sum": 0.9996695223139163,
+  "mixed_surface_fraction_0.05_to_0.95": 0.17093382702146234,
+  "mixed_surface_definition": "0.05 < land_frac_nadir < 0.95; each decision averages 60 one-second nadir samples, so this is not necessarily an individual shoreline grid cell",
+  "land_mean_interpretation": "The orbit-sampled mean land fraction is 0.338833. This is plausible for a near-polar ground track, but it is not directly comparable to an area-weighted global land fraction because the orbit does not sample Earth uniformly by surface area.",
+  "constant_cache_marker_present": true,
+  "nadir_cache_marker_present": true
+}
+
+The constants partition shows that `frland` excludes land ice; land is therefore `frland + frlandice`, and water is `frocean + frlake`. The 60 cached one-second nadir samples per decision were used.
