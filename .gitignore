@@ -2,6 +2,8 @@
 *.geojson
 *.czml
 cpr_decisions_*.csv
+trackwise_decisions_*.csv
+trackwise_decisions.czml
 observedclusters_*.geojson
 
 # OpenDAP caches and extraction outputs
