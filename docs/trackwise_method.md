@@ -54,7 +54,7 @@ per-second track from step 1. This value — precipitation, kept as `prectot_nad
 regard, for comparison; the nadir version is the one used to score the agent, because it is the
 one the CPR could have actually measured. Using the wider version would overstate what the
 instrument sees, the same problem the original clustering approach had at a much larger scale
-(§4 in the companion document).
+(§3.3 in the companion document).
 
 **6. Discard the patch and move on.** Nothing is kept in memory beyond the reduced row. This is
 what makes the dataset possible at all — see §3.
@@ -69,10 +69,10 @@ complete (diagnostic-proxy context, radar-truth) pair at the intended decision c
 A tempting alternative is to just download the whole weather grid for the whole period and query
 it locally. At the resolution and cadence this project needs, that is not possible:
 
-$$\underbrace{2{,}881 \times 5{,}760}_{\text{cells at 0.0625°}} \times \underbrace{13}_{\text{variables}} \times \underbrace{11{,}760}_{\text{30-min steps, 8 months}} \approx 11.7\ \text{TB}.$$
+$$\underbrace{2{,}881 \times 5{,}760}_{\text{cells at 0.0625°}} \times \underbrace{13}_{\text{variables}} \times \underbrace{11{,}760}_{\text{30-min steps, 8 months}} \times \underbrace{4\ \text{B}}_{\text{float32}} \approx 10.1\ \text{TB}\ (9.2\ \text{TiB}).$$
 
 The satellite only ever flies over a thin ribbon of the planet at any moment, so almost all of that
-11.7 TB would be weather data the agent never needs, over parts of the globe it isn't looking at.
+10 TB would be weather data the agent never needs, over parts of the globe it isn't looking at.
 The fix is architectural: fetch only the small patch of grid under the satellite at each decision,
 reduce it to the handful of numbers described above, and throw the rest away immediately. Peak
 memory per request is under one megabyte, independent of how long the extraction runs — which is
@@ -97,8 +97,10 @@ one row per decision.
 Because the CPR's footprint is narrow, using a wide-swath label would silently teach the agent to
 expect credit for precipitation the radar never flies over — the same distortion, at a smaller
 scale, that made the clustering approach's whole-object crediting a problem. Restricting the label
-to the true nadir track corrects this directly, and the effect is large: at every precipitation
-threshold tested, the nadir-based positive rate is roughly half the swath-based one.
+to the true nadir track corrects this directly, and the effect is large: at every meaningful
+precipitation threshold the nadir-based positive rate is well below the swath-based one, and the
+gap widens as the threshold rises — nadir positives are about 73% of swath positives at
+0.1 mm/hr, about half at 0.5–1 mm/hr, and only about a quarter to a third at 5–10 mm/hr.
 
 | threshold | swath positive | nadir positive |
 |---|---|---|
@@ -109,6 +111,9 @@ threshold tested, the nadir-based positive rate is roughly half the swath-based 
 | ≥ 5 mm/hr | 11.1% | 3.5% |
 | ≥ 10 mm/hr | 6.9% | 1.8% |
 
+The "any precipitation" row is not usable as a label: the model produces trace drizzle almost
+everywhere, so 97.4% of nadir decisions are positive at that threshold.
+
 At the 1 mm/hr operating threshold used for training, **13.0% of decisions are positive** — a
 workable minority class for a reward signal, and a realistic one, since it reflects only what the
 CPR could physically have observed.
@@ -117,23 +122,26 @@ CPR could physically have observed.
 
 The entire premise of CPR gating only works if cloud properties available to a passive-imager-like
 context are informative about precipitation the imager cannot directly measure. This was tested
-directly on the finished 8-month dataset, not assumed. Ranking individual diagnostic proxies by
+directly on the finished 8-month dataset, not assumed. Ranking the always-available features by
 how well they
 separate precipitating from non-precipitating decisions (ROC-AUC, where 0.5 is chance and 1.0 is
-perfect separation):
+perfect separation; "inverted" means lower values indicate precipitation, so the AUC is reported
+as 1 − AUC):
 
 | feature | AUC vs. nadir precipitation ≥ 1 mm/hr |
 |---|---|
-| cloud optical thickness (mean) | **0.815** |
-| cloud optical thickness (peak) | 0.789 |
-| low-cloud optical thickness | 0.734 |
-| high-cloud optical thickness | 0.712 |
-| mid-level cloud fraction | 0.694 |
-| total cloud fraction | 0.651 |
+| cloud optical thickness (mean, `tautot_mean`) | **0.815** |
+| cloud optical thickness (peak, `tautot_max`) | 0.789 |
+| total cloud fraction (`cldtot_mean`) | 0.651 |
+| cloud-top temperature (`cldtmp_mean`) | 0.622 (inverted) |
+| outgoing longwave radiation (`lwtup_mean`) | 0.598 (inverted) |
+| nadir ocean fraction (`ocean_frac_nadir`) | 0.572 |
 
-A logistic regression combining the candidate diagnostic features reaches **ROC-AUC 0.837** and an
-average precision of 0.377 against the 13.0% base rate — a large, genuine lift over chance, using
-only information the agent is actually allowed to see. Cloud optical thickness carries the most
+A logistic regression combining all 12 always-available features (the diagnostic proxies plus
+geometry: `solar_hour`, `lat`, `sin_lon`, `cos_lon`, and nadir land/ocean fractions) reaches
+**ROC-AUC 0.837** and an average precision of **0.368** against the 13.0% base rate (held-out 30%
+split) — a large, genuine lift over chance, using only information the agent is actually allowed
+to see. Cloud optical thickness carries the most
 signal, which lines up with the physical picture: optically thick cloud is where precipitation
 tends to form, so a passive imager measuring cloud thickness is measuring a real precursor of what
 the radar would find.
@@ -191,4 +199,4 @@ polygon's geometry) avoids this entirely and is the more robust approach regardl
 | positive-rate distortion | up to 39× area over-credited to a grazing pass | none — label is the actual footprint |
 | temporal coverage (final run) | a single repeated weather snapshot (original notebook) | 11,731 distinct 30-minute weather states over 8 months |
 | memory footprint | full field per snapshot | one small patch per decision, discarded immediately |
-| demonstrated learnability | not established on the clustering table | ROC-AUC 0.838, AP 0.378 on real features |
+| demonstrated learnability | not established on the clustering table | ROC-AUC 0.837, AP 0.368 on always-available features |
