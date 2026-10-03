@@ -18,9 +18,9 @@ CZML_DAYS = 30           # one monthly CZML per 30-day window, full 1-minute det
 FULL_TRACK_STEP = 5      # full-run CZML: orbit sample every 5 minutes
 FULL_MARKERS = 20_000    # full-run CZML: ~same decision thinning as the Kepler CSV
 
-# Same TLE as extract_trackwise.py. The parquet lat/lon are planar centroids of
-# each 1-minute footprint, which break near the poles and across +/-180 deg
-# (up to ~20,000 km off), so the CZML positions are re-propagated from the TLE.
+# Same TLE as extract_trackwise.py. The parquet lat/lon are footprint centroids
+# (~40 km off nadir from the roll; broken ones repaired by
+# fix_trackwise_locations.py), so the CZML track is re-propagated from the TLE.
 TLE = ["1 59908U 24101A   25200.34125573  .00010433  00000+0  14571-3 0  9999",
        "2 59908  97.0168 326.4971 0001222 108.6708 251.4681 15.57041891 64775"]
 
