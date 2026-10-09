@@ -17,6 +17,9 @@ ALTITUDE_M = 394_000.0
 CZML_DAYS = 30           # one monthly CZML per 30-day window, full 1-minute detail
 FULL_TRACK_STEP = 5      # full-run CZML: orbit sample every 5 minutes
 FULL_MARKERS = 20_000    # full-run CZML: ~same decision thinning as the Kepler CSV
+# CZML colour/beam threshold. Display only: `fire` (median split) stays the
+# balanced training label, but colouring by it makes ~50% of the globe green.
+SHOW_MM_HR = 1.0
 
 # Same TLE as extract_trackwise.py. The parquet lat/lon are footprint centroids
 # (~40 km off nadir from the roll; broken ones repaired by
@@ -39,7 +42,7 @@ def subpoint(times):
 
 def build_czml(name, track, markers, multiplier, beams):
     """Satellite packet sampled from `track`, one ground marker per row of
-    `markers`, and (if `beams`) a nadir beam for every firing marker."""
+    `markers`, and (if `beams`) a nadir beam for every `show` marker."""
     start, end = track["time"].min(), track["time"].max()
     epoch, stop = iso(start), iso(end)
 
@@ -107,14 +110,15 @@ def build_czml(name, track, markers, multiplier, beams):
 
     firing_count = 0
     for row in markers.itertuples():
-        no_data = pd.isna(row.fire)  # nadir precip invalid -> no CPR decision
-        firing = not no_data and row.fire == 1
+        no_data = pd.isna(row.show)  # nadir precip invalid -> no CPR decision
+        firing = not no_data and row.show == 1
+        label = "n/a" if pd.isna(row.fire) else int(row.fire)
         if no_data:
             state, color = "n/a", [150, 150, 150, 110]
         elif firing:
-            state, color = "ON", [0, 190, 80, 230]
+            state, color = "ON", [0, 190, 80, 200]
         else:
-            state, color = "off", [190, 40, 50, 130]
+            state, color = "off", [190, 40, 50, 200]
         lon, lat = round(float(row.mid_lon), 4), round(float(row.mid_lat), 4)
         begin = iso(row.time)
         end = iso(row.time + pd.Timedelta(minutes=25))
@@ -129,7 +133,8 @@ def build_czml(name, track, markers, multiplier, beams):
                     "color": {"rgba": color},
                 },
                 "description": (
-                    f"<b>{begin}</b><br>CPR: {state}<br>"
+                    f"<b>{begin}</b><br>CPR (precip >= {SHOW_MM_HR:g} mm/hr): {state}<br>"
+                    f"training label (fire): {label}<br>"
                     f"nadir precip: {row.prectot_nadir * MM_PER_KG_M2_S:.2f} mm/hr<br>"
                     f"tautot: {row.tautot_mean:.1f} | cloud: {row.cldtot_mean:.2f}"
                 ),
@@ -140,7 +145,7 @@ def build_czml(name, track, markers, multiplier, beams):
     if beams:
         # One beam entity (satellite -> sub-satellite point) shown only during
         # runs of consecutive firing minutes, instead of a polyline per firing.
-        fire = markers["fire"].isin([1]).to_numpy()
+        fire = markers["show"].isin([1]).to_numpy()
         gap = markers["time"].diff() != pd.Timedelta(minutes=1)
         run_id = (pd.Series(fire != pd.Series(fire).shift().to_numpy()) | gap.to_numpy()).cumsum()
         runs = markers[fire].groupby(run_id[fire].to_numpy())["time"].agg(["min", "max"])
@@ -192,6 +197,14 @@ def main():
     rows.iloc[::max(len(rows) // 20_000, 1)].to_csv(KEPLER_CSV, index=False)
     print(f"full CSV:   {FULL_CSV} ({len(rows):,} rows)")
     print(f"Kepler CSV: {KEPLER_CSV} ({len(rows.iloc[::max(len(rows) // 20_000, 1)]):,} rows)")
+
+    # CZML-only display column; not written to the CSVs above.
+    rows["show"] = pd.NA
+    rows.loc[valid, "show"] = (
+        rows.loc[valid, "prectot_nadir"] * MM_PER_KG_M2_S >= SHOW_MM_HR).astype("int8")
+    print(f"CZML colour: nadir precip >= {SHOW_MM_HR:g} mm/hr "
+          f"({100 * rows.loc[valid, 'show'].mean():.1f}% green; "
+          f"training label fire is {100 * rows.loc[valid, 'fire'].mean():.1f}% positive)")
 
     CZML_DIR.mkdir(exist_ok=True)
     for old in CZML_DIR.glob("trackwise_decisions_*.czml"):
