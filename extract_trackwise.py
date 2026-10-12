@@ -4,7 +4,9 @@ geos5data_0.0625deg_30mn_trackwise.ipynb.
 
 Block-structured so memory is FLAT: ground tracks, nadir points and slabs are
 built and discarded one 200-field block at a time. Resume = skip blocks whose
-parquet part already exists.  Launch:  nohup python3 extract_8mo.py &
+parquet part already exists. A part is written only when every task in the
+block succeeded, so a resume always refetches an incomplete block instead of
+freezing its gaps in place.  Launch:  nohup python3 extract_trackwise.py &
 """
 import warnings; warnings.filterwarnings("ignore")
 import os, sys, gc, time as _time
@@ -39,6 +41,11 @@ G5_STEP   = timedelta(minutes=30)
 # 18 is ~12% faster than 12; drop to 12 if the log shows blocks failing outright
 # (as opposed to individual retries, which are normal).
 DEC_PER_FIELD, GROUP, WORKERS, CHECKPOINT = 30, 3, 18, 200
+# A task whose 4 in-task retries all fail is re-queued at block level after a
+# pause (60 s, 120 s, ... capped at 15 min; ~45 min total), which rides out NCCS
+# outages and laptop sleeps. The 2005-06 run had no such pass and lost 1,161
+# decisions in 49 whole-task gaps (one gap of 807 decisions).
+RETRY_ROUNDS, RETRY_PAUSE = 6, 60
 CACHE = "cache_8mo_jun2005_lst"
 G5NR_URL = ("https://opendap.nccs.nasa.gov/dods/OSSE/G5NR/Ganymed/7km/"
             "0.0625_deg/inst/inst30mn_2d_met1_Nx")
@@ -136,7 +143,8 @@ def reduce_decision(geom, sub, nlat, nlon):
 
 def process_task(fi, geoms, decs, times, nlats, nlons):
     """One small bbox (<=GROUP decisions). `fi` is the RELATIVE field index;
-    the absolute G5NR time index is FIELD_START + fi."""
+    the absolute G5NR time index is FIELD_START + fi. Returns None when the
+    download failed (retryable), a list of rows otherwise."""
     g5i = FIELD_START + fi
     import xarray as xr
     pad = 0.13
@@ -157,7 +165,7 @@ def process_task(fi, geoms, decs, times, nlats, nlons):
             break
         except Exception:
             _time.sleep(min(4*2**a, 45))
-    if sub is None: return []
+    if sub is None: return None
     out = []
     for g,d,t,nla,nlo in zip(geoms, decs, times, nlats, nlons):
         r = reduce_decision(g, sub, nla, nlo)
@@ -214,22 +222,45 @@ def main():
                                  list(ch.time), [nla[i] for i in ri], [nlo[i] for i in ri]))
             res = Parallel(n_jobs=WORKERS, backend="loky")(
                 delayed(process_task)(*x) for x in args)
-            flat = [r for rs in res for r in rs]
-            if flat:
+            flat = [r for rs in res if rs for r in rs]
+            failed = [x for x, rs in zip(args, res) if rs is None]
+            for rnd in range(1, RETRY_ROUNDS+1):
+                if not failed: break
+                pause = min(RETRY_PAUSE*2**(rnd-1), 900)
+                log(f"block {f0//CHECKPOINT}: {len(failed)} tasks failed, "
+                    f"retry round {rnd}/{RETRY_ROUNDS} in {pause} s")
+                _time.sleep(pause)
+                res = Parallel(n_jobs=min(WORKERS, len(failed)), backend="loky")(
+                    delayed(process_task)(*x) for x in failed)
+                flat += [r for rs in res if rs for r in rs]
+                failed = [x for x, rs in zip(failed, res) if rs is None]
+            want = sum(len(x[2]) for x in args)
+            if failed:
+                log(f"block {f0//CHECKPOINT} INCOMPLETE: {len(failed)} tasks "
+                    f"({sum(len(x[2]) for x in failed)} decisions) still failing "
+                    f"-> part NOT saved, rerun to resume")
+            else:
+                if len(flat) != want:
+                    log(f"block {f0//CHECKPOINT}: {want-len(flat)} decisions had "
+                        f"an empty slab (not a download failure)")
                 pd.DataFrame(flat).to_parquet(
                     f"{CACHE}/rows_{f0//CHECKPOINT:05d}.parquet", index=False)
             el = _time.time()-t0
             bt = el - prev_el; prev_el = el
             if first_bt is None: first_bt = bt
             warn = "  <-- SLOW: stale handles?" if bt > 3*first_bt else ""
-            log(f"block {f0//CHECKPOINT} ({n}/{len(todo)}): {len(flat):,} rows | "
+            log(f"block {f0//CHECKPOINT} ({n}/{len(todo)}): {len(flat):,}/{want:,} rows | "
                 f"{len(args):,} req | block {bt/60:.0f} min | eta "
                 f"{el/n*(len(todo)-n)/3600:.1f} h{warn}")
-            del gt, nla, nlo, args, res, flat
+            del gt, nla, nlo, args, res, flat, failed
         except Exception as e:
             log(f"block {f0//CHECKPOINT} FAILED: {type(e).__name__}: {e}")
         gc.collect()
-    log(f"DONE in {(_time.time()-t0)/3600:.1f} h")
+    left = [a for a,b in blocks
+            if not os.path.exists(f"{CACHE}/rows_{a//CHECKPOINT:05d}.parquet")]
+    log(f"DONE in {(_time.time()-t0)/3600:.1f} h | "
+        + (f"{len(left)} blocks incomplete {[a//CHECKPOINT for a in left]} "
+           f"-> rerun to resume" if left else f"all {len(blocks)} blocks complete"))
 
 if __name__ == "__main__":
     main()
