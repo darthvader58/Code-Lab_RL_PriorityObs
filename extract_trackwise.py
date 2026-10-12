@@ -19,9 +19,13 @@ from joblib import Parallel, delayed
 # tavg01mo_2d_met3_Cx: 3.204 mm/day, highest of all 24 months), so a June start
 # opens on peak monsoon/ITCZ and then sweeps through NH autumn into winter --
 # giving real seasonal spread rather than one regime.
-# G5NR 30-min axis starts 2005-05-15 21:30, so:
-FIELD_START = 773       # == 2005-06-01 00:00
-N_FIELDS    = 11760     # 245 days -> 2006-02-01 00:00 (exclusive)
+# G5NR 30-min axis starts 2005-05-15 21:30. The window must start at the same
+# UTC time-of-day as the orbit (startdate 15:04 UTC): decision i reads weather
+# step FIELD_START + i//30, so any time-of-day offset here shifts the local
+# solar time of every weather sample. Starting at 00:00 (step 773) put the
+# ~14:00 descending pass on ~22:40 weather and the ~02:00 pass on ~10:35.
+FIELD_START = 803       # == 2005-06-01 15:00, 4 min before orbit time-of-day
+N_FIELDS    = 11760     # 245 days -> 2006-02-01 15:00 (exclusive)
 
 DECISION  = timedelta(minutes=1)
 SUB_STEP  = timedelta(seconds=1)
@@ -35,7 +39,7 @@ G5_STEP   = timedelta(minutes=30)
 # 18 is ~12% faster than 12; drop to 12 if the log shows blocks failing outright
 # (as opposed to individual retries, which are normal).
 DEC_PER_FIELD, GROUP, WORKERS, CHECKPOINT = 30, 3, 18, 200
-CACHE = "cache_8mo_jun2005"
+CACHE = "cache_8mo_jun2005_lst"
 G5NR_URL = ("https://opendap.nccs.nasa.gov/dods/OSSE/G5NR/Ganymed/7km/"
             "0.0625_deg/inst/inst30mn_2d_met1_Nx")
 MSI = ["tautot","tauhgh","taulow","cldtot","cldhgh","cldmid","cldlow","cldtmp","lwtup"]
@@ -188,7 +192,7 @@ def main():
     todo = [(a,b) for a,b in blocks
             if not os.path.exists(f"{CACHE}/rows_{a//CHECKPOINT:05d}.parquet")]
     log(f"window: G5NR steps {FIELD_START}..{FIELD_START+N_FIELDS-1} "
-        f"(2005-06-01 -> 2006-02-01, 8 months)")
+        f"(2005-06-01 15:00 -> 2006-02-01 15:00, 8 months)")
     log(f"{N_FIELDS:,} fields x {DEC_PER_FIELD} decisions = "
         f"{N_FIELDS*DEC_PER_FIELD:,} rows | {N_FIELDS//CHECKPOINT+1} blocks | "
         f"{len(blocks)-len(todo)} cached | {len(todo)} to do | {WORKERS} workers")
