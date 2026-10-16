@@ -28,9 +28,9 @@ PARQUET_IN = os.path.join(REPO, "trackwise_decisions.parquet")
 DECISION = timedelta(minutes=1)
 SUB_STEP = timedelta(seconds=1)
 SUB_PER_DEC = int(DECISION / SUB_STEP)  # 60
-startdate = datetime(2025, 7, 19, 15, 4, tzinfo=timezone.utc)
-TLE = ["1 59908U 24101A   25200.34125573  .00010433  00000+0  14571-3 0  9999",
-       "2 59908  97.0168 326.4971 0001222 108.6708 251.4681 15.57041891 64775"]
+startdate = datetime(2026, 10, 15, 15, 0, tzinfo=timezone.utc)
+TLE = ["1 59908U 24101A   26287.91308245  .00003560  00000+0  50729-4 0  9996",
+       "2 59908  97.0045  52.9401 0002233  96.7262 263.4249 15.56977907135196"]
 
 from tatc.constants import timescale
 from skyfield.api import EarthSatellite, wgs84

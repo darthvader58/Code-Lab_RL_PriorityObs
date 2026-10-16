@@ -21,12 +21,13 @@ from joblib import Parallel, delayed
 # tavg01mo_2d_met3_Cx: 3.204 mm/day, highest of all 24 months), so a June start
 # opens on peak monsoon/ITCZ and then sweeps through NH autumn into winter --
 # giving real seasonal spread rather than one regime.
-# G5NR 30-min axis starts 2005-05-15 21:30. The window must start at the same
-# UTC time-of-day as the orbit (startdate 15:04 UTC): decision i reads weather
-# step FIELD_START + i//30, so any time-of-day offset here shifts the local
-# solar time of every weather sample. Starting at 00:00 (step 773) put the
-# ~14:00 descending pass on ~22:40 weather and the ~02:00 pass on ~10:35.
-FIELD_START = 803       # == 2005-06-01 15:00, 4 min before orbit time-of-day
+# G5NR 30-min axis starts 2005-05-15 21:30. Decision i reads weather step
+# FIELD_START + i//30, so FIELD_START must sit at the SAME UTC time-of-day as
+# startdate (15:00 UTC, below): then every decision reads the latest snapshot
+# at or before the satellite's time (offset 0-29 min). Starting at 00:00 (step
+# 773) put the ~14:00 pass on ~22:40 weather; a 15:04 orbit start against a
+# 15:00 snapshot left 4 of every 30 decisions on a needlessly old snapshot.
+FIELD_START = 803       # == 2005-06-01 15:00, same time-of-day as startdate
 N_FIELDS    = 11760     # 245 days -> 2006-02-01 15:00 (exclusive)
 
 DECISION  = timedelta(minutes=1)
@@ -51,16 +52,19 @@ RETRY_ROUNDS, RETRY_PAUSE = 6, 60
 # after a network change (VPN drop) libcurl sits on a dead socket forever and
 # ignores HTTP.TIMEOUT, which once froze a block for over an hour.
 TASK_TIMEOUT = 900
-CACHE = "cache_8mo_jun2005_lst"
+CACHE = "cache_8mo_jun2005_aligned"
 G5NR_URL = ("https://opendap.nccs.nasa.gov/dods/OSSE/G5NR/Ganymed/7km/"
             "0.0625_deg/inst/inst30mn_2d_met1_Nx")
 MSI = ["tautot","tauhgh","taulow","cldtot","cldhgh","cldmid","cldlow","cldtmp","lwtup"]
 LAB = ["prectot","preccon","iwp","lwp"]
 VARS = MSI + LAB
-startdate = datetime(2025,7,19,15,4,tzinfo=timezone.utc)
+# First 15:00 UTC after the TLE epoch (2026-10-14 21:54 UTC), so propagation
+# runs forward from the epoch; the time-of-day must match FIELD_START above.
+startdate = datetime(2026,10,15,15,0,tzinfo=timezone.utc)
 PER_FIELD = int(G5_STEP/DECISION)
-TLE = ["1 59908U 24101A   25200.34125573  .00010433  00000+0  14571-3 0  9999",
-       "2 59908  97.0168 326.4971 0001222 108.6708 251.4681 15.57041891 64775"]
+# EarthCARE (NORAD 59908), CelesTrak GP element set, epoch 2026-10-14 21:54 UTC
+TLE = ["1 59908U 24101A   26287.91308245  .00003560  00000+0  50729-4 0  9996",
+       "2 59908  97.0045  52.9401 0002233  96.7262 263.4249 15.56977907135196"]
 os.makedirs(CACHE, exist_ok=True)
 
 def log(m): print(f"[{datetime.now():%m-%d %H:%M:%S}] {m}", flush=True)
@@ -77,7 +81,12 @@ if "HTTP.TIMEOUT=120" not in _cur:
     log("set ~/.dodsrc HTTP.TIMEOUT=120, CONNECTTIMEOUT=30")
 
 # ---- satellite / orbit ----------------------------------------------------
-from tatc import utils
+from tatc import config, utils
+# Footprints (TATC) and nadir points (Skyfield) must come from the same
+# propagation. TATC reuses a detected repeat cycle by default; this TLE has none
+# (checked: identical to Skyfield), but pin it off so a future TLE cannot split
+# the two trajectories silently.
+config.rc.repeat_cycle_for_orbit_track = False
 from tatc.schemas import PointedInstrument, Satellite, TwoLineElements
 from tatc.analysis import compute_ground_track
 from tatc.constants import timescale
