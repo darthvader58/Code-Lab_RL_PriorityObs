@@ -43,8 +43,9 @@ G5_STEP   = timedelta(minutes=30)
 # (one worker per core) shrank the shared loky pool from 18 to 10 every block;
 # workers shut down with an open DAP handle sometimes segfault in libnetcdf,
 # which failed the next call. Every Parallel call now uses the same WORKERS
-# count, so the pool is never resized.
-DEC_PER_FIELD, GROUP, WORKERS, CHECKPOINT = 30, 3, 10, 200
+# count, so the pool is never resized. (A fixed pool of 10 avoided the crashes
+# but took ~64 min per block versus 15-33 min with 18.)
+DEC_PER_FIELD, GROUP, WORKERS, CHECKPOINT = 30, 3, 18, 200
 # A task whose 4 in-task retries all fail is re-queued at block level after a
 # pause (60 s, 120 s, ... capped at 15 min; ~45 min total), which rides out NCCS
 # outages and laptop sleeps. The 2005-06 run had no such pass and lost 1,161
