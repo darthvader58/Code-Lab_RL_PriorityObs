@@ -43,7 +43,9 @@ CloudSat [stephens2002cloudsat] and EarthCARE [illingworth2015earthcare] carry n
 profiling radars whose footprint is a narrow line inside the much wider imager swath. Small radar
 platforms such as RainCube [peral2019raincube] and the planned INCUS constellation of three
 small satellites with RainCube-heritage radars [tanelli2023incus] make duty-cycled radar operation a
-realistic design question.
+realistic design question. TRMM [kummerow1998trmm] and the GPM Core Observatory [hou2014gpm] pair
+a precipitation radar with passive imagers on one spacecraft, in non-sun-synchronous orbits that
+sample all local times; they are the natural extensions of this setup (Section 8.3).
 
 **Point to make:** studies that score targeting policies against gridded or imager-scale truth
 implicitly assume the instrument sees the whole scene. For a nadir radar it does not (Section 4).

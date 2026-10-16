@@ -28,7 +28,8 @@
    labels are still correct for the gating task, because the radar can only measure what is beneath
    it when it passes over. But a policy trained only on ~14:00/~02:00 weather may not transfer to a
    radar in an orbit with different local times, including a non-sun-synchronous orbit that samples
-   all of them.
+   all of them. TRMM and GPM, which pair a radar with passive imagers on non-sun-synchronous orbits,
+   are discussed in §8.3.
 
 ## 8.2 Future work
 
@@ -52,7 +53,65 @@
    swath sees forward-of-nadir cells only marginally; a dedicated lookahead would connect this work
    to dynamic targeting).
 
-## 8.3 Closing paragraph (draft)
+## 8.3 Other missions that fit the same question, without the fixed local-time limitation
+
+The research question (can passive measurements tell an active radar when to acquire?) is not
+specific to EarthCARE. Two NASA/JAXA precipitation missions carry an active radar and passive
+imagers on the same spacecraft and fly non-sun-synchronous orbits, so their overpasses drift through
+the local day instead of staying near ~14:00 and ~02:00 (Limitation 8). This paper does not build
+datasets for them. They are named here as the natural next test cases.
+
+**Accumulated sampling is not continuous sampling.** For both missions, the broader local-time
+coverage builds up over many passes and days. A given storm can still form and dissipate between
+overpasses, and coverage can be uneven across locations and hours. These orbits reduce the
+fixed-local-time restriction; they do not remove temporal sampling limits.
+
+### TRMM (1997–2015)
+
+- **Instruments** [nasa_trmm, kummerow1998trmm]: Precipitation Radar (PR, active, 3-D rainfall);
+  TRMM Microwave Imager (TMI, passive, atmospheric water, cloud liquid water, cloud ice,
+  precipitation); Visible and Infrared Scanner (VIRS, passive, cloud cover, type, and top
+  temperature).
+- **Orbit:** non-sun-synchronous, 35° inclination, about a 46-day precession cycle relative to the
+  Sun, so observation times move through the local day.
+- **Fit to this work:** VIRS → PR keeps the same structure as MSI → CPR here (cloud context informs a
+  radar decision). Adding TMI allows a second experiment comparing infrared context alone with
+  infrared plus passive microwave.
+- **Differences:** coverage is tropical and subtropical only, not near-polar. The instruments have
+  different resolutions and swath widths, so spatial matching and radar-footprint labels would have
+  to be rebuilt for TRMM rather than obtained by swapping the orbital elements. The mission has
+  ended, so this would be a historical-data or simulation study, with selective radar activation as
+  a counterfactual.
+
+### GPM Core Observatory (2014–present)
+
+- **Instruments** [nasa_gpm_core, hou2014gpm]: Dual-frequency Precipitation Radar (DPR, active,
+  Ku- and Ka-band, 3-D precipitation, including lighter rain and falling snow); GPM Microwave Imager
+  (GMI, passive, 13 microwave channels) [nasa_gmi].
+- **Orbit:** non-sun-synchronous, about 65° inclination, sampling different local times and reaching
+  higher latitudes than TRMM.
+- **Fit to this work:** the same decision structure (passive observation → acquire radar or not), on
+  one spacecraft, so no cross-satellite collocation is needed.
+- **Differences:** GMI already measures precipitation-related microwave signals, unlike the
+  cloud-only MSI-like context here. A GPM formulation should therefore reward what the radar adds
+  beyond the passive measurement (vertical structure, or uncertainty left after GMI), not the
+  detection of precipitation alone. Combined radar-radiometer retrieval products contain the
+  withheld radar measurement and must not be used as passive inputs. GMI and DPR observe the same
+  location about 67 s apart [nasa_gmi], so the analysis must confirm that the passive observation
+  would be available before the radar decision.
+
+### Requirements common to both
+
+- Only passive measurements available before the decision may enter the policy's input. Radar
+  measurements stay withheld until the action is scored.
+- Labels must follow each radar's own footprint and scanning geometry, as §4 argues for EarthCARE.
+- Any energy, switching, or duty-cycle cost must be justified for that mission. Carrying a radar
+  does not mean rapid, policy-controlled switching is operationally supported.
+
+These missions are candidate extensions. This paper does not show that its dataset, policies, or
+budget model transfer to TRMM or GPM.
+
+## 8.4 Closing paragraph (draft)
 
 > This benchmark fixes the label, the split, and the metric for budget-constrained radar gating, and
 > reports how much a static, imager-driven gate achieves. A sequential reinforcement-learning policy

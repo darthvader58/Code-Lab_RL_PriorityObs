@@ -48,7 +48,7 @@ Section order and source files:
 | 7 Experimental setup | `07_experiments.md` (protocols only; results go to §8) |
 | 8 Results and discussion | `10_results_and_discussion.md` + filled tables |
 | 9 Limitations and future work | `08_limitations_future_work.md` |
-| 10 Conclusion | `08_limitations_future_work.md` §8.3 |
+| 10 Conclusion | `08_limitations_future_work.md` §8.4 |
 | Data and code availability | Zenodo DOI, repository tag |
 | References | `09_references.md` |
 | Figures / tables | `11_figures_and_tables.md` |

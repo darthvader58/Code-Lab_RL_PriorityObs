@@ -62,6 +62,24 @@ source before citing it and convert to BibTeX in Overleaf.
   https://www.actris.eu/sites/default/files/inline-files/20250520_EarthCARE_Update_CCRES_Work_shop.pptx_.pdf
   — workshop slides; prefer a peer-reviewed EarthCARE commissioning/validation paper if one exists by
   submission.
+- ✓ **[nasa_trmm]** NASA GPM, *TRMM mission* and *TRMM satellite* pages.
+  https://gpm.nasa.gov/missions/trmm · https://gpm.nasa.gov/missions/TRMM/satellite
+  — Key facts used: NASA/JAXA, 1997–2015; PR (active), TMI and VIRS (passive) on one spacecraft;
+  non-sun-synchronous, 35° inclination, ~46-day precession relative to the Sun; tropical/subtropical
+  coverage; instruments differ in resolution and swath.
+- ✓ **[nasa_gpm_core]** NASA GPM, *GPM Core Observatory* and *GPM mission* pages.
+  https://gpm.nasa.gov/missions/GPM/core-observatory · https://gpm.nasa.gov/missions/GPM
+  — Key facts used: NASA/JAXA, launched 2014; DPR (Ku/Ka) and GMI on one spacecraft;
+  non-sun-synchronous, ~65° inclination; extends TRMM toward light rain and falling snow.
+- ✓ **[nasa_gmi]** NASA GPM, *GPM Microwave Imager (GMI)* page. https://gpm.nasa.gov/missions/gpm/GMI
+  — Key facts used: 13 channels; sensitive to rain, frozen precipitation, water vapor; GMI and DPR
+  overlapping observations ~67 s apart.
+- ? **[kummerow1998trmm]** Kummerow, C., Barnes, W., Kozu, T., Shiue, J., Simpson, J. *The Tropical
+  Rainfall Measuring Mission (TRMM) Sensor Package.* Journal of Atmospheric and Oceanic Technology,
+  15(3), 809–817, 1998. — details from recall; confirm volume, pages, and DOI before citing.
+- ? **[hou2014gpm]** Hou, A. Y., Kakar, R. K., Neeck, S., et al. *The Global Precipitation
+  Measurement Mission.* Bulletin of the American Meteorological Society, 95(5), 701–722, 2014.
+  doi:10.1175/BAMS-D-13-00164.1 — details from recall; confirm before citing.
 
 ## Data and simulation
 

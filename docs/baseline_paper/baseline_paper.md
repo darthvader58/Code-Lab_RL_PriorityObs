@@ -143,7 +143,9 @@ G5NR diagnostics are idealized proxies, not MSI retrievals; ~7 km vs. ~500 m res
 simulated period (2005–06) from a model with a known split-ITCZ bias; EarthCARE's real CPR runs continuously, so the budget is a stand-in for a
 future power-limited radar; decisions are scored independently (no battery or reveal-on-fire
 dynamics yet); the sun-synchronous orbit samples only ~14:00 and ~02:00 local time, so all rates
-are conditional on those times and may not transfer to orbits with other local times. Follow-ups: validation on real EarthCARE MSI + CPR data, and sequential RL that must
+are conditional on those times and may not transfer to orbits with other local times (TRMM and GPM,
+which pair a radar with passive imagers on non-sun-synchronous orbits, are named as follow-up test
+cases). Follow-ups: validation on real EarthCARE MSI + CPR data, and sequential RL that must
 beat these baselines.
 
 ## 10. One-sentence claim of the paper
