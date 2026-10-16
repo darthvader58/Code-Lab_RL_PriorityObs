@@ -200,3 +200,141 @@ polygon's geometry) avoids this entirely and is the more robust approach regardl
 | temporal coverage (final run) | a single repeated weather snapshot (original notebook) | 11,731 distinct 30-minute weather states over 8 months |
 | memory footprint | full field per snapshot | one small patch per decision, discarded immediately |
 | demonstrated learnability | not established on the clustering table | ROC-AUC 0.837, AP 0.368 on always-available features |
+
+---
+
+## 7. Re-extraction (October 2026)
+
+The dataset was extracted a second time. This section explains why, what changed, and what it
+affects. Until the downstream steps are rerun on the new extraction, the numbers in §2, §4, and §6
+(351,639 rows, 49 discontinuities, ROC-AUC 0.837) describe the old extraction.
+
+### 7.1 How it was previously
+
+Each row is built from two inputs, and each input has its own time.
+
+**Satellite time (TATC + Skyfield).** The orbit is propagated from EarthCARE's TLE, starting at
+`startdate = 2025-07-19 15:04 UTC`. Decision *i* is the minute starting at `startdate + i min`.
+TATC's `compute_ground_track` produces the MSI footprint for that minute, and Skyfield's
+`wgs84.subpoint` produces the per-second nadir points. The row's `time`, `lat`, `lon`, and
+`solar_hour` (`UTC hour + lon / 15`) all come from this time. This part was correct: it gives
+EarthCARE's real local crossing times of about 14:00 (descending pass) and 02:00 (ascending pass).
+
+**Weather time (G5NR).** The weather snapshot is not chosen by timestamp. It is chosen by index:
+
+```python
+g5i = FIELD_START + decision // 30     # one G5NR step (30 min) per 30 decisions
+ds[VARS].isel(time=g5i)
+```
+
+`FIELD_START` was **773**, which is G5NR's 2005-06-01 **00:00 UTC** snapshot.
+
+The two times advanced at the same rate, but they started at different times of day: the satellite
+at 15:04 UTC and the weather at 00:00 UTC. Nothing in the code checked that they matched.
+
+Separately, downloads were handled like this. Each request fetched the weather for 3 decisions and
+was retried up to 4 times. If all 4 attempts failed, the request returned an empty list. The block
+of 6,000 decisions was then saved as finished anyway. On a restart, saved blocks are skipped, so
+the missing decisions were never fetched again.
+
+### 7.2 What problem it created
+
+**Wrong time of day for the weather.** Every row paired the satellite's position with weather from
+about 15 hours earlier in the day. Measured over all 351,639 rows, the offset was 904–933 minutes.
+In local solar time:
+
+| pass | satellite overhead at | weather in the row was from |
+|---|---|---|
+| descending | ~14:00 | ~22:40 |
+| ascending | ~02:00 | ~10:35 |
+
+This mattered for three reasons:
+
+- Precipitation depends strongly on time of day. Convection over land peaks in the afternoon,
+  which is what the 14:00 pass should see. The old rows showed late-evening weather instead, so
+  every precipitation statistic was taken at the wrong hour.
+- `tautot_mean` and `tautot_max` are marked daylight-only, because MSI optical depth needs sunlight.
+  Rows that were daytime by orbit contained nighttime weather.
+- `solar_hour` is an agent input. It matched the satellite but not the weather in the same row, so
+  an agent trained on it would learn a time-of-day relationship that the real mission does not have.
+
+The old data was not random noise. It was consistent data for a satellite crossing at ~22:40 and
+~10:35. It was not EarthCARE.
+
+**Missing decisions.** The silently dropped requests left **49 gaps**, totalling **1,161
+decisions**. Gap sizes ranged from 3 to 807 decisions. Every gap was a multiple of 3, meaning each
+was one or more whole failed requests. Gaps break the 1-minute sequence that RL episodes rely on.
+
+### 7.3 How it was changed
+
+Commits `a826fd8`, `4a06337`, and `b816bc1`, applied to both `extract_trackwise.py` and the
+notebook:
+
+1. **`FIELD_START` changed from 773 to 803.**
+   ```python
+   FIELD_START = 773   # before: 2005-06-01 00:00 UTC
+   FIELD_START = 803   # after:  2005-06-01 15:00 UTC
+   ```
+   803 − 773 = 30 steps = 15 hours. Step 803 was checked against the G5NR server's time axis.
+   The satellite side (TLE, `startdate`, TATC, Skyfield) was not changed.
+2. **A failed request now returns `None`** instead of an empty list, so a failure can be told apart
+   from a request that legitimately had no rows.
+3. **Failed requests are retried at block level**, for up to 6 more rounds, waiting 60 s, 2, 4, 8,
+   15 and 15 min between rounds (about 45 min total).
+4. **An empty response counts as a failure.** During the new run the server once returned zero grid
+   cells without an error, for 3 decisions (6492–6494). Fetching the same region again returned
+   193 × 94 cells, so it was a server fault. Such responses are now retried.
+5. **A block is saved only if all of its requests succeeded.** Otherwise it is logged as
+   `INCOMPLETE` and not saved, so rerunning the script fetches it again.
+6. **New cache folder** `cache_8mo_jun2005_lst`, so old and new rows cannot mix.
+
+### 7.4 What the solution is
+
+Line up the start of the weather time with the satellite's time of day, and refuse to save
+incomplete data.
+
+The selection is still pure index arithmetic, so the §5 rule (never match timestamps across the two
+time axes) still holds. Only the starting index moved, so that decision 0 reads the 15:00 UTC
+snapshot instead of the 00:00 UTC one. Because both times advance together, they stay aligned for
+all 352,800 decisions.
+
+For the gaps, the extractor now separates three cases: a request that succeeded, a request that
+failed, and a block that is incomplete. It keeps retrying failures and never saves an incomplete
+block.
+
+### 7.5 What it solved
+
+**Time of day.** Each decision now reads the last snapshot taken before the satellite passes over.
+The offset is 4–33 minutes, which is the limit set by 30-minute snapshots. Checked on the first
+6,000 rows of the new run:
+
+| pass | satellite overhead at | weather before | weather after (median) |
+|---|---|---|---|
+| descending | ~14:00 | ~22:40 | **13:39** |
+| ascending | ~02:00 | ~10:35 | **01:36** |
+
+`solar_hour` now describes both the satellite and the weather in the same row, and daylight-only
+features are now in daylight rows.
+
+**Gaps.** Blocks completed so far have 6,000 of 6,000 rows. That includes the block that hit the
+empty-response fault, which was refetched in full after the fix. The full run is expected to give
+**352,800 rows** (11,760 steps × 30 decisions) with **0 gaps**, instead of 351,639 rows with 49 gaps.
+
+### 7.6 Impact
+
+- **The dataset now represents EarthCARE.** The precipitation the agent is scored on, the class
+  balance, and the feature-label relationships are all measured at the mission's real local times.
+- **Earlier results no longer apply.** The class-balance table, the feature AUCs, and the ROC-AUC
+  0.837 / AP 0.368 in §4.3 were computed on time-shifted weather. They have to be recomputed and
+  may change.
+- **Everything built from weather values must be regenerated:** the footprint-location repair,
+  `solar_hour`, the land/water merge, `lwtup_fore`, the validity flags, the validation reports, and
+  the CZML exports. The orbit geometry did not change, so the footprints and the nadir land/water
+  fractions themselves come out the same.
+- **Row-count checks will fail on purpose.** Several scripts and notebook cell 8 assert 351,639
+  rows. They need updating to the new count.
+- **RL episodes can be continuous.** With no gaps, episodes no longer have to be split or padded
+  around missing minutes. The gap-handling code (for example `lwtup_fore`) still works and will
+  just find no gaps.
+- **Cost:** one full re-download of about 30 hours. No change to the method, the features, or the
+  labels themselves.
