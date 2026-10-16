@@ -68,3 +68,13 @@ the budget problem depends on; the median split and other thresholds are reporte
 
 **Response:** That is exactly what the geometry-only and latitude-band baselines (P2, P3) measure;
 the imager's value is reported as the margin over them. **Where:** §5.4, Table 4.
+
+### O11. "A sun-synchronous orbit only sees two times of day. Doesn't that bias the results?"
+
+**Response:** It limits what the results describe, and the paper states this. EarthCARE samples
+~14:00 and ~02:00 local time, so every reported rate is conditional on precipitation at those times,
+not on daily precipitation. The labels remain correct for the task, because a radar can only gate
+what is beneath it when it passes over. The open question is transfer to orbits with different local
+times. Because G5NR has every half hour, the fraction of daily precipitation the two windows miss
+can be measured directly, which real EarthCARE data cannot do. **Where:** §3.2; Limitation 8;
+§8.2 future work 5.
