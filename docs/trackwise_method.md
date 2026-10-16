@@ -388,3 +388,41 @@ instead of 351,639 rows with 49 gaps.
   just find no gaps.
 - **Cost:** one full re-download of about 30 hours, plus the partial runs discarded along the way.
   No change to the method, the features, or the labels themselves.
+
+---
+
+## 8. Known limitation: diurnal coverage
+
+Weather at a given location changes over the day. Over land, solar heating drives convection that
+typically peaks in the afternoon and evening, while precipitation over the oceans often peaks near
+dawn. This daily pattern is the diurnal cycle, and describing it fully requires samples across all
+hours.
+
+EarthCARE does not sample all hours. Its sun-synchronous orbit crosses each latitude at nearly the
+same local solar time on every pass: about 14:00 on the descending pass and about 02:00 on the
+ascending pass. In this dataset, the descending node stays at 13:56–13:58 and the ascending node at
+01:56–01:58 for the whole 8-month window. Local time drifts away from these values toward high
+latitudes, but repeated passes over a location keep landing in the same two local-time windows.
+They do not gradually move through the day. (This concerns *which hours* are sampled, not how often
+a location is revisited.)
+
+Because the weather is now matched to the satellite's local time (§7), every row describes weather
+in one of those two windows only. As a result:
+
+- **All rates in this dataset are conditional on the sampling times.** The positive rate, the
+  precipitation statistics, and the feature-label relationships describe precipitation present at
+  ~14:00 and ~02:00 local time. They are not daily or climatological precipitation statistics.
+  Precipitation that starts and ends between the two windows, such as a late-afternoon storm over
+  land, never appears in the data.
+- **The gating task itself is not affected.** The radar can only measure what is beneath the
+  satellite, and the satellite is only overhead at these times. The labels correctly describe what
+  the CPR could have measured on each pass.
+- **Results may not transfer to orbits with different local times.** A policy trained here has only
+  seen ~14:00 and ~02:00 weather. A radar in a different sun-synchronous orbit, or in a
+  non-sun-synchronous (precessing) orbit that samples all local times, faces a different mix of
+  weather. That would need retraining or validation.
+
+G5NR provides weather at every half hour, so this limitation can be measured in this setup: comparing
+the precipitation sampled at the satellite's times with the precipitation at all hours along the
+same ground track gives the fraction of daily precipitation that the two windows miss. Real
+EarthCARE data could not provide that comparison.
