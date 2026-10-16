@@ -162,8 +162,14 @@ def process_task(fi, geoms, decs, times, nlats, nlons):
                 sub = xr.concat([w,e], dim="lon")
             else:
                 sub = ds[VARS].isel(time=g5i).sel(lon=slice(lon0-pad, lon1+pad), **sel).load()
+            # NCCS occasionally answers with a zero-size slab instead of an
+            # error; the padded bbox always spans grid cells, so treat it as a
+            # failed download (it once left a 3-decision gap).
+            if 0 in (sub.sizes["lat"], sub.sizes["lon"]):
+                raise ValueError("empty slab")
             break
         except Exception:
+            sub = None
             _time.sleep(min(4*2**a, 45))
     if sub is None: return None
     out = []
