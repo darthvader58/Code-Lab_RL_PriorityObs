@@ -213,12 +213,17 @@ affects. Until the downstream steps are rerun on the new extraction, the numbers
 
 Each row is built from two inputs, and each input has its own time.
 
-**Satellite time (TATC + Skyfield).** The orbit is propagated from EarthCARE's TLE, starting at
-`startdate = 2025-07-19 15:04 UTC`. Decision *i* is the minute starting at `startdate + i min`.
-TATC's `compute_ground_track` produces the MSI footprint for that minute, and Skyfield's
-`wgs84.subpoint` produces the per-second nadir points. The row's `time`, `lat`, `lon`, and
-`solar_hour` (`UTC hour + lon / 15`) all come from this time. This part was correct: it gives
+**Satellite time (TATC + Skyfield).** The orbit was propagated from an EarthCARE TLE with epoch
+2025-07-19 08:11 UTC, starting at `startdate = 2025-07-19 15:04 UTC`. Decision *i* is the minute
+starting at `startdate + i min`. TATC's `compute_ground_track` produces the MSI footprint for that
+minute, and Skyfield's `wgs84.subpoint` produces the per-second nadir points. The row's `time`,
+`lat`, `lon`, and `solar_hour` (`UTC hour + lon / 15`) all come from this time. This part gives
 EarthCARE's real local crossing times of about 14:00 (descending pass) and 02:00 (ascending pass).
+
+TATC 3.4.10 has a setting, on by default (`repeat_cycle_for_orbit_track`), that reuses positions
+from an earlier orbit if it detects a repeat cycle. Skyfield never does this. The code did not
+control the setting, so the footprints and the nadir points were not guaranteed to come from the
+same trajectory.
 
 **Weather time (G5NR).** The weather snapshot is not chosen by timestamp. It is chosen by index:
 
@@ -232,10 +237,11 @@ ds[VARS].isel(time=g5i)
 The two times advanced at the same rate, but they started at different times of day: the satellite
 at 15:04 UTC and the weather at 00:00 UTC. Nothing in the code checked that they matched.
 
-Separately, downloads were handled like this. Each request fetched the weather for 3 decisions and
-was retried up to 4 times. If all 4 attempts failed, the request returned an empty list. The block
-of 6,000 decisions was then saved as finished anyway. On a restart, saved blocks are skipped, so
-the missing decisions were never fetched again.
+**Downloads.** Each request fetched the weather for 3 decisions and was retried up to 4 times. If
+all 4 attempts failed, the request returned an empty list, and its block of 6,000 decisions was
+saved as finished anyway. On a restart, saved blocks are skipped, so the missing decisions were
+never fetched again. The only protection against a hung connection was `HTTP.TIMEOUT=120` in
+`~/.dodsrc`.
 
 ### 7.2 What problem it created
 
@@ -265,10 +271,28 @@ The old data was not random noise. It was consistent data for a satellite crossi
 decisions**. Gap sizes ranged from 3 to 807 decisions. Every gap was a multiple of 3, meaning each
 was one or more whole failed requests. Gaps break the 1-minute sequence that RL episodes rely on.
 
+**Problems found while re-extracting.** The first fix (moving `FIELD_START` to 803, §7.3) was
+running when a review and the run itself turned up four more issues:
+
+- **4-minute boundary error.** Step 803 is 15:00 UTC, but the orbit started at 15:04. So the
+  satellite at 15:30–15:33 still read the 15:00 snapshot although 15:30 was available. 4 of every
+  30 decisions (13%) used a snapshot 30 minutes older than necessary, and the offset was 4–33 min
+  instead of 0–29.
+- **Repeat-cycle risk.** Checked directly: for the old TLE, TATC found no repeat cycle, and TATC and
+  Skyfield positions agreed to within 0.1 m at 8 dates across the window. So no data was affected,
+  but a different TLE could have split the two trajectories without any error.
+- **Empty responses.** The server once returned zero grid cells without an error, for 3 decisions
+  (6492–6494). Fetching the same region again returned 193 × 94 cells, so it was a server fault,
+  but the code treated it as a success and saved a 3-decision gap.
+- **Hung downloads.** When the VPN disconnected mid-run, 12 of 18 workers were left on connections
+  through an address that no longer existed. libcurl waited on them indefinitely and ignored
+  `HTTP.TIMEOUT`, so a block stalled for over 90 minutes with no error and no retry.
+
 ### 7.3 How it was changed
 
-Commits `a826fd8`, `4a06337`, and `b816bc1`, applied to both `extract_trackwise.py` and the
-notebook:
+Commits `a826fd8`, `4a06337`, `b816bc1`, `c39fc32`, and `9dc8377`, applied to
+`extract_trackwise.py` and the notebook (the TLE and `startdate` also in the `task_outputs` scripts
+that re-propagate the orbit):
 
 1. **`FIELD_START` changed from 773 to 803.**
    ```python
@@ -276,65 +300,91 @@ notebook:
    FIELD_START = 803   # after:  2005-06-01 15:00 UTC
    ```
    803 − 773 = 30 steps = 15 hours. Step 803 was checked against the G5NR server's time axis.
-   The satellite side (TLE, `startdate`, TATC, Skyfield) was not changed.
-2. **A failed request now returns `None`** instead of an empty list, so a failure can be told apart
+2. **`startdate` changed to a 15:00 UTC start, with a current TLE.**
+   ```python
+   startdate = datetime(2025, 7, 19, 15, 4, tzinfo=timezone.utc)   # before
+   startdate = datetime(2026, 10, 15, 15, 0, tzinfo=timezone.utc)  # after
+   ```
+   The TLE was replaced with the latest CelesTrak element set for EarthCARE (NORAD 59908), epoch
+   2026-10-14 21:54 UTC. `startdate` is the first 15:00 UTC after that epoch, so the orbit is
+   propagated forward from fresh elements and starts at the same time of day as step 803. The
+   orbit's calendar date does not need to match the weather's; only the time of day does.
+3. **TATC's repeat cycle is switched off:** `config.rc.repeat_cycle_for_orbit_track = False`. With
+   it off, TATC propagates the TLE the same way Skyfield does.
+4. **A failed request now returns `None`** instead of an empty list, so a failure can be told apart
    from a request that legitimately had no rows.
-3. **Failed requests are retried at block level**, for up to 6 more rounds, waiting 60 s, 2, 4, 8,
+5. **Failed requests are retried at block level**, for up to 6 more rounds, waiting 60 s, 2, 4, 8,
    15 and 15 min between rounds (about 45 min total).
-4. **An empty response counts as a failure.** During the new run the server once returned zero grid
-   cells without an error, for 3 decisions (6492–6494). Fetching the same region again returned
-   193 × 94 cells, so it was a server fault. Such responses are now retried.
-5. **A block is saved only if all of its requests succeeded.** Otherwise it is logged as
+6. **An empty response counts as a failure** and is retried.
+7. **Each task has a 15-minute time limit** (`TASK_TIMEOUT = 900`). A normal task takes about 15 s.
+   If any task exceeds the limit, the worker pool is killed and all of that call's tasks count as
+   failed and go through the retry rounds.
+8. **A block is saved only if all of its requests succeeded.** Otherwise it is logged as
    `INCOMPLETE` and not saved, so rerunning the script fetches it again.
-6. **New cache folder** `cache_8mo_jun2005_lst`, so old and new rows cannot mix.
+9. **New cache folder** `cache_8mo_jun2005_aligned`. All data from earlier attempts was deleted, and
+   the extraction was restarted from the first block.
 
 ### 7.4 What the solution is
 
-Line up the start of the weather time with the satellite's time of day, and refuse to save
-incomplete data.
+Make both times start at the same time of day, 15:00 UTC, and refuse to save incomplete data.
 
-The selection is still pure index arithmetic, so the §5 rule (never match timestamps across the two
-time axes) still holds. Only the starting index moved, so that decision 0 reads the 15:00 UTC
-snapshot instead of the 00:00 UTC one. Because both times advance together, they stay aligned for
-all 352,800 decisions.
+The weather selection is still pure index arithmetic, so the §5 rule (never match timestamps across
+the two time axes) still holds. With the orbit starting at 15:00 UTC and decision 0 reading the
+15:00 UTC snapshot, the 30 decisions in each 30-minute block all read the snapshot from the start
+of their own half hour. Both times advance together, so they stay aligned for all 352,800
+decisions. Fixing the alignment through `startdate` rather than by adding an offset inside the index
+formula keeps the rule "decision *i* belongs to step *i* // 30", which the block, field, and
+request grouping all depend on.
 
-For the gaps, the extractor now separates three cases: a request that succeeded, a request that
-failed, and a block that is incomplete. It keeps retrying failures and never saves an incomplete
-block.
+Footprints and nadir points come from one propagation of one TLE, because the TATC repeat cycle is
+off.
+
+For downloads, the extractor separates three cases: a request that succeeded, a request that failed
+(including empty responses and tasks over the time limit), and a block that is incomplete. It keeps
+retrying failures and never saves an incomplete block.
 
 ### 7.5 What it solved
 
-**Time of day.** Each decision now reads the last snapshot taken before the satellite passes over.
-The offset is 4–33 minutes, which is the limit set by 30-minute snapshots. Checked on the first
-6,000 rows of the new run:
+**Time of day.** Every decision now reads the latest snapshot at or before the satellite's time.
+The offset is 0–29 minutes for all 352,800 decisions, the minimum possible with 30-minute snapshots.
+Computed over the full window from the new orbit and the index mapping (latitudes within ±60°):
 
-| pass | satellite overhead at | weather before | weather after (median) |
+| pass | satellite overhead at (median) | weather before | weather after (median) |
 |---|---|---|---|
-| descending | ~14:00 | ~22:40 | **13:39** |
-| ascending | ~02:00 | ~10:35 | **01:36** |
+| descending | 13:56 | ~22:40 | **13:43** |
+| ascending | 01:56 | ~10:35 | **01:43** |
+
+With the new TLE, the descending node stays at 13:56–13:58 and the ascending node at 01:56–01:58
+local time across the whole 8-month window.
 
 `solar_hour` now describes both the satellite and the weather in the same row, and daylight-only
 features are now in daylight rows.
 
-**Gaps.** Blocks completed so far have 6,000 of 6,000 rows. That includes the block that hit the
-empty-response fault, which was refetched in full after the fix. The full run is expected to give
-**352,800 rows** (11,760 steps × 30 decisions) with **0 gaps**, instead of 351,639 rows with 49 gaps.
+**Trajectory.** With the repeat cycle off, TATC and Skyfield nadir positions agree to floating-point
+precision at every date checked, and footprint centroids stay 40–42 km from nadir (the 5.76° MSI
+roll) at the start, middle, and end of the window.
+
+**Gaps.** Failed, empty, and hung downloads are all retried, and no incomplete block is saved. The
+full run is expected to give **352,800 rows** (11,760 steps × 30 decisions) with **0 gaps**,
+instead of 351,639 rows with 49 gaps.
 
 ### 7.6 Impact
 
 - **The dataset now represents EarthCARE.** The precipitation the agent is scored on, the class
-  balance, and the feature-label relationships are all measured at the mission's real local times.
+  balance, and the feature-label relationships are all measured at the mission's real local times,
+  from a current orbit.
 - **Earlier results no longer apply.** The class-balance table, the feature AUCs, and the ROC-AUC
   0.837 / AP 0.368 in §4.3 were computed on time-shifted weather. They have to be recomputed and
   may change.
-- **Everything built from weather values must be regenerated:** the footprint-location repair,
-  `solar_hour`, the land/water merge, `lwtup_fore`, the validity flags, the validation reports, and
-  the CZML exports. The orbit geometry did not change, so the footprints and the nadir land/water
-  fractions themselves come out the same.
+- **Everything downstream must be regenerated, including geometry.** The new TLE and `startdate`
+  change where the satellite is at each decision. So the footprints, the nadir land/water fractions,
+  the footprint-location repair, `solar_hour`, the land/water merge, `lwtup_fore`, the validity
+  flags, the validation reports, and the CZML exports all have to be rebuilt from the new rows. The
+  orbit dates in the `time` column now run from 2026-10-15 to 2027-06-17.
 - **Row-count checks will fail on purpose.** Several scripts and notebook cell 8 assert 351,639
   rows. They need updating to the new count.
 - **RL episodes can be continuous.** With no gaps, episodes no longer have to be split or padded
   around missing minutes. The gap-handling code (for example `lwtup_fore`) still works and will
   just find no gaps.
-- **Cost:** one full re-download of about 30 hours. No change to the method, the features, or the
-  labels themselves.
+- **Cost:** one full re-download of about 30 hours, plus the partial runs discarded along the way.
+  No change to the method, the features, or the labels themselves.
