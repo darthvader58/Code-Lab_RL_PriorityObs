@@ -46,6 +46,11 @@ DEC_PER_FIELD, GROUP, WORKERS, CHECKPOINT = 30, 3, 18, 200
 # outages and laptop sleeps. The 2005-06 run had no such pass and lost 1,161
 # decisions in 49 whole-task gaps (one gap of 807 decisions).
 RETRY_ROUNDS, RETRY_PAUSE = 6, 60
+# A task normally takes ~15 s; in-task retries can stretch that to ~10 min.
+# Past TASK_TIMEOUT the pool is killed and the whole call counts as failed:
+# after a network change (VPN drop) libcurl sits on a dead socket forever and
+# ignores HTTP.TIMEOUT, which once froze a block for over an hour.
+TASK_TIMEOUT = 900
 CACHE = "cache_8mo_jun2005_lst"
 G5NR_URL = ("https://opendap.nccs.nasa.gov/dods/OSSE/G5NR/Ganymed/7km/"
             "0.0625_deg/inst/inst30mn_2d_met1_Nx")
@@ -201,6 +206,15 @@ def block_tracks(f0, f1):
     del sp, ts, secs
     return gt, nla, nlo, {int(d): i for i,d in enumerate(decs)}
 
+def run_tasks(tasks):
+    """process_task over `tasks` -> results aligned with `tasks`, None = failed."""
+    try:
+        return Parallel(n_jobs=min(WORKERS, len(tasks)), backend="loky",
+                        timeout=TASK_TIMEOUT)(delayed(process_task)(*x) for x in tasks)
+    except Exception as e:      # stalled task (TimeoutError) or a killed worker
+        log(f"pool aborted ({type(e).__name__}): {len(tasks)} tasks count as failed")
+        return [None]*len(tasks)
+
 def main():
     blocks = [(b, min(b+CHECKPOINT, N_FIELDS)) for b in range(0, N_FIELDS, CHECKPOINT)]
     todo = [(a,b) for a,b in blocks
@@ -226,8 +240,7 @@ def main():
                     ri = [row_of[int(d)] for d in ch.decision]
                     args.append((int(fi), list(ch.geometry), list(ch.decision),
                                  list(ch.time), [nla[i] for i in ri], [nlo[i] for i in ri]))
-            res = Parallel(n_jobs=WORKERS, backend="loky")(
-                delayed(process_task)(*x) for x in args)
+            res = run_tasks(args)
             flat = [r for rs in res if rs for r in rs]
             failed = [x for x, rs in zip(args, res) if rs is None]
             for rnd in range(1, RETRY_ROUNDS+1):
@@ -236,8 +249,7 @@ def main():
                 log(f"block {f0//CHECKPOINT}: {len(failed)} tasks failed, "
                     f"retry round {rnd}/{RETRY_ROUNDS} in {pause} s")
                 _time.sleep(pause)
-                res = Parallel(n_jobs=min(WORKERS, len(failed)), backend="loky")(
-                    delayed(process_task)(*x) for x in failed)
+                res = run_tasks(failed)
                 flat += [r for rs in res if rs for r in rs]
                 failed = [x for x, rs in zip(failed, res) if rs is None]
             want = sum(len(x[2]) for x in args)
