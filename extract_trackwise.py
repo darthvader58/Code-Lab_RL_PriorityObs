@@ -61,19 +61,38 @@ TASK_TIMEOUT = 900
 # of the first 30 blocks. block_tracks is retried on that, and a block that is
 # still not saved is re-queued at the end of the run, up to BLOCK_PASSES times.
 TRACK_ATTEMPTS, BLOCK_PASSES = 3, 10
-CACHE = "cache_8mo_jun2005_aligned"
+CACHE = "cache_8mo_jun2005_season"
 G5NR_URL = ("https://opendap.nccs.nasa.gov/dods/OSSE/G5NR/Ganymed/7km/"
             "0.0625_deg/inst/inst30mn_2d_met1_Nx")
 MSI = ["tautot","tauhgh","taulow","cldtot","cldhgh","cldmid","cldlow","cldtmp","lwtup"]
 LAB = ["prectot","preccon","iwp","lwp"]
 VARS = MSI + LAB
-# First 15:00 UTC after the TLE epoch (2026-10-14 21:54 UTC), so propagation
-# runs forward from the epoch; the time-of-day must match FIELD_START above.
-startdate = datetime(2026,10,15,15,0,tzinfo=timezone.utc)
+# The orbit window must match the G5NR window in UTC time of day AND day of
+# year (season); only the year differs. 2025-06-01 15:00 pairs with G5NR
+# 2005-06-01 15:00 (step 803), and neither 8-month span crosses a 29 February.
+startdate = datetime(2025,6,1,15,0,tzinfo=timezone.utc)
 PER_FIELD = int(G5_STEP/DECISION)
-# EarthCARE (NORAD 59908), CelesTrak GP element set, epoch 2026-10-14 21:54 UTC
-TLE = ["1 59908U 24101A   26287.91308245  .00003560  00000+0  50729-4 0  9996",
-       "2 59908  97.0045  52.9401 0002233  96.7262 263.4249 15.56977907135196"]
+# Historical EarthCARE (NORAD 59908) element sets spanning the window, from a
+# CelesTrak special data request. A set of TLEs (not one) captures the orbit
+# maintenance flown during the window. TATC and the nadir propagation below both
+# use the TLE whose epoch is closest to each time.
+TLE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "earthcare_59908_tle_20250525_20260208.txt")
+MAX_TLE_GAP = timedelta(days=3)
+
+def load_tles(path):
+    """Element sets in `path` -> chronological flat [line1, line2, ...] list.
+    Name lines and duplicate epochs are dropped."""
+    from sgp4.api import Satrec
+    from sgp4.conveniences import sat_epoch_datetime
+    lines = [ln.rstrip() for ln in open(path) if ln.strip()]
+    sets = {}
+    for a, b in zip(lines, lines[1:]):
+        if a.startswith("1 ") and b.startswith("2 ") and a[2:7] == b[2:7] == "59908":
+            sets[sat_epoch_datetime(Satrec.twoline2rv(a, b))] = (a, b)
+    return [ln for ep in sorted(sets) for ln in sets[ep]]
+
+TLE = load_tles(TLE_FILE)
 os.makedirs(CACHE, exist_ok=True)
 
 def log(m): print(f"[{datetime.now():%m-%d %H:%M:%S}] {m}", flush=True)
@@ -106,7 +125,30 @@ SAT = Satellite(name="EarthCare", orbit=TwoLineElements(tle=TLE),
         cross_track_field_of_view=utils.swath_width_to_field_of_view(394e3,150e3,5.760868),
         along_track_field_of_view=utils.swath_width_to_field_of_view(394e3,10e3,5.760868),
         roll_angle=5.760868, is_rectangular=True)])
-SF = EarthSatellite(TLE[0], TLE[1], "EarthCare", timescale)
+SFS = [EarthSatellite(TLE[2*k], TLE[2*k+1], "EarthCare", timescale)
+       for k in range(len(TLE)//2)]
+
+def check_tle_coverage(end):
+    """Fail early unless the TLE epochs bracket [startdate, end] with no gap
+    longer than MAX_TLE_GAP."""
+    ep = [sf.epoch.utc_datetime() for sf in SFS]
+    gaps = np.diff(ep) if len(ep) > 1 else np.array([timedelta(0)])
+    assert ep[0] <= startdate and ep[-1] >= end, \
+        f"TLEs span {ep[0]:%Y-%m-%d} .. {ep[-1]:%Y-%m-%d}, need {startdate:%Y-%m-%d} .. {end:%Y-%m-%d}"
+    assert max(gaps) <= MAX_TLE_GAP, f"largest TLE gap {max(gaps)} > {MAX_TLE_GAP}"
+    return len(ep), ep[0], ep[-1], max(gaps)
+
+def nadir(times):
+    """Sub-satellite lat/lon at `times` (list of datetimes), each time propagated
+    from the same closest-epoch TLE that TATC picks for the footprints."""
+    idx = np.asarray(SAT.orbit.get_closest_tle_index(list(times)))
+    lat = np.empty(len(times)); lon = np.empty(len(times))
+    times = np.asarray(times, dtype=object)
+    for k in np.unique(idx):
+        m = idx == k
+        sp = wgs84.subpoint(SFS[k].at(timescale.from_datetimes(list(times[m]))))
+        lat[m] = sp.latitude.degrees; lon[m] = sp.longitude.degrees
+    return lat, lon
 SUB_PER_DEC = int(DECISION/SUB_STEP)
 
 # ---- worker-side DAP handle ----------------------------------------------
@@ -217,11 +259,11 @@ def block_tracks(f0, f1):
     gt["decision"] = decs; gt["field"] = decs // PER_FIELD
     off = np.arange(SUB_PER_DEC)*SUB_STEP.total_seconds()
     secs = (decs[:,None]*DECISION.total_seconds() + off[None,:]).ravel()
-    ts = timescale.from_datetimes(pd.to_datetime(startdate)+pd.to_timedelta(secs,unit="s"))
-    sp = wgs84.subpoint(SF.at(ts))
-    nla = sp.latitude.degrees.astype("float32").reshape(len(decs), SUB_PER_DEC)
-    nlo = sp.longitude.degrees.astype("float32").reshape(len(decs), SUB_PER_DEC)
-    del sp, ts, secs
+    times = (pd.to_datetime(startdate)+pd.to_timedelta(secs,unit="s")).to_pydatetime()
+    lat, lon = nadir(times)
+    nla = lat.astype("float32").reshape(len(decs), SUB_PER_DEC)
+    nlo = lon.astype("float32").reshape(len(decs), SUB_PER_DEC)
+    del lat, lon, times, secs
     return gt, nla, nlo, {int(d): i for i,d in enumerate(decs)}
 
 def run_tasks(tasks):
@@ -244,6 +286,9 @@ def run_tasks(tasks):
 
 def main():
     blocks = [(b, min(b+CHECKPOINT, N_FIELDS)) for b in range(0, N_FIELDS, CHECKPOINT)]
+    n_tle, ep0, ep1, gap = check_tle_coverage(startdate + N_FIELDS*G5_STEP)
+    log(f"orbit: {n_tle} TLEs, epochs {ep0:%Y-%m-%d %H:%M} .. {ep1:%Y-%m-%d %H:%M}, "
+        f"largest gap {gap}")
     todo = [(a,b) for a,b in blocks
             if not os.path.exists(f"{CACHE}/rows_{a//CHECKPOINT:05d}.parquet")]
     log(f"window: G5NR steps {FIELD_START}..{FIELD_START+N_FIELDS-1} "
