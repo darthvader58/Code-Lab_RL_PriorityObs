@@ -39,9 +39,12 @@ G5_STEP   = timedelta(minutes=30)
 # A warm pool matters: 18 cold workers all opening DAP handles at once looks
 # like an attack and stalls. joblib reuses the pool across a block, so only the
 # first task of a block pays the open cost.
-# 18 is ~12% faster than 12; drop to 12 if the log shows blocks failing outright
-# (as opposed to individual retries, which are normal).
-DEC_PER_FIELD, GROUP, WORKERS, CHECKPOINT = 30, 3, 18, 200
+# 18 is ~12% faster than 12, but on this 10-core machine the footprint step
+# (one worker per core) shrank the shared loky pool from 18 to 10 every block;
+# workers shut down with an open DAP handle sometimes segfault in libnetcdf,
+# which failed the next call. Every Parallel call now uses the same WORKERS
+# count, so the pool is never resized.
+DEC_PER_FIELD, GROUP, WORKERS, CHECKPOINT = 30, 3, 10, 200
 # A task whose 4 in-task retries all fail is re-queued at block level after a
 # pause (60 s, 120 s, ... capped at 15 min; ~45 min total), which rides out NCCS
 # outages and laptop sleeps. The 2005-06 run had no such pass and lost 1,161
@@ -56,7 +59,7 @@ TASK_TIMEOUT = 900
 # on the reused pool then raises TerminatedWorkerError at once, which skipped 6
 # of the first 30 blocks. block_tracks is retried on that, and a block that is
 # still not saved is re-queued at the end of the run, up to BLOCK_PASSES times.
-TRACK_ATTEMPTS, BLOCK_PASSES = 3, 3
+TRACK_ATTEMPTS, BLOCK_PASSES = 3, 10
 CACHE = "cache_8mo_jun2005_aligned"
 G5NR_URL = ("https://opendap.nccs.nasa.gov/dods/OSSE/G5NR/Ganymed/7km/"
             "0.0625_deg/inst/inst30mn_2d_met1_Nx")
@@ -204,7 +207,7 @@ def block_tracks(f0, f1):
     """Ground-track footprints + nadir points for one block of fields."""
     decs = np.array([f*PER_FIELD+k for f in range(f0,f1)
                      for k in range(min(DEC_PER_FIELD, PER_FIELD))])
-    gt = pd.concat(Parallel(n_jobs=-1)(
+    gt = pd.concat(Parallel(n_jobs=WORKERS, backend="loky")(
         delayed(compute_ground_track)(
             SAT, pd.date_range(startdate+int(i)*DECISION,
                                startdate+int(i)*DECISION+DECISION,
@@ -221,13 +224,22 @@ def block_tracks(f0, f1):
     return gt, nla, nlo, {int(d): i for i,d in enumerate(decs)}
 
 def run_tasks(tasks):
-    """process_task over `tasks` -> results aligned with `tasks`, None = failed."""
+    """process_task over `tasks` -> results aligned with `tasks`, None = failed.
+
+    Results are collected as they arrive, so if the pool aborts (a stalled task
+    hits TASK_TIMEOUT, or a worker segfaults) the tasks already finished are
+    kept and only the rest count as failed."""
+    out = [None]*len(tasks)
     try:
-        return Parallel(n_jobs=min(WORKERS, len(tasks)), backend="loky",
-                        timeout=TASK_TIMEOUT)(delayed(process_task)(*x) for x in tasks)
+        gen = Parallel(n_jobs=WORKERS, backend="loky", timeout=TASK_TIMEOUT,
+                       return_as="generator")(delayed(process_task)(*x) for x in tasks)
+        for i, r in enumerate(gen):
+            out[i] = r
     except Exception as e:      # stalled task (TimeoutError) or a killed worker
-        log(f"pool aborted ({type(e).__name__}): {len(tasks)} tasks count as failed")
-        return [None]*len(tasks)
+        kept = sum(r is not None for r in out)
+        log(f"pool aborted ({type(e).__name__}): kept {kept}, "
+            f"{len(tasks)-kept} tasks count as failed")
+    return out
 
 def main():
     blocks = [(b, min(b+CHECKPOINT, N_FIELDS)) for b in range(0, N_FIELDS, CHECKPOINT)]
