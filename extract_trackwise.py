@@ -52,6 +52,11 @@ RETRY_ROUNDS, RETRY_PAUSE = 6, 60
 # after a network change (VPN drop) libcurl sits on a dead socket forever and
 # ignores HTTP.TIMEOUT, which once froze a block for over an hour.
 TASK_TIMEOUT = 900
+# loky workers occasionally die between calls (no crash report); the next call
+# on the reused pool then raises TerminatedWorkerError at once, which skipped 6
+# of the first 30 blocks. block_tracks is retried on that, and a block that is
+# still not saved is re-queued at the end of the run, up to BLOCK_PASSES times.
+TRACK_ATTEMPTS, BLOCK_PASSES = 3, 3
 CACHE = "cache_8mo_jun2005_aligned"
 G5NR_URL = ("https://opendap.nccs.nasa.gov/dods/OSSE/G5NR/Ganymed/7km/"
             "0.0625_deg/inst/inst30mn_2d_met1_Nx")
@@ -237,10 +242,18 @@ def main():
     log(f"estimate: {N_FIELDS*DEC_PER_FIELD//GROUP:,} tasks x ~{_rate:.1f}s = "
         f"{N_FIELDS*DEC_PER_FIELD/GROUP*_rate/3600:.0f} h "
         f"({N_FIELDS*DEC_PER_FIELD/GROUP*_rate/3600/24:.1f} days)")
-    t0 = _time.time(); prev_el = 0.0; first_bt = None
-    for n,(f0,f1) in enumerate(todo, 1):
+    t0 = _time.time(); prev_el = 0.0; first_bt = None; tries = {}
+    for n,(f0,f1) in enumerate(todo, 1):     # todo grows when a block is re-queued
+        tries[f0] = tries.get(f0, 0) + 1
         try:
-            gt, nla, nlo, row_of = block_tracks(f0, f1)
+            for att in range(1, TRACK_ATTEMPTS+1):
+                try:
+                    gt, nla, nlo, row_of = block_tracks(f0, f1); break
+                except Exception as e:
+                    if att == TRACK_ATTEMPTS: raise
+                    log(f"block {f0//CHECKPOINT}: footprints failed ({type(e).__name__}), "
+                        f"attempt {att}/{TRACK_ATTEMPTS}, retrying in 10 s")
+                    _time.sleep(10)
             args = []
             for fi, seg in gt.groupby("field"):
                 seg = seg.sort_values("decision")
@@ -282,6 +295,10 @@ def main():
             del gt, nla, nlo, args, res, flat, failed
         except Exception as e:
             log(f"block {f0//CHECKPOINT} FAILED: {type(e).__name__}: {e}")
+        if (not os.path.exists(f"{CACHE}/rows_{f0//CHECKPOINT:05d}.parquet")
+                and tries[f0] < BLOCK_PASSES):
+            todo.append((f0, f1))
+            log(f"block {f0//CHECKPOINT}: re-queued (pass {tries[f0]+1}/{BLOCK_PASSES})")
         gc.collect()
     left = [a for a,b in blocks
             if not os.path.exists(f"{CACHE}/rows_{a//CHECKPOINT:05d}.parquet")]
