@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Fetch the one permitted time-invariant G5NR constants collection via pydap.
+"""Fetch the time-invariant G5NR constants (land, land-ice, ocean, lake fractions) via pydap.
 
-This avoids xarray's optional-backend discovery, which is broken in the local
-environment. It writes the same cache expected by step5to8_nadir_landwater.py.
+Writes task_outputs/const_cache/*.npy for enrich_trackwise.py. Run once; a completed cache
+(the _DONE marker) is not fetched again.
 """
 import os
 import time

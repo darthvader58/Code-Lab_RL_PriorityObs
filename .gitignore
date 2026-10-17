@@ -15,3 +15,6 @@ cache_*/
 .DS_Store
 __pycache__/
 .claude/
+
+# G5NR constants cache (task_outputs/fetch_g5nr_constants.py)
+task_outputs/const_cache/
