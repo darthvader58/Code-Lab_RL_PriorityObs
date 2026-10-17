@@ -94,8 +94,6 @@ def load_tles(path):
     return [ln for ep in sorted(sets) for ln in sets[ep]]
 
 TLE = load_tles(TLE_FILE)
-os.makedirs(CACHE, exist_ok=True)
-
 def log(m): print(f"[{datetime.now():%m-%d %H:%M:%S}] {m}", flush=True)
 
 # libnetcdf blocks forever on a stalled DAP transfer unless HTTP.TIMEOUT is set.
@@ -286,6 +284,7 @@ def run_tasks(tasks):
     return out
 
 def main():
+    os.makedirs(CACHE, exist_ok=True)
     blocks = [(b, min(b+CHECKPOINT, N_FIELDS)) for b in range(0, N_FIELDS, CHECKPOINT)]
     n_tle, ep0, ep1, gap = check_tle_coverage(startdate + N_FIELDS*G5_STEP)
     log(f"orbit: {n_tle} TLEs, epochs {ep0:%Y-%m-%d %H:%M} .. {ep1:%Y-%m-%d %H:%M}, "
