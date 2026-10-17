@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Create the current trackwise CSV and Cesium exports from the parquet file."""
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
-from skyfield.api import EarthSatellite, load, wgs84
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+import extract_trackwise as X  # noqa: E402
 SOURCE = ROOT / "trackwise_decisions.parquet"
 FULL_CSV = ROOT / "trackwise_decisions_full.csv"
 KEPLER_CSV = ROOT / "trackwise_decisions_kepler.csv"
@@ -21,11 +23,8 @@ FULL_MARKERS = 20_000    # full-run CZML: ~same decision thinning as the Kepler 
 # balanced training label, but colouring by it makes ~50% of the globe green.
 SHOW_MM_HR = 1.0
 
-# Same TLE as extract_trackwise.py. The parquet lat/lon are footprint centroids
-# (~40 km off nadir from the roll; broken ones repaired by
-# fix_trackwise_locations.py), so the CZML track is re-propagated from the TLE.
-TLE = ["1 59908U 24101A   26287.91308245  .00003560  00000+0  50729-4 0  9996",
-       "2 59908  97.0045  52.9401 0002233  96.7262 263.4249 15.56977907135196"]
+# The parquet lat/lon are footprint centroids (~40 km off nadir from the roll), so the CZML
+# track is re-propagated with the extraction's own TLE-set orbit (extract_trackwise.nadir).
 
 
 def iso(value):
@@ -34,10 +33,7 @@ def iso(value):
 
 def subpoint(times):
     """Sub-satellite (lat, lon) in degrees at each timestamp."""
-    ts = load.timescale(builtin=True)
-    sat = EarthSatellite(TLE[0], TLE[1], "EarthCare", ts)
-    sp = wgs84.subpoint(sat.at(ts.from_datetimes(times.dt.to_pydatetime())))
-    return sp.latitude.degrees, sp.longitude.degrees
+    return X.nadir(times.dt.to_pydatetime())
 
 
 def build_czml(name, track, markers, multiplier, beams):
@@ -184,7 +180,7 @@ def write_czml(path, packets):
 
 def main():
     rows = pd.read_parquet(SOURCE)
-    expected = (351_639, 40)
+    expected = (X.N_FIELDS * X.PER_FIELD, 40)
     if rows.shape != expected or not rows["decision"].is_unique:
         raise ValueError(f"unexpected trackwise dataset: {rows.shape}")
 
