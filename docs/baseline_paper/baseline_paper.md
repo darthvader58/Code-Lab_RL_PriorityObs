@@ -7,9 +7,10 @@ EarthCARE, TRMM, and GPM*
 the observed environment changes, using reinforcement learning to make those decisions onboard under
 resource limits.
 
-**Central research question (this paper):** Using only passive-sensor observations, how well can a spacecraft autonomously prioritize when to
-activate its active radar under a power budget, and how do its orbit, radar footprint, and passive
-sensing shape that skill?
+**Central research question (this paper):** What baseline skill can static policies achieve, on mission-specific benchmarks, in autonomously
+prioritizing when to activate a spacecraft's active radar under a power budget using only
+passive-sensor observations, and how do orbit, radar footprint, and passive sensing shape that
+baseline?
 
 - **(a) Detection prioritization (EarthCARE, TRMM):** when will the radar measure precipitation the
   passive sensors see only as cloud?
@@ -90,9 +91,10 @@ The three missions pose this question in three different forms:
 
 ## 2. Research questions
 
-**Central question:** Using only passive-sensor observations, how well can a spacecraft autonomously prioritize when to
-activate its active radar under a power budget, and how do its orbit, radar footprint, and passive
-sensing shape that skill?
+**Central question:** What baseline skill can static policies achieve, on mission-specific benchmarks, in autonomously
+prioritizing when to activate a spacecraft's active radar under a power budget using only
+passive-sensor observations, and how do orbit, radar footprint, and passive sensing shape that
+baseline?
 
 - **(a) Detection prioritization (EarthCARE, TRMM):** when will the radar measure precipitation the
   passive sensors see only as cloud?

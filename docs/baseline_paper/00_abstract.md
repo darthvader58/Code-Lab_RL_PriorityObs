@@ -15,9 +15,9 @@
 Autonomous spacecraft will need to decide onboard which Earth-science observations to prioritize as
 conditions below them change. Spaceborne cloud and precipitation radars are a clear case: they return
 information passive sensors cannot, but they are expensive to operate, and on power-limited future
-platforms a radar may only run for a fraction of each orbit. We ask how well a spacecraft can
-prioritize when to activate its radar using only its passive sensors, and how its orbit, radar
-footprint, and passive sensing shape that skill. Where the passive sensors see only clouds, the
+platforms a radar may only run for a fraction of each orbit. We ask what baseline skill static
+policies achieve in prioritizing when to activate a spacecraft's radar using only its passive sensors,
+and how its orbit, radar footprint, and passive sensing shape that baseline. Where the passive sensors see only clouds, the
 decision is detection prioritization; where they already see precipitation, it is value
 prioritization. We introduce three track-wise benchmarks for this decision, one for each of three
 missions that pair a radar with passive sensors on one

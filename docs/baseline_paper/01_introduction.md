@@ -41,9 +41,10 @@ Studying all three separates three effects: when in the day a mission can look (
 radar sees compared with the passive sensor (nadir line vs. scanning swath), and how much the passive
 sensor already knows (cloud-only vs. microwave). The central question of this paper is therefore:
 
-> Using only passive-sensor observations, how well can a spacecraft autonomously prioritize when to
-> activate its active radar under a power budget, and how do its orbit, radar footprint, and passive
-> sensing shape that skill?
+> What baseline skill can static policies achieve, on mission-specific benchmarks, in autonomously
+> prioritizing when to activate a spacecraft's active radar under a power budget using only
+> passive-sensor observations, and how do orbit, radar footprint, and passive sensing shape that
+> baseline?
 
 - **(a) Detection prioritization (EarthCARE, TRMM):** when will the radar measure precipitation the
   passive sensors see only as cloud?
