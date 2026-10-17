@@ -2,6 +2,18 @@
 
 ## 1.1 Motivation
 
+Earth-observing spacecraft increasingly need to decide for themselves which observations to make.
+Conditions below them change faster than a ground-planned schedule can follow, and their most
+capable instruments are often their most resource-expensive. The long-term goal of this work is:
+
+> Enable spacecraft to autonomously determine which Earth-science observations to prioritize as
+> the observed environment changes, using reinforcement learning to make those decisions onboard under
+> resource limits.
+
+Reinforcement learning is a natural tool for such decisions, but it needs benchmarks: a defined
+environment, a decision, a measure of success, and a baseline to beat. This paper provides them for
+one concrete instance of the problem — when to activate a spacecraft's active radar.
+
 Spaceborne cloud and precipitation radars measure what passive sensors cannot: the vertical
 structure of cloud and precipitation. That capability is expensive. EarthCARE's Cloud Profiling Radar
 (CPR) draws roughly 308 W, comparable to the ATLID lidar (310 W), while its Multi-Spectral Imager
@@ -29,20 +41,27 @@ Studying all three separates three effects: when in the day a mission can look (
 radar sees compared with the passive sensor (nadir line vs. scanning swath), and how much the passive
 sensor already knows (cloud-only vs. microwave). The central question of this paper is therefore:
 
-> How do a mission's orbit, radar footprint, and passive sensing determine how much a
-> passive-informed duty-cycle gate can capture, and what does each mission's benchmark require of a
-> future RL policy?
+> Using only passive-sensor observations, how well can a spacecraft autonomously prioritize when to
+> activate its active radar under a power budget, and how do its orbit, radar footprint, and passive
+> sensing shape that skill?
+
+- **(a) Detection prioritization (EarthCARE, TRMM):** when will the radar measure precipitation the
+  passive sensors see only as cloud?
+- **(b) Value prioritization (GPM):** when will the radar add information beyond a passive sensor that
+  already sees precipitation?
 
 Each mission gets its own benchmark (dataset, label, splits, metric, baselines), and later its own RL
 policy; the comparison across the three answers the question.
 
 ## 1.2 The decision problem
 
-Once per minute along the orbit, an onboard controller decides whether to power the radar for the
-next minute. It may use only what is available at decision time — the passive sensors' view of the
+Once per minute along the orbit, an onboard prioritization policy (the **gate**) decides whether to
+power the radar for the next minute. It may use only what is available at decision time — the passive sensors' view of the
 scene and the spacecraft's own geometry. It is scored on what the radar would have measured in **its
-own footprint**: the nadir line for EarthCARE, the scanned swath for TRMM and GPM. For GPM the score
-is the radar's added value beyond GMI (§5.8).
+own footprint**: the nadir line for EarthCARE, the scanned swath for TRMM and GPM. On EarthCARE and
+TRMM this is **detection prioritization**: the passive sensors see clouds, and the gate must find
+precipitation for the radar to measure. On GPM it is **value prioritization**: GMI already sees
+precipitation, and the gate must find where the radar adds information beyond it (§5.8).
 
 Each mission is a separate application case with its own dataset, training, and validation, and can
 give a different answer. One model trained on all three would have to reduce them to the features
@@ -56,6 +75,8 @@ baselines here become the reference point later RL policies must beat, one per m
 
 ## 1.3 Why a baseline paper first
 
+- The program's goal is RL-based prioritization; RL needs a defined environment and a bar to beat.
+  These benchmarks are that environment and bar, one per mission.
 - A learned sequential policy is only interesting if it beats a well-tuned static classifier
   thresholded to the same budget. That bar does not exist yet for any of the three missions.
 - The evaluation choices — label geometry, train/test split, metric — change the conclusions more
@@ -65,7 +86,7 @@ baselines here become the reference point later RL policies must beat, one per m
 
 ## 1.4 Contributions
 
-1. **Three track-wise benchmarks** of one-minute radar on/off decisions along the real ground tracks
+1. **Three track-wise benchmarks for autonomous observation prioritization** of one-minute radar on/off decisions along the real ground tracks
    of EarthCARE, TRMM, and GPM (historical orbital elements), over 8 months of the 7 km GEOS-5 Nature
    Run, matched by UTC time of day and day of year, each with radar-footprint and passive-swath truth,
    feature tiers, validity flags, and a published hash.

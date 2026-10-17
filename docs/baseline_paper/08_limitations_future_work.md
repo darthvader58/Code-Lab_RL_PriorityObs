@@ -90,8 +90,9 @@ submitted as EarthCARE-only, and the unfinished missions move to a follow-up pap
 
 ## 8.4 Closing paragraph (draft)
 
-> This benchmark fixes the label, the split, and the metric for budget-constrained radar gating on
-> three missions with different orbits, radar geometries, and passive sensors, and reports how much a
-> static, passive-driven gate achieves on each. A sequential reinforcement-learning policy is worth
-> building only to the extent that it closes the remaining gap to the oracle at the same budget, on
-> that mission, using inputs the spacecraft can actually compute.
+> Autonomous prioritization of Earth-science observations needs benchmarks before it needs
+> learners. These three benchmarks fix the label, split, and metric for prioritizing a spaceborne
+> radar's observations on missions with different orbits, radar geometries, and passive sensors, and
+> report how much a static, passive-driven policy achieves on each. A sequential
+> reinforcement-learning policy is worth building only to the extent that it closes the remaining gap
+> to the oracle at the same budget, on that mission, using inputs the spacecraft can actually compute.

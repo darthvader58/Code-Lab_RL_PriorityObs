@@ -7,6 +7,10 @@ evaluation period the policy may fire on at most a fraction *d* of decisions (th
 budget). Each decision is scored independently (contextual bandit); sequential effects are left to
 the RL follow-up.
 
+The gate is an onboard observation-prioritization policy. On EarthCARE and TRMM it performs
+**detection prioritization** (find precipitation the passive sensors see only as cloud); on GPM it
+performs **value prioritization** (find where the radar adds information beyond GMI).
+
 The task is defined and solved **separately for each mission**: each has its own features, label,
 splits, and fitted policies. The formal statement below is written for EarthCARE; TRMM uses the same
 form with the PR-swath label, and GPM uses the added-value label of §5.8.
@@ -114,7 +118,7 @@ The learned policies are only worth reporting as a contribution if:
 - they beat P2/P3 (geometry) clearly, showing the imager adds value beyond orbit position, and
 - the gap to P8 (oracle) is reported honestly, since that gap is the room left for RL.
 
-## 5.8 GPM: scoring the radar's added value
+## 5.8 GPM: value prioritization — scoring the radar's added value
 
 GMI already detects precipitation, so "fire when it rains" is the wrong objective for GPM: a gate
 could score well by repeating what GMI already knows, and the radar would add nothing. The GPM label

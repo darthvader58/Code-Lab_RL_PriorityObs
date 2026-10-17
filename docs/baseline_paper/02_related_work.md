@@ -81,8 +81,8 @@ precipitation well, but has a documented split-ITCZ bias. Mission-architecture t
 
 ## 2.7 Gap statement (closing sentence of the section)
 
-> To our knowledge, no published benchmark evaluates budget-constrained on/off gating of a spaceborne
-> radar from co-located passive context, scored against the radar's own footprint, compares it across
+> To our knowledge, no published benchmark evaluates autonomous, budget-constrained prioritization of
+> a spaceborne radar's observations from co-located passive context, scored against the radar's own footprint, compares it across
 > missions with different orbits, radar geometries, and passive sensors, or reports how much of that
 > skill survives with features cheap enough to compute onboard.
 

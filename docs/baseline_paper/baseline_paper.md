@@ -1,11 +1,24 @@
 # Baseline Paper — Master Outline
 
-**Working title:** *What a Passive Sensor Can Tell a Radar: Budget-Constrained Gating Benchmarks
-Across EarthCARE, TRMM, and GPM*
+**Working title:** *Benchmarks for Autonomous Prioritization of Spaceborne Radar Observations:
+EarthCARE, TRMM, and GPM*
 
-**Central research question:** How do a mission's orbit, radar footprint, and passive sensing determine how much a
-passive-informed duty-cycle gate can capture, and what does each mission's benchmark require of a
-future RL policy?
+**Research goal (the program):** Enable spacecraft to autonomously determine which Earth-science observations to prioritize as
+the observed environment changes, using reinforcement learning to make those decisions onboard under
+resource limits.
+
+**Central research question (this paper):** Using only passive-sensor observations, how well can a spacecraft autonomously prioritize when to
+activate its active radar under a power budget, and how do its orbit, radar footprint, and passive
+sensing shape that skill?
+
+- **(a) Detection prioritization (EarthCARE, TRMM):** when will the radar measure precipitation the
+  passive sensors see only as cloud?
+- **(b) Value prioritization (GPM):** when will the radar add information beyond a passive sensor that
+  already sees precipitation?
+
+**This paper's contribution to the goal:** Three mission benchmarks (datasets, labels, splits, metrics, and static baselines) that define the
+changing environment, the prioritization decision, and the performance bar a reinforcement-learning
+policy must exceed for each mission.
 
 **Paper type:** dataset + baselines. No reinforcement learning is trained in this paper. It defines
 **three benchmarks** (one per mission), each with its own dataset, label, splits, metric, and set of
@@ -53,10 +66,16 @@ Do not submit with any of these markers left.
 
 ## 1. Problem statement
 
-Spaceborne radars measure precipitation and cloud structure that passive sensors cannot, but they are
-far more expensive to run. If a radar mission could only run its radar for a fraction *d* of each
-orbit, which moments should it choose? The decision has to be made onboard, using only information
-the passive sensors on the same spacecraft provide at that moment.
+The program's goal is autonomous, onboard prioritization of Earth-science observations in a changing
+environment. This paper studies one concrete, measurable instance of it: when to activate a
+spacecraft's active radar. Spaceborne radars measure precipitation and cloud structure that passive
+sensors cannot, but they are far more expensive to run. If a radar could only run for a fraction *d*
+of each orbit, which moments should it prioritize? The decision has to be made onboard, once per
+minute, using only what the passive sensors on the same spacecraft observe at that moment, while the
+weather below changes from one minute to the next.
+
+Throughout the paper, a **gate** is the onboard prioritization policy that switches the radar on or
+off.
 
 The three missions pose this question in three different forms:
 
@@ -67,19 +86,24 @@ The three missions pose this question in three different forms:
 | passive context | MSI (visible/infrared): sees **clouds** | VIRS (visible/infrared): sees **clouds**; TMI (microwave): sees rain | GMI (13-channel microwave): sees **rain and ice** |
 | orbit | sun-synchronous, ~14:00 / ~02:00 local | 35°, precessing, all local times | 65°, precessing, all local times |
 | latitude coverage | near-global | tropics and subtropics | up to ~65° |
-| question the gate answers | is there precipitation under the radar? | is there precipitation in the radar swath? | does the radar add enough beyond what GMI already sees? |
+| prioritization type | **detection**: is there precipitation under the radar? | **detection**: is there precipitation in the radar swath? | **value**: does the radar add enough beyond what GMI already sees? |
 
 ## 2. Research questions
 
-**Central question:** How do a mission's orbit, radar footprint, and passive sensing determine how much a
-passive-informed duty-cycle gate can capture, and what does each mission's benchmark require of a
-future RL policy?
+**Central question:** Using only passive-sensor observations, how well can a spacecraft autonomously prioritize when to
+activate its active radar under a power budget, and how do its orbit, radar footprint, and passive
+sensing shape that skill?
+
+- **(a) Detection prioritization (EarthCARE, TRMM):** when will the radar measure precipitation the
+  passive sensors see only as cloud?
+- **(b) Value prioritization (GPM):** when will the radar add information beyond a passive sensor that
+  already sees precipitation?
 
 RQ1–RQ4 answer it for each mission separately; RQ5 answers it across missions.
 
 - **RQ1 — Predictability.** For each mission, how well does passive context predict precipitation in
   the radar's own footprint, when the evaluation is free of temporal leakage?
-- **RQ2 — Gating value.** At a duty-cycle budget *d*, what fraction of radar-measurable precipitation
+- **RQ2 — Prioritization value.** At a duty-cycle budget *d*, what fraction of radar-measurable precipitation
   does a passive-driven gate capture, compared with random gating, geometry-only gating, and the
   oracle? (For GPM: what fraction of the radar's added value.)
 - **RQ3 — Label geometry.** How much does scoring against the passive sensor's swath, instead of the
@@ -170,7 +194,7 @@ model, proxies, or real GPM data. Follow-ups: validation on real data, and seque
 
 ## 10. One-sentence claim of the paper
 
-> With only passive context, a one-minute gate can capture **[TO RUN]%** of radar-measurable
+> Using only passive-sensor observations, an onboard prioritization policy can capture **[TO RUN]%** of radar-measurable
 > precipitation on EarthCARE while the radar runs **[TO RUN]%** of the time (TRMM: **[TO RUN]%**;
 > GPM: **[TO RUN]%** of the radar's added value); a cheap feature set keeps **[TO RUN]%** of that
 > skill; and scoring a nadir radar against swath truth would have roughly doubled the positive class.
