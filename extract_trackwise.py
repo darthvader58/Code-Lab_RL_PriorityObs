@@ -76,8 +76,9 @@ PER_FIELD = int(G5_STEP/DECISION)
 # CelesTrak special data request. A set of TLEs (not one) captures the orbit
 # maintenance flown during the window. TATC and the nadir propagation below both
 # use the TLE whose epoch is closest to each time.
+# tle/sat000<NORAD>.txt: CelesTrak historical request, 2025-05-25 -> 2026-02-08
 TLE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "earthcare_59908_tle_20250525_20260208.txt")
+                        "tle", "sat000059908.txt")
 MAX_TLE_GAP = timedelta(days=3)
 
 def load_tles(path):
