@@ -29,7 +29,7 @@ clearly that this is a proxy, not flight hardware.
 
 **Claim for the paper:** running the policy is not the bottleneck. The bottleneck is the inputs.
 
-## 6.3 Feature cost: three tiers
+## 6.3 Feature cost: three tiers (EarthCARE; TRMM and GPM in §6.7)
 
 | tier | features | needs onboard retrieval? | works at night? |
 |---|---|---|---|
@@ -68,7 +68,26 @@ sets a hardware requirement for future missions. Either result is publishable.
 
 ## 6.6 Latency budget (one paragraph in the paper)
 
-At ~7 km/s ground speed the imager sees the nadir scene essentially when the radar would. For the
+At ~7 km/s ground speed, MSI and VIRS see the scene essentially when the radar does. GMI's footprint
+lies ahead of the spacecraft, so on GPM the passive view of a scene can precede the radar's. For the
 gate to act on the current minute, features + policy must complete within seconds. Policy time is
 negligible (6.2); feature time depends on the tier (6.3). `lwtup_fore` is the only feature that
 looks ahead along track, and it is a proxy (see `03_dataset.md` §3.5).
+
+## 6.7 Feature tiers for TRMM and GPM
+
+The policy cost (§6.2) is the same for every mission. The feature cost is not.
+
+| mission | Tier A (full) | Tier B (cheap) | Tier C (geometry) | works at night? |
+|---|---|---|---|---|
+| EarthCARE | MSI-style cloud proxies + geometry (§6.3) | thermal-infrared-like proxies + geometry | geometry | Tier A no, B and C yes |
+| TRMM | VIRS-style cloud proxies + geometry; optionally + TMI | thermal-infrared-like proxies + geometry | geometry | Tier A no, B and C yes |
+| GPM | all 13 GMI channels + geometry | a few GMI channels (e.g., 37 and 89 GHz) + geometry | geometry | yes, all tiers |
+
+- **TRMM** follows EarthCARE closely. Because TRMM samples all local times, its day/night split has
+  data at every hour and latitude, which EarthCARE's two fixed local times cannot provide.
+- **GPM** needs no onboard retrieval in any tier: brightness temperatures come straight from
+  calibrated counts, and microwave works day and night through cloud. The cost question for GPM is
+  therefore not "can the features be computed onboard?" but "how many channels does the gate need?"
+- **Tier C** (orbit position, surface type, local time) is the floor in every mission; anything the
+  passive sensor adds must beat it.

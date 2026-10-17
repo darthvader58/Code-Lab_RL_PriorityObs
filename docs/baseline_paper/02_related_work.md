@@ -37,18 +37,27 @@ easily at low decision rates.
 **Point to make:** the cost of the *policy* is negligible; the cost of the *features* (onboard cloud
 retrievals) is the real constraint. This motivates the feature tiers in Section 6.
 
-## 2.4 Active sensors and the nadir footprint
+## 2.4 Spaceborne radars and their passive companions
 
-CloudSat [stephens2002cloudsat] and EarthCARE [illingworth2015earthcare] carry nadir-only
-profiling radars whose footprint is a narrow line inside the much wider imager swath. Small radar
-platforms such as RainCube [peral2019raincube] and the planned INCUS constellation of three
-small satellites with RainCube-heritage radars [tanelli2023incus] make duty-cycled radar operation a
-realistic design question. TRMM [kummerow1998trmm] and the GPM Core Observatory [hou2014gpm] pair
-a precipitation radar with passive imagers on one spacecraft, in non-sun-synchronous orbits that
-sample all local times; they are the natural extensions of this setup (Section 8.3).
+Two families of spaceborne radar matter here.
 
-**Point to make:** studies that score targeting policies against gridded or imager-scale truth
-implicitly assume the instrument sees the whole scene. For a nadir radar it does not (Section 4).
+- **Nadir profiling radars.** CloudSat [stephens2002cloudsat] and EarthCARE
+  [illingworth2015earthcare] carry nadir-only cloud radars whose footprint is a narrow line inside the
+  much wider imager swath. On EarthCARE the companion is the visible/infrared MSI.
+- **Scanning precipitation radars.** TRMM's Precipitation Radar [kummerow1998trmm] and GPM's
+  Dual-frequency Precipitation Radar [hou2014gpm] scan across track over a ~245 km swath. TRMM paired
+  the PR with a visible/infrared scanner (VIRS) and a microwave imager (TMI); GPM pairs the DPR with a
+  13-channel microwave imager (GMI) whose footprint lies ahead of the spacecraft [nasa_gmi]. Both fly
+  precessing, non-sun-synchronous orbits (35° and 65°) that sample all local times.
+
+Small radar platforms such as RainCube [peral2019raincube] and the planned INCUS constellation of
+three small satellites with RainCube-heritage scanning Ka-band radars [tanelli2023incus] make
+duty-cycled radar operation a realistic design question.
+
+**Points to make:** (1) studies that score targeting policies against gridded or imager-scale truth
+implicitly assume the instrument sees the whole scene; for a nadir radar it does not (Section 4).
+(2) Microwave imagers already observe precipitation, so on GPM the radar's value is its added
+detail, not detection (Section 5.8).
 
 ## 2.5 Simulation testbeds
 
@@ -64,16 +73,17 @@ precipitation well, but has a documented split-ITCZ bias. Mission-architecture t
 |---|---|---|
 | Decision | where to point / what to image | whether an active radar fires (on/off) |
 | Constraint | slew time, pointing | power / duty-cycle budget *d* |
-| Information source | separate lookahead sensor, 60–90 s lead | co-located imager, ~simultaneous with nadir |
-| Truth | scene-scale value (cloud-free area, storm) | precipitation in the radar's nadir footprint |
+| Information source | separate lookahead sensor, 60–90 s lead | co-located passive sensor: imager ~simultaneous with nadir (EarthCARE, TRMM), microwave imager ahead of the radar (GPM) |
+| Truth | scene-scale value (cloud-free area, storm) | precipitation in the radar's own footprint (nadir line or scanned swath) |
 | Hidden information | none | radar-only features revealed after firing (future work) |
-| Platform | CogniSAT-6 (flown) | EarthCARE geometry + G5NR (simulated) |
+| Platform | CogniSAT-6 (flown) | EarthCARE, TRMM, GPM geometry + G5NR (simulated); three separate cases |
 | Learner | DP expert → IL / RL | static baselines (this paper) → RL (next paper) |
 
 ## 2.7 Gap statement (closing sentence of the section)
 
-> To our knowledge, no published benchmark evaluates budget-constrained on/off gating of a nadir
-> radar from co-located imager context, scored against the radar's own footprint, nor reports how
-> much of that skill survives with features cheap enough to compute onboard.
+> To our knowledge, no published benchmark evaluates budget-constrained on/off gating of a spaceborne
+> radar from co-located passive context, scored against the radar's own footprint, compares it across
+> missions with different orbits, radar geometries, and passive sensors, or reports how much of that
+> skill survives with features cheap enough to compute onboard.
 
 Re-run the literature search right before submission to make sure this statement still holds.

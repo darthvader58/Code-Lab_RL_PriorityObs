@@ -30,20 +30,22 @@ the ground. **Where:** §6, Table 5.
 
 **Response:** Correct and stated explicitly. They are idealized proxies; results are an upper bound
 on what a real imager provides. Tier B and the night analysis bound the effect, and validation on
-real EarthCARE MSI/CPR data is the first follow-up. **Where:** §3.6, Limitation 1, §8.2.
+real EarthCARE MSI/CPR data is the first follow-up. **Where:** §3.5, Limitation 1, §8.2.
 
 ### O5. "Your AUC is inflated by temporal leakage."
 
 **Response:** All headline results use a time-blocked split with a buffer of at least one weather
 step, and the random-split numbers are shown only for comparison. **Where:** §7 E1. (This objection
-is valid against the current 0.837 number — do not report it without the blocked-split
+is valid against the earlier 0.837 number — do not report it without the blocked-split
 counterpart.)
 
 ### O6. "One year of one model; does it generalise?"
 
 **Response:** Leave-one-month-out results across eight months spanning boreal summer to winter;
 known G5NR biases (split ITCZ, weaker Hadley circulation [gelaro2015g5nr]) are discussed. Real-data
-validation is future work. **Where:** E2, §10.5, Limitation 3.
+validation is future work. Three missions with different orbits, radar geometries, and passive
+sensors show whether conclusions hold beyond one geometry, though all three use the same simulated
+period. **Where:** E2, E12, §10.5, §10.8, Limitations 3 and 7.
 
 ### O7. "Why not just train RL now?"
 
@@ -75,7 +77,32 @@ the imager's value is reported as the margin over them. **Where:** §5.4, Table 
 ~14:00 and ~02:00 local time, so every reported rate is conditional on precipitation at those times,
 not on daily precipitation. The labels remain correct for the task, because a radar can only gate
 what is beneath it when it passes over. The open question is transfer to orbits with different local
-times. Because G5NR has every half hour, the fraction of daily precipitation the two windows miss
-can be measured directly, which real EarthCARE data cannot do. TRMM and GPM pair a radar with
-passive imagers on non-sun-synchronous orbits and are named as follow-up test cases. **Where:**
-§3.2; Limitation 8; §8.2 future work 5; §8.3.
+times. The paper measures this directly: TRMM and GPM sample all local times, and E12 compares
+TRMM's skill near 14:00/02:00 with its skill at other hours and tests transfer from EarthCARE. G5NR
+also has every half hour, so the fraction of daily precipitation EarthCARE's two windows miss can be
+measured, which real EarthCARE data cannot do. **Where:** §3.3; Limitation 8; E12; §8.2 future
+work 5.
+
+### O12. "Why three missions? Why not one model trained on all of them?"
+
+**Response:** The missions differ in orbit (sun-synchronous vs. precessing), radar geometry (nadir
+line vs. scanning swath), and passive information (cloud-only vs. microwave). One pooled model would
+have to drop to the features they share and would hide exactly these differences. Each mission is
+therefore a separate case with its own dataset, training, and validation; transfer between missions
+is measured separately (E12). If a reviewer prefers depth over breadth: EarthCARE is the primary case
+and is reported in full, and the other two use the identical method. **Where:** §1.2, §5.9, E12,
+§8.3, Limitation 7.
+
+### O13. "GMI already sees rain. Isn't the GPM gate trivial?"
+
+**Response:** It would be if the target were rain detection, which is why the GPM label is the
+radar's added value beyond GMI (vertical structure, light rain and snow, or the GMI retrieval's
+uncertainty), not rain occurrence. Combined DPR + GMI products contain the withheld radar
+measurement and are never used as inputs. **Where:** §5.8, §3.8.
+
+### O14. "TRMM only covers the tropics. Is the comparison fair?"
+
+**Response:** Cross-mission comparisons are restricted to shared latitudes or reported by latitude
+band, and TRMM's results are described as tropical and subtropical only. TRMM is included because it
+flew during G5NR's own period and its visible/infrared scanner matches EarthCARE's imager closely,
+which isolates the effect of the orbit. **Where:** §3.7, E12, Limitation 9.

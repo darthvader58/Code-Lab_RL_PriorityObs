@@ -77,6 +77,19 @@ source before citing it and convert to BibTeX in Overleaf.
 - ? **[kummerow1998trmm]** Kummerow, C., Barnes, W., Kozu, T., Shiue, J., Simpson, J. *The Tropical
   Rainfall Measuring Mission (TRMM) Sensor Package.* Journal of Atmospheric and Oceanic Technology,
   15(3), 809–817, 1998. — details from recall; confirm volume, pages, and DOI before citing.
+- ✓ **[celestrak_satcat]** CelesTrak SATCAT and special data requests (historical element sets).
+  https://celestrak.org — Key facts used (checked Oct 2026): NORAD IDs EarthCARE 59908 (2024-101A),
+  TRMM 25063 (1997-074A, launched 1997-11-27, re-entered 2015-06-16), GPM-CORE 39574 (2014-009C,
+  launched 2014-02-27). Historical TLE sets per mission are obtained through the special data request
+  form; cite the request date and record count for each set in the data-availability statement.
+- ? **[trmm_instruments]** TRMM instrument figures used in §3.7: PR 13.8 GHz, ~245 km swath and ~5 km
+  footprint after the 2001 altitude boost to ~402 km; VIRS 5 channels (0.63–12 µm), ~720 km swath;
+  TMI 9 channels (10.65–85.5 GHz). Figures from recall; confirm against [kummerow1998trmm] and the
+  NASA TRMM pages before citing, including the post-boost swath widths.
+- ? **[gpm_instruments]** GPM figures used in §3.8: DPR KuPR 13.6 GHz and KaPR 35.5 GHz, ~245 km
+  swath (KaPR scan widened to the full Ku swath in 2018), ~5 km footprint; GMI 13 channels
+  10.65–183.31 GHz, ~885 km swath; orbit ~407 km, 65°. Figures from recall; confirm against
+  [hou2014gpm] and [nasa_gmi] before citing.
 - ? **[hou2014gpm]** Hou, A. Y., Kakar, R. K., Neeck, S., et al. *The Global Precipitation
   Measurement Mission.* Bulletin of the American Meteorological Society, 95(5), 701–722, 2014.
   doi:10.1175/BAMS-D-13-00164.1 — details from recall; confirm before citing.

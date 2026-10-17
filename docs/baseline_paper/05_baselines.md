@@ -2,10 +2,14 @@
 
 ## 5.1 Task
 
-At each decision *t* with imager-visible features *x_t*, a policy outputs fire ∈ {0, 1}. Over an
+At each decision *t* with passive-sensor features *x_t*, a policy outputs fire ∈ {0, 1}. Over an
 evaluation period the policy may fire on at most a fraction *d* of decisions (the duty-cycle
 budget). Each decision is scored independently (contextual bandit); sequential effects are left to
 the RL follow-up.
+
+The task is defined and solved **separately for each mission**: each has its own features, label,
+splits, and fitted policies. The formal statement below is written for EarthCARE; TRMM uses the same
+form with the PR-swath label, and GPM uses the added-value label of §5.8.
 
 ### Formal statement (LaTeX-ready)
 
@@ -27,7 +31,8 @@ $$\mathrm{precision}@d = \frac{\sum_t \pi_d(x_t)\, y_t}{\sum_t \pi_d(x_t)}, \qqu
 \mathrm{lift}@d = \frac{\mathrm{capture}@d}{d}.$$
 
 Reference values: random gating gives $\mathrm{capture}@d = d$; the oracle gives
-$\min(1, d/\bar{y})$ with base rate $\bar{y} = 0.1297$.
+$\min(1, d/\bar{y})$ with base rate $\bar{y}$ (≈ 0.13 for EarthCARE in the earlier extraction,
+**[TO RERUN]**).
 
 Because decisions are scored independently and $\pi$ does not affect future observations, this is
 a contextual bandit with a budget, and the budget-optimal static policy is a threshold on
@@ -36,8 +41,12 @@ future state (battery, switching cost) or future observations (`cpr_conditional`
 
 ## 5.2 Labels
 
-- **Primary:** *y_t* = 1 if `prectot_nadir` ≥ 1 mm/hr (base rate 12.97%).
-- **Secondary:** convective, `preccon_nadir` ≥ 1 mm/hr (base rate 1.03%).
+- **EarthCARE primary:** *y_t* = 1 if `prectot_nadir` ≥ 1 mm/hr (base rate ≈ 13% in the earlier
+  extraction, **[TO RERUN]**).
+- **TRMM primary:** *y_t* = 1 if the maximum `prectot` in the PR swath ≥ 1 mm/hr **[TO BUILD]**.
+- **GPM primary:** the radar's added value beyond GMI (§5.8) **[TO BUILD]**.
+- **Secondary (all):** convective, `preccon` ≥ 1 mm/hr in the radar footprint (EarthCARE ≈ 1% in the
+  earlier extraction).
 - **Sensitivity:** thresholds 0.1 and 5 mm/hr, and the median-split `fire` label used by the
   current notebook/CZML export (~0.09 mm/hr, ~50% positive).
 
@@ -53,12 +62,13 @@ budget metric is meant to expose.
 | **mass-capture@d** | fraction of total nadir precipitation (sum of `prectot_nadir`) in fired decisions | rewards catching heavy events, not just any event |
 | **precision@d** | fraction of fired decisions that are positive | how much of the radar's on-time is wasted |
 | **lift@d** | capture@d ÷ *d* | improvement over random gating (random = 1.0) |
-| ROC-AUC, AP | threshold-free ranking quality | comparability with the existing 0.837 / 0.368 numbers |
+| ROC-AUC, AP | threshold-free ranking quality | comparability with earlier numbers and other studies |
 
 Reference curves:
 - Random gating: capture@d = *d*.
-- Oracle: capture@d = min(1, *d* / base rate). With base rate 12.97%, the oracle captures
-  everything at *d* ≈ 13%.
+- Oracle: capture@d = min(1, *d* / base rate). With a base rate near 13%, the oracle captures
+  everything at *d* ≈ 13%. The scanning radars see a much wider area, so their base rates will be
+  higher and their oracle curves saturate later.
 
 Report capture@d as a curve over *d* ∈ [0, 1] and as a table at *d* ∈ {5, 10, 13, 20, 30, 50}%.
 
@@ -89,16 +99,47 @@ Report the realized test duty cycle next to capture, since it will drift slightl
 - `tautot` at night: see Section 6. Do not silently feed nighttime optical depth to a policy that
   claims to be onboard-realistic.
 
-## 5.6 Preliminary results (random 30% split — superseded once E1 runs)
+## 5.6 Preliminary results (earlier EarthCARE extraction, random 30% split — [TO RERUN])
 
 From [`../trackwise_method.md`](../trackwise_method.md) §4.3, against `prectot_nadir` ≥ 1 mm/hr:
 `tautot_mean` AUC 0.815, `tautot_max` 0.789, `cldtot_mean` 0.651, `cldtmp_mean` 0.622 (inverted),
 `lwtup_mean` 0.598 (inverted), `ocean_frac_nadir` 0.572; logistic regression on all 12 features
-AUC 0.837, AP 0.368 (base rate 13.0%). These show the signal exists. They are not paper results
-until re-run under the time-blocked split.
+AUC 0.837, AP 0.368 (base rate 13.0%). These show the signal exists. They come from the deleted,
+time-shifted extraction and a random split, so they are not paper results until recomputed on the
+new extraction under the time-blocked split.
 
 ## 5.7 What counts as a positive result
 
 The learned policies are only worth reporting as a contribution if:
 - they beat P2/P3 (geometry) clearly, showing the imager adds value beyond orbit position, and
 - the gap to P8 (oracle) is reported honestly, since that gap is the room left for RL.
+
+## 5.8 GPM: scoring the radar's added value
+
+GMI already detects precipitation, so "fire when it rains" is the wrong objective for GPM: a gate
+could score well by repeating what GMI already knows, and the radar would add nothing. The GPM label
+must measure what DPR adds beyond GMI. Candidate definitions, to be fixed before building the GPM
+dataset (decision D3 in `14_submission_plan.md`):
+
+1. **Structure the passive sensor cannot resolve.** Fire where DPR reveals vertical structure that
+   matters (e.g., convective cores, bright-band height, echo-top height above a threshold).
+2. **Precipitation GMI handles poorly.** Fire on light rain and falling snow that KaPR detects but
+   GMI-based retrievals miss or underestimate.
+3. **Retrieval uncertainty.** Fire where the GMI-only precipitation estimate is most uncertain or
+   disagrees most with DPR.
+
+Whichever is chosen, the gate's input must be GMI only, and any combined DPR + GMI product contains
+the withheld radar measurement and must not be used as an input. GMI's footprint lies ahead of the
+spacecraft, so its view of a scene can come before the radar reaches it; the analysis must confirm
+that each input is available before the decision it informs.
+
+## 5.9 One policy set per mission; cross-mission transfer
+
+The policies P0–P8 are fitted and evaluated separately for each mission. A single model trained on
+all three missions is not used: their observation spaces (visible/infrared vs. microwave), label
+footprints, and objectives differ, and pooling would reduce them to their shared features. Transfer is
+measured separately in E12, after each mission's own results exist: train on one mission's data,
+apply to another's with the shared features (geometry tier, cloud proxies), and report the loss
+relative to that mission's own policy. A large loss when transferring from EarthCARE to TRMM, for
+example, would show that a policy trained only on ~14:00/~02:00 weather does not cover other times of
+day.

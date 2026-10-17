@@ -1,10 +1,22 @@
 # Baseline Paper — Master Outline
 
-**Working title:** *Can a Passive Imager Tell a Nadir Radar When to Fire? A Track-Wise Benchmark for
-Budget-Constrained Radar Gating*
+**Working title:** *What a Passive Sensor Can Tell a Radar: Budget-Constrained Gating Benchmarks
+Across EarthCARE, TRMM, and GPM*
 
-**Paper type:** dataset + baselines. No reinforcement learning is trained in this paper; it defines the
-benchmark, the metric, and the bar a future RL policy must beat.
+**Central research question:** How do a mission's orbit, radar footprint, and passive sensing determine how much a
+passive-informed duty-cycle gate can capture, and what does each mission's benchmark require of a
+future RL policy?
+
+**Paper type:** dataset + baselines. No reinforcement learning is trained in this paper. It defines
+**three benchmarks** (one per mission), each with its own dataset, label, splits, metric, and set of
+baselines, and therefore the bar each of **three future RL policies** (one per mission) must beat.
+
+**Scope (agreed with advisor, Oct 2026):** three missions are studied as **three separate application
+cases**, each with its own dataset, training, and validation. They are not pooled into one model.
+EarthCARE is the primary case and is done in full depth first. TRMM and GPM are added with the same
+method if time allows; depth on one mission takes priority over shallow coverage of three. If TRMM or
+GPM cannot be completed at the same depth, the paper falls back to EarthCARE with the other missions in
+future work (`14_submission_plan.md`).
 
 This file is the single-page summary of everything the paper will discuss. Each section is
 expanded in its own file so it can be pasted into Overleaf section by section:
@@ -14,143 +26,151 @@ expanded in its own file so it can be pasted into Overleaf section by section:
 | [`00_abstract.md`](./00_abstract.md) | Title options, abstract, keywords, plain-language summary |
 | [`01_introduction.md`](./01_introduction.md) | Introduction, motivation, contributions |
 | [`02_related_work.md`](./02_related_work.md) | Related work (condensed review) |
-| [`03_dataset.md`](./03_dataset.md) | The track-wise dataset |
-| [`04_label_finding.md`](./04_label_finding.md) | Nadir vs. swath labels |
-| [`05_baselines.md`](./05_baselines.md) | Gating policies and the evaluation metric |
-| [`06_onboard_feasibility.md`](./06_onboard_feasibility.md) | Feature tiers and onboard cost |
+| [`03_dataset.md`](./03_dataset.md) | The track-wise datasets (shared method + one subsection per mission) |
+| [`04_label_finding.md`](./04_label_finding.md) | Label geometry: scoring against the radar's own footprint |
+| [`05_baselines.md`](./05_baselines.md) | Gating policies and the evaluation metric, per mission |
+| [`06_onboard_feasibility.md`](./06_onboard_feasibility.md) | Feature tiers and onboard cost, per mission |
 | [`07_experiments.md`](./07_experiments.md) | Experiments to run before submission + result tables |
 | [`08_limitations_future_work.md`](./08_limitations_future_work.md) | Limitations and the path to RL |
 | [`09_references.md`](./09_references.md) | Reference list with verification status |
 | [`10_results_and_discussion.md`](./10_results_and_discussion.md) | Results/discussion template with sentence frames per outcome |
 | [`11_figures_and_tables.md`](./11_figures_and_tables.md) | Every figure and table, its data source, and status |
-| [`12_reviewer_objections.md`](./12_reviewer_objections.md) | Anticipated objections (incl. the onboard-compute one) and responses |
+| [`12_reviewer_objections.md`](./12_reviewer_objections.md) | Anticipated objections and responses |
 | [`13_key_numbers.md`](./13_key_numbers.md) | Every number in the paper with its source file |
-| [`14_submission_plan.md`](./14_submission_plan.md) | Venues, steps to submission, Overleaf section map |
+| [`14_submission_plan.md`](./14_submission_plan.md) | Venues, staging of the three missions, Overleaf section map |
 
 **Reading order for writing:** this file → `13_key_numbers.md` → sections 00–08 → run
 `07_experiments.md` → `10_results_and_discussion.md` → `12_reviewer_objections.md` →
 `14_submission_plan.md`.
 
-Numbers marked **[computed]** come from the committed dataset
-(`trackwise_decisions.parquet`, SHA-256 `4b92f01e…1466`). Numbers marked **[TO RUN]** do not exist
-yet and must come from the experiments in `07_experiments.md`. Do not submit with any **[TO RUN]**
-left.
+Status markers: **[TO RUN]** = experiment not yet run. **[TO RERUN]** = a number exists from the
+earlier EarthCARE extraction, which paired each orbit position with weather from the wrong time of
+day and season and has been deleted (`../trackwise_method.md` §7); the number must be recomputed
+from the new extraction before use. **[TO BUILD]** = the dataset for that mission does not exist yet.
+Do not submit with any of these markers left.
 
 ---
 
 ## 1. Problem statement
 
-An active, nadir-pointing radar (EarthCARE's Cloud Profiling Radar, CPR, ~308 W) is far more
-expensive to run than the passive imager beside it (MSI). If a future radar mission could only run
-its radar for a fraction *d* of each orbit, which minutes should it choose? The decision has to be
-made onboard, once per minute, using only information the imager provides at that moment.
+Spaceborne radars measure precipitation and cloud structure that passive sensors cannot, but they are
+far more expensive to run. If a radar mission could only run its radar for a fraction *d* of each
+orbit, which moments should it choose? The decision has to be made onboard, using only information
+the passive sensors on the same spacecraft provide at that moment.
+
+The three missions pose this question in three different forms:
+
+| | EarthCARE | TRMM | GPM Core |
+|---|---|---|---|
+| NORAD ID | 59908 | 25063 | 39574 |
+| active sensor | CPR, 94 GHz cloud radar, **nadir only** | PR, 13.8 GHz, **cross-track scanning** | DPR, Ku 13.6 + Ka 35.5 GHz, **cross-track scanning** |
+| passive context | MSI (visible/infrared): sees **clouds** | VIRS (visible/infrared): sees **clouds**; TMI (microwave): sees rain | GMI (13-channel microwave): sees **rain and ice** |
+| orbit | sun-synchronous, ~14:00 / ~02:00 local | 35°, precessing, all local times | 65°, precessing, all local times |
+| latitude coverage | near-global | tropics and subtropics | up to ~65° |
+| question the gate answers | is there precipitation under the radar? | is there precipitation in the radar swath? | does the radar add enough beyond what GMI already sees? |
 
 ## 2. Research questions
 
-- **RQ1 — Predictability.** How well does imager-visible context predict precipitation in the
-  radar's *nadir* footprint, when the evaluation is free of temporal leakage?
-- **RQ2 — Gating value.** At a duty-cycle budget *d*, what fraction of nadir precipitation does an
-  imager-driven gate capture, compared with random gating, geometry-only gating, and the oracle?
-- **RQ3 — Label geometry.** How much does labelling against the imager swath, instead of the radar
-  nadir, distort the positive rate and the apparent skill of a gating policy?
-- **RQ4 — Onboard feasibility.** How much of the skill survives when the policy is limited to
-  features that are cheap to compute onboard, and how much survives at night?
+**Central question:** How do a mission's orbit, radar footprint, and passive sensing determine how much a
+passive-informed duty-cycle gate can capture, and what does each mission's benchmark require of a
+future RL policy?
+
+RQ1–RQ4 answer it for each mission separately; RQ5 answers it across missions.
+
+- **RQ1 — Predictability.** For each mission, how well does passive context predict precipitation in
+  the radar's own footprint, when the evaluation is free of temporal leakage?
+- **RQ2 — Gating value.** At a duty-cycle budget *d*, what fraction of radar-measurable precipitation
+  does a passive-driven gate capture, compared with random gating, geometry-only gating, and the
+  oracle? (For GPM: what fraction of the radar's added value.)
+- **RQ3 — Label geometry.** How much does scoring against the passive sensor's swath, instead of the
+  radar's footprint, distort the positive rate and the apparent skill? (Largest for EarthCARE's nadir
+  radar.)
+- **RQ4 — Onboard feasibility.** How much skill survives with features cheap enough to compute
+  onboard, and how much survives at night?
+- **RQ5 — Mission comparison.** How do orbit (sun-synchronous vs. precessing), radar geometry (nadir
+  vs. scanning), and passive information (cloud-only vs. microwave) change achievable gating skill?
+  This compares three separately trained results; it does not train one model on all three.
 
 ## 3. Contributions
 
-1. **A track-wise benchmark.** 351,639 one-minute decisions along EarthCARE's real ground track
-   (TLE-propagated, 1 s sampling), June 2005 – January 2006 of the GEOS-5 Nature Run (G5NR) at
-   0.0625° / 30 min. Every row pairs imager-visible context with nadir and swath truth. Feature tiers,
-   validity flags, and a hash are published. **[computed]**
-2. **A label finding.** Swath labels more than double the positive rate (28.9% vs. 13.0% at
-   ≥1 mm/hr), and 55.2% of swath-positive minutes have no qualifying precipitation under the radar.
-   **[computed]** The effect on apparent policy skill is **[TO RUN]**.
-3. **Budget-constrained baselines.** Capture-vs-duty-cycle curves for random, geometry-only,
-   single-threshold, logistic-regression, gradient-boosting, and oracle gates, under a time-blocked
-   split. **[TO RUN]**
-4. **Onboard feasibility.** The same curves for three feature tiers, reported for day and night,
-   with the arithmetic and memory cost of each policy. **[TO RUN]**
+1. **Three track-wise datasets.** One-minute radar on/off decisions along each mission's real ground
+   track (historical TLE sets, 1 s sampling), June 2005 – January 2006 of the GEOS-5 Nature Run
+   (G5NR) at 0.0625° / 30 min, matched to G5NR by UTC time of day and day of year. EarthCARE
+   **[extraction in progress]**; TRMM **[TO BUILD]**; GPM **[TO BUILD; data source open, §5.8]**.
+2. **A label-geometry finding.** For EarthCARE, scoring against the imager swath instead of the nadir
+   radar line inflated the positive rate by about 2× in the earlier extraction **[TO RERUN]**; the
+   effect for scanning radars (TRMM, GPM) is expected to be smaller and is measured **[TO RUN]**.
+3. **Budget-constrained baselines per mission.** Capture-vs-duty-cycle curves for random,
+   geometry-only, single-threshold, logistic-regression, gradient-boosting, and oracle gates, under a
+   time-blocked split. **[TO RUN]**
+4. **Onboard feasibility per mission.** The same curves for cheap feature tiers, day and night, with
+   the compute and memory cost of each policy. **[TO RUN]**
+5. **A cross-mission comparison** of how orbit, radar geometry, and passive information shape gating
+   skill, including whether a policy trained on one mission transfers to another. **[TO RUN]**
 
-## 4. The dataset (→ `03_dataset.md`)
+## 4. The datasets (→ `03_dataset.md`)
 
-- **Unit:** one row per one-minute CPR on/off decision; 351,639 rows; 1,161 missing decision IDs
-  across 49 discontinuities (kept, never bridged).
-- **Geometry:** real EarthCARE orbital elements, sub-satellite point every second, ~394 km altitude,
-  150 km MSI swath.
-- **Weather:** G5NR at 0.0625° (~7 km) and 30 min; 11,731 distinct weather states; window chosen as
-  the wettest two-month start in the 24-month record.
+- **Unit:** one row per one-minute radar on/off decision; 352,800 decisions per mission over
+  8 months (11,760 G5NR steps × 30), with no gaps by construction of the extractor.
+- **Orbit:** historical TLE sets per mission (CelesTrak), so orbit maintenance is represented; TATC
+  footprints and nadir points use the same closest-epoch TLE.
+- **Time alignment:** orbit and weather start at the same UTC time of day (15:00) and the same day of
+  year (1 June). TRMM flew during 2005, so its orbit also matches the G5NR year.
+- **Weather:** G5NR at 0.0625° (~7 km) and 30 min; window chosen as the wettest two-month start in the
+  24-month record.
 - **Extraction:** per-decision bounding-box fetch, reduced to summary values and discarded (avoids a
   ~10 TB full download).
-- **Columns (40):** 12 always-available features, 5 radar-conditional features, nadir and swath
-  targets (`prectot`, `preccon`, `iwp`, `lwp`), metadata, and 8 validity flags.
-- **Quality control:** 710 corrupted fill-value readings removed (0.20%); 24 finite corrupt target
-  values set to NaN; no imputation.
+- **Per mission:** the passive swath (MSI 150 km, VIRS ~720 km, GMI ~885 km) defines the context
+  features; the radar footprint (CPR nadir line, PR or DPR ~245 km swath) defines the label.
 
-## 5. The label finding (→ `04_label_finding.md`)
+## 5. Label geometry (→ `04_label_finding.md`)
 
-| label at ≥ 1 mm/hr | positive rate |
-|---|---|
-| `prectot_nadir` (what the radar can measure) | **12.97%** |
-| `prectot_swath` (anywhere in the imager swath) | **28.93%** |
-| `preccon_nadir` (convective only) | 1.03% |
-| `preccon_swath` | 4.45% |
-
-Swath-positive minutes with no nadir precipitation ≥ 1 mm/hr: **55.2%** of all swath positives.
-The reverse never happens (swath is the maximum over a superset of the nadir cells).
-Takeaway: any targeting study that scores a nadir instrument against imager-scale truth more than
-doubles its positive class and rewards the policy for minutes the instrument could not have measured.
+The label must be computed from the cells the radar could actually measure. For EarthCARE that is a
+narrow nadir line inside a 150 km imager swath, so a swath label rewards a policy for minutes the radar
+could not have measured. The earlier EarthCARE extraction gave a nadir positive rate of ~13% vs. ~29%
+for the swath at ≥ 1 mm/hr, with ~55% of swath positives having nothing under the radar
+**[TO RERUN]**. For TRMM and GPM the radar itself scans ~245 km, so the gap between radar footprint and
+passive swath is a different and probably smaller effect **[TO RUN]**.
 
 ## 6. The baselines (→ `05_baselines.md`)
 
-- **Primary label:** `prectot_nadir ≥ 1 mm/hr`. The existing median-split `fire` label (~0.09 mm/hr)
-  is a sensitivity check, not the headline.
-- **Primary metric:** *capture@d*, the fraction of positive minutes the gate fires on when it may
-  fire on a fraction *d* of minutes. Also: precipitation-weighted capture, precision-at-budget,
-  ROC-AUC, average precision.
-- **Policies:** random; always-on (upper bound with no budget); geometry-only; single-feature
-  threshold on `tautot_mean`; logistic regression; gradient-boosted trees; oracle.
-- **Threshold rule:** each learned score is turned into a gate by picking the threshold that fires
-  on exactly a fraction *d* of validation minutes.
+- **EarthCARE and TRMM label:** precipitation ≥ 1 mm/hr in the radar footprint.
+- **GPM label:** the radar's added value beyond GMI (candidate definitions in `05_baselines.md` §5.8),
+  since GMI already detects rain.
+- **Primary metric:** *capture@d*, the fraction of positive minutes the gate fires on when it may fire
+  on a fraction *d* of minutes. Also mass-capture, precision@d, ROC-AUC, average precision.
+- **Policies:** random; always-on; geometry-only; single-feature threshold; logistic regression;
+  gradient-boosted trees; oracle. One set per mission.
+- **Threshold rule:** each learned score is turned into a gate by picking the threshold that fires on
+  exactly a fraction *d* of validation minutes.
 
 ## 7. Onboard feasibility (→ `06_onboard_feasibility.md`)
 
-- **Tier A (full):** all 12 always-available features. Upper bound; assumes onboard cloud retrievals.
-- **Tier B (cheap):** thermal-infrared-like quantities (`cldtmp_mean`, `lwtup_mean`, `lwtup_fore`)
-  plus geometry. Works day and night. No optical-depth retrieval.
-- **Tier C (geometry):** `lat`, `solar_hour`, `sin_lon`, `cos_lon`, `land_frac_nadir`,
-  `ocean_frac_nadir`. Needs no imager at all.
-- **Cost:** logistic regression ≈ 12 multiply-adds per decision; a 12-64-64-1 MLP ≈ 5,000; both
-  fit in kilobytes. One decision per minute is far inside a flight processor's budget. The real cost
-  is producing the features, which is why Tier B exists.
+- Policy cost is negligible for every mission (≈ 12 to ≈ 5,000 operations per decision).
+- Feature cost differs by mission: MSI and VIRS need visible/infrared cloud products (optical depth
+  needs daylight); GMI brightness temperatures are available day and night.
+- Tier C (geometry only) is the floor in every mission.
 
 ## 8. Experiments to run before submission (→ `07_experiments.md`)
 
-1. Replace the random 30% split with a **time-blocked split** with a buffer between blocks; report
-   how much the current 0.837 AUC changes.
-2. **Leave-one-month-out** cross-validation for seasonal robustness.
-3. **Capture@d** at d ∈ {5, 10, 13, 20, 30, 50}% for every policy.
-4. **Nadir vs. swath** training and scoring (2 × 2 grid) to quantify RQ3.
-5. **Feature tiers A/B/C**, each reported for day, night, and overall.
-6. **Stratified skill:** tropics / mid-latitudes / polar; land / ocean / mixed.
-7. **Label-threshold sensitivity:** 0.1, 1, 5 mm/hr and the median split; convective-only target.
-8. **Missing-data handling:** rows with invalid features or targets excluded and counted.
-9. **Onboard cost table:** operations, parameters, and memory per policy.
-10. **Statistical uncertainty:** block bootstrap confidence intervals on capture@d.
+E1–E11 are run **per mission**: time-blocked split, leave-one-month-out, capture@d curves, label
+geometry grid, feature tiers × day/night, stratified skill, label sensitivity, missing-data
+accounting, policy cost, bootstrap intervals, feature importance. **E12** compares the three missions
+and tests cross-mission transfer.
 
 ## 9. Limitations (→ `08_limitations_future_work.md`)
 
-G5NR diagnostics are idealized proxies, not MSI retrievals; ~7 km vs. ~500 m resolution; one
-simulated period (2005–06) from a model with a known split-ITCZ bias; EarthCARE's real CPR runs continuously, so the budget is a stand-in for a
-future power-limited radar; decisions are scored independently (no battery or reveal-on-fire
-dynamics yet); the sun-synchronous orbit samples only ~14:00 and ~02:00 local time, so all rates
-are conditional on those times and may not transfer to orbits with other local times (TRMM and GPM,
-which pair a radar with passive imagers on non-sun-synchronous orbits, are named as follow-up test
-cases). Follow-ups: validation on real EarthCARE MSI + CPR data, and sequential RL that must
-beat these baselines.
+G5NR diagnostics are idealized proxies, not instrument retrievals; ~7 km vs. sub-km to ~5 km radar
+footprints; one simulated period (2005–06) from a model with a known split-ITCZ bias; the real radars
+run continuously, so the budget models a future power-limited radar; decisions are scored
+independently. EarthCARE samples only ~14:00 and ~02:00 local time; TRMM and GPM sample all local
+times but only over many days. TRMM covers only the tropics and subtropics. GPM's passive context
+(microwave brightness temperatures) is not produced by G5NR, which forces a choice between a forward
+model, proxies, or real GPM data. Follow-ups: validation on real data, and sequential RL per mission.
 
 ## 10. One-sentence claim of the paper
 
-> With only imager-visible context, a one-minute gate can capture **[TO RUN]%** of nadir
-> precipitation while the radar runs **[TO RUN]%** of the time; a cheap, retrieval-free feature
-> set keeps **[TO RUN]%** of that skill; and scoring against swath rather than nadir truth would
-> have more than doubled the positive class.
+> With only passive context, a one-minute gate can capture **[TO RUN]%** of radar-measurable
+> precipitation on EarthCARE while the radar runs **[TO RUN]%** of the time (TRMM: **[TO RUN]%**;
+> GPM: **[TO RUN]%** of the radar's added value); a cheap feature set keeps **[TO RUN]%** of that
+> skill; and scoring a nadir radar against swath truth would have roughly doubled the positive class.

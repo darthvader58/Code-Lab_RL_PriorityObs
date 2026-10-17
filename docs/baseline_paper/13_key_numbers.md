@@ -1,10 +1,30 @@
 # 13. Key Numbers and Where They Come From
 
-Every number used in the paper, with its source. Update this file whenever the dataset is
-regenerated. Dataset: `trackwise_decisions.parquet`, 351,639 × 40,
-SHA-256 `4b92f01e24e231a5b5a1151060fef586f08e450e15c252fb23ef9ef772fd1466`.
+Every number used in the paper, with its source. Update this file whenever a dataset is
+regenerated.
 
-## Dataset
+**Status (Oct 2026):** the EarthCARE numbers under "Dataset", "Labels", "Temporal structure", and
+"Preliminary skill" come from the **earlier EarthCARE extraction** (351,639 rows, SHA-256
+`4b92f01e…1466`), which paired each orbit position with weather from the wrong time of day and
+season. That dataset and its reports have been deleted. Every one of these values is **[TO RERUN]**
+on the new extraction and must not be quoted as is. TRMM and GPM have no numbers yet.
+
+## Missions (fixed facts)
+
+| quantity | EarthCARE | TRMM | GPM Core | source |
+|---|---|---|---|---|
+| NORAD ID | 59908 | 25063 | 39574 | celestrak_satcat (checked Oct 2026) |
+| international ID | 2024-101A | 1997-074A | 2014-009C | same |
+| launch / end | 2024-05-28 / operating | 1997-11-27 / re-entered 2015-06-16 | 2014-02-27 / operating | same |
+| inclination | ~97° (sun-synchronous) | ~35° | ~65° | same |
+| orbit window used | 2025-06-01 → 2026-02-01 15:00 UTC | 2005-06-01 → 2006-02-01 15:00 UTC | 2025-06-01 → 2026-02-01 15:00 UTC | `03_dataset.md` |
+| TLE set requested | 2025-05-25 → 2026-02-08 | 2005-05-25 → 2006-02-08 | 2025-05-25 → 2026-02-08 | CelesTrak special request |
+| local-time nodes | 13:56–13:58 / 01:56–01:58 | all local times | all local times | measured from TLE propagation (EarthCARE) |
+| radar swath | nadir only | ~245 km | ~245 km | trmm_instruments, gpm_instruments (verify) |
+| passive swath | MSI 150 km | VIRS ~720 km | GMI ~885 km | same (verify) |
+| decisions per dataset | 352,800 | 352,800 | 352,800 | 11,760 G5NR steps × 30 |
+
+## Dataset (earlier EarthCARE extraction — [TO RERUN])
 
 | quantity | value | source |
 |---|---|---|
@@ -25,7 +45,7 @@ SHA-256 `4b92f01e24e231a5b5a1151060fef586f08e450e15c252fb23ef9ef772fd1466`.
 | mixed-surface decisions (0.05–0.95 land) | 17.09% | same |
 | CPR / ATLID power | ~308 W / ~310 W | `../feature_set.md` |
 
-## Labels (computed for this paper, threshold 1 mm/hr = 1/3600 kg m⁻² s⁻¹)
+## Labels (earlier EarthCARE extraction — [TO RERUN]; threshold 1 mm/hr = 1/3600 kg m⁻² s⁻¹)
 
 | quantity | value |
 |---|---|
@@ -40,7 +60,7 @@ SHA-256 `4b92f01e24e231a5b5a1151060fef586f08e450e15c252fb23ef9ef772fd1466`.
 
 Reproduce with the snippet in `04_label_finding.md`.
 
-## Temporal structure (`task_outputs/t3_autocorr_report.md`)
+## Temporal structure (earlier EarthCARE extraction — [TO RERUN]; report file deleted)
 
 | variable | lag-1 ACF | e-folding lag |
 |---|---|---|
@@ -48,7 +68,7 @@ Reproduce with the snippet in `04_label_finding.md`.
 | `preccon_nadir` | 0.116 | 1 decision |
 | `tautot_mean` | 0.628 | 3 decisions |
 
-## Preliminary skill — random 30% split (to be replaced by E1)
+## Preliminary skill — earlier EarthCARE extraction, random 30% split ([TO RERUN] under E1)
 
 | feature / model | ROC-AUC vs. `prectot_nadir` ≥ 1 mm/hr |
 |---|---|

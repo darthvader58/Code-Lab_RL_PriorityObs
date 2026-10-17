@@ -3,6 +3,10 @@
 Write this section only after `07_experiments.md` is filled in. Each subsection says what to report
 and gives sentence templates for the likely outcomes. Delete the outcomes that did not happen.
 
+Report §10.1–10.6 **per mission** (EarthCARE first; TRMM and GPM as their own subsections or as
+columns in each table), then compare the missions in §10.8. Never pool the three datasets into one
+result.
+
 ## 10.1 Leakage and the evaluation split (E1, E2)
 
 Report: AUC/AP/capture@13% under random vs. time-blocked splits; leave-one-month-out mean and range.
@@ -11,7 +15,7 @@ Report: AUC/AP/capture@13% under random vs. time-blocked splits; leave-one-month
   consecutive decisions share a 30-minute weather field; all further results use the time-blocked
   split." This is itself a methodological finding worth a sentence in the abstract.
 - *If it barely changes:* "Skill is robust to the split ([Δ] AUC), consistent with nadir
-  precipitation decorrelating within one decision (lag-1 ACF 0.17)."
+  precipitation decorrelating within one decision (lag-1 ACF [TO RERUN])."
 - Separate leakage from seasonal shift with E2: if June–September months score well in LOMO but
   the Nov–Jan test block does not, the drop is seasonal, not leakage.
 
@@ -78,6 +82,25 @@ Close the section with what RL would need to do to be worthwhile:
 - beat the best static gate at the same duty cycle on the time-blocked test set;
 - use something static gates cannot: battery state, switching costs, or `cpr_conditional` features
   revealed after firing;
-- note that lag-1 precipitation autocorrelation is only 0.17, so the gain from simply remembering
-  the last minute is likely small — any RL gain has to come from the budget dynamics or the
-  revealed features.
+- note that lag-1 precipitation autocorrelation was only ~0.17 for EarthCARE's nadir label in the
+  earlier extraction ([TO RERUN]), so the gain from simply remembering the last minute is likely
+  small — any RL gain has to come from the budget dynamics or the revealed features. Scanning radars
+  see a wider area, so their labels may be more persistent; check per mission.
+
+## 10.8 Comparing the missions (E12)
+
+Report: the side-by-side comparison table and the transfer matrix.
+
+Discuss each difference through the property that causes it:
+- **Orbit / local time.** "On TRMM, decisions near 14:00 and 02:00 local time give capture@20% of
+  [X]%, against [Y]% at other hours; EarthCARE's two sampling times therefore [over/under]state
+  gating skill relative to the full day."
+- **Radar geometry.** "The scanning radars' base rates are [higher], and the swath-label inflation
+  falls from [~2×] (EarthCARE, nadir) to [Z×] (TRMM, GPM)."
+- **Passive information.** "With microwave context, the gate [does/does not] find where the radar
+  adds value beyond GMI: capture of added value at 20% is [V]%."
+- **Transfer.** "A policy trained on EarthCARE loses [L] points of capture when applied to TRMM,
+  compared with TRMM's own policy." A large loss supports training one policy per mission.
+
+State plainly when the missions disagree; three separate cases may give three answers, and that is a
+result, not a failure.
