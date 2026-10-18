@@ -10,7 +10,7 @@
 4. *What a Passive Sensor Can Tell a Radar: Budget-Constrained Gating Benchmarks Across EarthCARE,
    TRMM, and GPM*
 
-## Abstract (draft — ~250 words; replace every [TO RUN] before submission)
+## Abstract (draft — ~250 words; EarthCARE numbers final, replace every [TO RUN] before submission)
 
 Autonomous spacecraft will need to decide onboard which Earth-science observations to prioritize as
 conditions below them change. Spaceborne cloud and precipitation radars are a clear case: they return
@@ -26,11 +26,13 @@ spacecraft: EarthCARE (nadir cloud radar, visible/infrared imager, sun-synchrono
 scanning radar, microwave imager, 65° precessing orbit). For each mission, one-minute radar on/off
 opportunities are generated along the real ground track from historical orbital elements over eight
 months of the 7 km GEOS-5 Nature Run, matched by time of day and season. Each mission is trained and
-evaluated separately. We show that scoring EarthCARE's nadir radar against imager-swath truth roughly
-doubles the positive class [TO RERUN], while the effect for scanning radars is [TO RUN]. Under a
-leakage-free, time-blocked split, a passive-driven prioritization policy captures [TO RUN]% (EarthCARE), [TO RUN]%
-(TRMM), and [TO RUN]% (GPM, measured as the radar's added value beyond the microwave imager) at a
-[TO RUN]% duty cycle, against [TO RUN]% for geometry-only gating. Comparing the missions shows how
+evaluated separately. We show that scoring EarthCARE's nadir radar against imager-swath truth more
+than doubles the positive class (13.7% to 30.0% of minutes at ≥ 1 mm/hr), while the effect for
+scanning radars is [TO RUN]. Under a leakage-free, time-blocked split, a passive-driven
+prioritization policy captures 66% of rainy minutes on EarthCARE (AUC 0.89), [TO RUN]% on TRMM, and
+[TO RUN]% on GPM (measured as the radar's added value beyond the microwave imager) at a 20% duty
+cycle, against 28% for geometry-only gating on EarthCARE and 20% for random gating. On EarthCARE,
+night-capable inputs retain 89% of that skill. Comparing the missions shows how
 orbit local-time sampling, radar geometry, and the information already in the passive sensor shape
 achievable gating skill [TO RUN]. The three benchmarks fix the label, split, metric, and
 baseline that a sequential reinforcement-learning policy for each mission must beat, as a step toward

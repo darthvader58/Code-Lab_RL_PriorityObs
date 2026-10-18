@@ -20,9 +20,10 @@ Before submission, quote a verified power or duty-cycle figure for one such miss
 
 ### O3. "Satellites don't have the compute to run an RL agent." (advisor's objection)
 
-**Response:** Two costs must be separated. The trained policy costs ~12 to ~5,000 operations per
-decision once a minute — negligible even for radiation-hardened processors, and onboard neural
-inference has already flown [giuffrida2022phisat]. The real constraint is producing the input
+**Response:** Two costs must be separated. The trained policy costs ~15 to ~5,000 operations per
+decision once a minute (16 to 18,300 parameters, 3 kB to 1 MB on EarthCARE) — negligible even for
+radiation-hardened processors, and onboard neural inference has already flown [giuffrida2022phisat].
+On EarthCARE, cheap thermal-infrared-like inputs keep 90% of the full-feature capture. The real constraint is producing the input
 features; Tier B/C measure how much skill survives without onboard retrievals. Training happens on
 the ground. **Where:** §6, Table 5.
 
@@ -35,9 +36,9 @@ real EarthCARE MSI/CPR data is the first follow-up. **Where:** §3.5, Limitation
 ### O5. "Your AUC is inflated by temporal leakage."
 
 **Response:** All headline results use a time-blocked split with a buffer of at least one weather
-step, and the random-split numbers are shown only for comparison. **Where:** §7 E1. (This objection
-is valid against the earlier 0.837 number — do not report it without the blocked-split
-counterpart.)
+step, and the random-split numbers are shown only for comparison. On EarthCARE the split barely
+matters (logistic regression AUC 0.833 random vs. 0.837 time-blocked), and leave-one-month-out gives
+0.811–0.844. **Where:** §7 E1, E2.
 
 ### O6. "One year of one model; does it generalise?"
 
@@ -50,8 +51,9 @@ period. **Where:** E2, E12, §10.5, §10.8, Limitations 3 and 7.
 ### O7. "Why not just train RL now?"
 
 **Response:** Without a fixed metric, split, and static baseline at the same budget, an RL result
-cannot be interpreted. With lag-1 precipitation autocorrelation of only 0.17, a sequential policy
-must earn its gain from budget dynamics or revealed features, which this benchmark makes testable.
+cannot be interpreted. With lag-1 precipitation autocorrelation of only 0.11 on EarthCARE, a
+sequential policy must earn its gain from budget dynamics or revealed features, which this benchmark
+makes testable. The bar is now fixed: 66.4% capture at 20% duty (AUC 0.893).
 **Where:** §1.3, §10.7.
 
 ### O8. "The 7 km model can't represent a ~1 km radar footprint."
@@ -69,7 +71,8 @@ the budget problem depends on; the median split and other thresholds are reporte
 ### O10. "Is the gain just geography — firing in the tropics?"
 
 **Response:** That is exactly what the geometry-only and latitude-band baselines (P2, P3) measure;
-the imager's value is reported as the margin over them. **Where:** §5.4, Table 4.
+the imager's value is reported as the margin over them: on EarthCARE, 27.5–28.0% capture at 20% duty
+for geometry vs. 66.4% with the passive features. **Where:** §5.4, Table 4.
 
 ### O11. "A sun-synchronous orbit only sees two times of day. Doesn't that bias the results?"
 

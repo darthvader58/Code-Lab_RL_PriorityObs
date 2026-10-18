@@ -24,8 +24,8 @@
    three can give different answers. Agreement across them supports a general conclusion; it does
    not prove one. Results for any other radar mission still need that mission's own dataset.
 8. **Diurnal coverage.** EarthCARE's sun-synchronous orbit samples each location at nearly fixed
-   local times: ~14:00 (descending) and ~02:00 (ascending); 13:56–13:58 and 01:56–01:58 at the
-   nodes over the study window. Every EarthCARE rate (positive rate, recall, AUC) is therefore
+   local times: ~14:00 (descending) and ~02:00 (ascending); 13:56–13:57 and 01:56–01:57 at the
+   nodes over the study window, with 82% of minutes in the six local hours around them. Every EarthCARE rate (positive rate, recall, AUC) is therefore
    conditional on precipitation present at those times, not on daily precipitation. Precipitation
    between the windows, such as late-afternoon convection over land, never enters the EarthCARE data.
    The labels are still correct for the gating task, because the radar can only measure what is

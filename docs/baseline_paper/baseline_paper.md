@@ -57,11 +57,12 @@ expanded in its own file so it can be pasted into Overleaf section by section:
 `07_experiments.md` → `10_results_and_discussion.md` → `12_reviewer_objections.md` →
 `14_submission_plan.md`.
 
-Status markers: **[TO RUN]** = experiment not yet run. **[TO RERUN]** = a number exists from the
-earlier EarthCARE extraction, which paired each orbit position with weather from the wrong time of
-day and season and has been deleted (`../trackwise_method.md` §7); the number must be recomputed
-from the new extraction before use. **[TO BUILD]** = the dataset for that mission does not exist yet.
-Do not submit with any of these markers left.
+Status markers: **[TO RUN]** = experiment not yet run. **[TO BUILD]** = the dataset for that
+mission does not exist yet. Do not submit with any of these markers left.
+
+**Status (18 Oct 2026):** EarthCARE is complete: dataset built (352,800 decisions, no gaps), E1–E11
+run including P7, results in `missions/earthcare/results/`, every EarthCARE number in
+`13_key_numbers.md`. TRMM and GPM are not started.
 
 ---
 
@@ -122,15 +123,19 @@ RQ1–RQ4 answer it for each mission separately; RQ5 answers it across missions.
 1. **Three track-wise datasets.** One-minute radar on/off decisions along each mission's real ground
    track (historical TLE sets, 1 s sampling), June 2005 – January 2006 of the GEOS-5 Nature Run
    (G5NR) at 0.0625° / 30 min, matched to G5NR by UTC time of day and day of year. EarthCARE
-   **[extraction in progress]**; TRMM **[TO BUILD]**; GPM **[TO BUILD; data source open, §5.8]**.
+   **done** (352,800 decisions, no gaps); TRMM **[TO BUILD]**; GPM **[TO BUILD; data source open,
+   §5.8]**.
 2. **A label-geometry finding.** For EarthCARE, scoring against the imager swath instead of the nadir
-   radar line inflated the positive rate by about 2× in the earlier extraction **[TO RERUN]**; the
-   effect for scanning radars (TRMM, GPM) is expected to be smaller and is measured **[TO RUN]**.
+   radar line inflates the positive rate 2.2× (13.7% → 30.0%), and 54.5% of swath-rainy minutes have
+   no rain under the radar; the effect for scanning radars (TRMM, GPM) is expected to be smaller and
+   is measured **[TO RUN]**.
 3. **Budget-constrained baselines per mission.** Capture-vs-duty-cycle curves for random,
    geometry-only, single-threshold, logistic-regression, gradient-boosting, and oracle gates, under a
-   time-blocked split. **[TO RUN]**
+   time-blocked split. EarthCARE done: LightGBM AUC 0.893, 66.4% capture at 20% duty; TRMM and GPM
+   **[TO RUN]**.
 4. **Onboard feasibility per mission.** The same curves for cheap feature tiers, day and night, with
-   the compute and memory cost of each policy. **[TO RUN]**
+   the compute and memory cost of each policy. EarthCARE done: night-capable inputs keep 89% of
+   capture; policies cost 3 kB – 1 MB and about 1 ms per decision; TRMM and GPM **[TO RUN]**.
 5. **A cross-mission comparison** of how orbit, radar geometry, and passive information shape gating
    skill, including whether a policy trained on one mission transfers to another. **[TO RUN]**
 
@@ -153,9 +158,9 @@ RQ1–RQ4 answer it for each mission separately; RQ5 answers it across missions.
 
 The label must be computed from the cells the radar could actually measure. For EarthCARE that is a
 narrow nadir line inside a 150 km imager swath, so a swath label rewards a policy for minutes the radar
-could not have measured. The earlier EarthCARE extraction gave a nadir positive rate of ~13% vs. ~29%
-for the swath at ≥ 1 mm/hr, with ~55% of swath positives having nothing under the radar
-**[TO RERUN]**. For TRMM and GPM the radar itself scans ~245 km, so the gap between radar footprint and
+could not have measured. On EarthCARE the nadir positive rate is 13.7% vs. 30.0% for the swath at
+≥ 1 mm/hr, with 54.5% of swath positives having nothing under the radar. A policy trained on nadir
+rain catches 66.4% of nadir rain but only 51.1% of swath rain at 20% duty. For TRMM and GPM the radar itself scans ~245 km, so the gap between radar footprint and
 passive swath is a different and probably smaller effect **[TO RUN]**.
 
 ## 6. The baselines (→ `05_baselines.md`)
@@ -165,14 +170,16 @@ passive swath is a different and probably smaller effect **[TO RUN]**.
   since GMI already detects rain.
 - **Primary metric:** *capture@d*, the fraction of positive minutes the gate fires on when it may fire
   on a fraction *d* of minutes. Also mass-capture, precision@d, ROC-AUC, average precision.
-- **Policies:** random; always-on; geometry-only; single-feature threshold; logistic regression;
-  gradient-boosted trees; oracle. One set per mission.
+- **Policies:** random; always-on; geometry-only; latitude band; single-feature threshold; logistic
+  regression; gradient-boosted trees (LightGBM); small MLP; oracle. One set per mission.
+- **EarthCARE bar for RL:** LightGBM, AUC 0.893 [0.891, 0.896], capture@20% 66.4%.
 - **Threshold rule:** each learned score is turned into a gate by picking the threshold that fires on
   exactly a fraction *d* of validation minutes.
 
 ## 7. Onboard feasibility (→ `06_onboard_feasibility.md`)
 
-- Policy cost is negligible for every mission (≈ 12 to ≈ 5,000 operations per decision).
+- Policy cost is negligible: on EarthCARE, 16 parameters (logistic regression) to 18,300 (LightGBM,
+  ~3,300 comparisons), all about 1 ms per decision in Python against a 60 s interval.
 - Feature cost differs by mission: MSI and VIRS need visible/infrared cloud products (optical depth
   needs daylight); GMI brightness temperatures are available day and night.
 - Tier C (geometry only) is the floor in every mission.
@@ -196,7 +203,8 @@ model, proxies, or real GPM data. Follow-ups: validation on real data, and seque
 
 ## 10. One-sentence claim of the paper
 
-> Using only passive-sensor observations, an onboard prioritization policy can capture **[TO RUN]%** of radar-measurable
-> precipitation on EarthCARE while the radar runs **[TO RUN]%** of the time (TRMM: **[TO RUN]%**;
-> GPM: **[TO RUN]%** of the radar's added value); a cheap feature set keeps **[TO RUN]%** of that
-> skill; and scoring a nadir radar against swath truth would have roughly doubled the positive class.
+> Using only passive-sensor observations, an onboard prioritization policy can capture **66%** of radar-measurable
+> precipitation on EarthCARE while the radar runs **20%** of the time (TRMM: **[TO RUN]%**;
+> GPM: **[TO RUN]%** of the radar's added value); night-capable inputs keep **89%** of that
+> skill; and scoring a nadir radar against swath truth would have more than doubled the positive
+> class.
