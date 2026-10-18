@@ -1,0 +1,15 @@
+feature,auc,inverted
+tautot_mean,0.8339480486878119,False
+tautot_max,0.8116446736056594,False
+cldtot_mean,0.6524708981503887,False
+cldtmp_mean,0.6186053760713496,True
+ocean_frac_nadir,0.5836358021294906,False
+land_frac_nadir,0.5805582665644587,True
+lwtup_mean,0.5739817114917911,True
+solar_hour,0.5463511678039145,True
+sin_lon,0.5301561059988704,True
+cos_lon,0.5280276906952187,True
+cos_sh,0.5266151963790735,False
+lat,0.5257099572912332,False
+lwtup_fore,0.5101040053307959,False
+sin_sh,0.5018682000052022,True

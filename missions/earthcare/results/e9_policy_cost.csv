@@ -1,0 +1,4 @@
+policy,inputs,parameters,operations,serialized_bytes,wall_ms_per_decision_python
+P2 geometry LR,7,8,~7 multiply-adds + 1 sigmoid,2772,0.7687293749768287
+P5 logistic regression,13,16,~15 multiply-adds + 1 sigmoid,3278,0.7798260400159052
+P6 gradient boosting,13,18300,"~3346 comparisons (300 trees, mean depth 11.2)",1049169,0.5381902099907165

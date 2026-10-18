@@ -1,0 +1,51 @@
+{
+  "mission": "earthcare",
+  "data": "/Users/shashwatraj/Desktop/FURI Spring 2025/Code-Lab_RL_PriorityObs/missions/earthcare/data/EarthCare_trackwise_decisions.parquet",
+  "data_sha256": "9fe09a93c8b0640f73f23d8422f869573ca172c90c242a4536fdd08a3eb82424",
+  "rows": 352800,
+  "seed": 0,
+  "experiments": [
+    "e1",
+    "e2",
+    "e3",
+    "e4",
+    "e5",
+    "e6",
+    "e7",
+    "e8",
+    "e9",
+    "e10",
+    "e11"
+  ],
+  "python": "3.12.2",
+  "numpy": "1.26.4",
+  "pandas": "2.2.2",
+  "sklearn": "1.6.1",
+  "lightgbm": "4.7.0",
+  "label": "prectot_nadir >= 0.000277778 kg m-2 s-1",
+  "split": {
+    "train": [
+      "2005-06",
+      "2005-07",
+      "2005-08",
+      "2005-09"
+    ],
+    "val": [
+      "2005-10"
+    ],
+    "test": [
+      "2005-11",
+      "2005-12",
+      "2006-01",
+      "2006-02"
+    ]
+  },
+  "e4": {
+    "positive_rate": {
+      "prectot_nadir": 0.12755155605549306,
+      "prectot_swath": 0.2785151856017998
+    },
+    "swath_pos_label_neg_share": 0.5420301561658589
+  },
+  "e11_best_policy": "P6 gradient boosting"
+}

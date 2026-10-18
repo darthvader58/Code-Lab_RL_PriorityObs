@@ -1,0 +1,12 @@
+item,count,note
+rows in dataset,352800.0,
+rows with invalid prectot_nadir,0.0,
+rows with invalid prectot_swath,0.0,
+rows with any NaN Tier A feature,28608.0,
+NaN in cldtmp_mean,17425.0,
+NaN in lwtup_fore,11760.0,
+train rows used (valid label),174750.0,
+val rows used (valid label),44580.0,
+test rows used (valid label),133350.0,
+drop rows used (valid label),120.0,
+NaN handling,,LR/MLP: median impute + missing indicators; LightGBM: native NaN; P4: NaN scores lowest
