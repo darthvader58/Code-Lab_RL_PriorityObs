@@ -1,10 +1,10 @@
 """Run the baseline-paper experiments for one mission.
 
-    python -m baselines.run_baselines --mission earthcare --data trackwise_decisions.parquet \
-        --out results/earthcare
+    python -m baselines.run_baselines --mission earthcare
 
-Writes one CSV per result table, two figures, and run_meta.json (dataset hash, package versions,
-seed) to --out. Every table and figure in the paper must come from these files.
+Reads the mission's dataset (missions/<mission>/data/) and writes one CSV per result table, two
+figures, and run_meta.json (dataset hash, package versions, seed) to missions/<mission>/results/;
+--data and --out override those paths. Every table and figure in the paper must come from these files.
 """
 import argparse
 import hashlib
@@ -55,15 +55,16 @@ def plot_curves(df, group, title, path):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mission", default="earthcare")
-    ap.add_argument("--data", required=True)
-    ap.add_argument("--out", required=True)
+    ap.add_argument("--data", help="default: the mission's data_path")
+    ap.add_argument("--out", help="default: the mission's results_dir")
     ap.add_argument("--experiments", nargs="+", default=ALL, choices=ALL)
     ap.add_argument("--mlp", action="store_true", help="include P7 (small MLP) in E3/E9")
     ap.add_argument("--n-boot", type=int, default=1000)
     a = ap.parse_args(argv)
 
     mission = get_mission(a.mission)
-    out = Path(a.out)
+    a.data = a.data or mission.data_path
+    out = Path(a.out or mission.results_dir)
     out.mkdir(parents=True, exist_ok=True)
     df = load(a.data, mission)
     log = lambda m: print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)

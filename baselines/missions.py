@@ -4,7 +4,9 @@ Each mission is a separate benchmark: its own label column, comparison column, f
 blocked split. Only EarthCARE has a dataset so far; TRMM and GPM fail loudly until theirs exist.
 """
 from dataclasses import dataclass, field
+from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
 MM_PER_HR = 1 / 3600          # 1 mm/hr in kg m-2 s-1 (G5NR precipitation units)
 
 GEOMETRY = ["lat", "sin_sh", "cos_sh", "sin_lon", "cos_lon", "land_frac_nadir", "ocean_frac_nadir"]
@@ -13,6 +15,8 @@ GEOMETRY = ["lat", "sin_sh", "cos_sh", "sin_lon", "cos_lon", "land_frac_nadir", 
 @dataclass(frozen=True)
 class Mission:
     name: str
+    data_path: Path                # missions/<name>/data/<Name>_trackwise_decisions.parquet
+    results_dir: Path              # missions/<name>/results/
     label_col: str                 # precipitation in the radar's own footprint
     swath_col: str                 # precipitation over the passive swath (label-geometry comparison)
     convective_col: str
@@ -27,6 +31,8 @@ class Mission:
 # `solar_hour` is cyclic, so every tier uses its sin/cos encoding (sin_sh, cos_sh) instead.
 EARTHCARE = Mission(
     name="earthcare",
+    data_path=ROOT / "missions" / "earthcare" / "data" / "EarthCare_trackwise_decisions.parquet",
+    results_dir=ROOT / "missions" / "earthcare" / "results",
     label_col="prectot_nadir",
     swath_col="prectot_swath",
     convective_col="preccon_nadir",
