@@ -265,7 +265,10 @@ def e9_cost(df, mission, fitted):
 # ---- E10: block bootstrap --------------------------------------------------------------------
 
 def e10_bootstrap(df, mission, fitted, n_boot=1000, budgets=(0.13, 0.20), seed=SEED):
-    """Resample whole G5NR days of the test block; thresholds stay fixed from validation."""
+    """Resample whole G5NR days of the test block; thresholds stay fixed from validation.
+
+    Every policy is scored on the same draws, so the second table gives paired differences:
+    the best policy (highest mean AUC) minus each other policy, per draw."""
     col = mission.label_col
     lab = label_fn(col, mission.threshold)
     _, va, te = _blocks(df, mission, [col])
@@ -276,7 +279,7 @@ def e10_bootstrap(df, mission, fitted, n_boot=1000, budgets=(0.13, 0.20), seed=S
     rng = np.random.default_rng(seed)
     draws = [np.concatenate([idx_by_day[d] for d in rng.choice(uniq, len(uniq))])
              for _ in range(n_boot)]
-    rows = []
+    rows, per_draw = [], {}
     for name, pol in fitted.items():
         s_va, s_te = pol.score(va), pol.score(te)
         ths = {d: threshold_for(s_va, d) for d in budgets}
@@ -287,11 +290,22 @@ def e10_bootstrap(df, mission, fitted, n_boot=1000, budgets=(0.13, 0.20), seed=S
             stats["ap"].append(average_precision_score(yy, ss))
             for d in budgets:
                 stats[f"capture@{int(d * 100)}%"].append((ss[yy] >= ths[d]).mean())
+        per_draw[name] = {k: np.asarray(v) for k, v in stats.items()}
         for k, v in stats.items():
             rows.append({"policy": name, "metric": k, "mean": np.mean(v),
                          "ci_low": np.quantile(v, 0.025), "ci_high": np.quantile(v, 0.975),
                          "n_boot": len(v)})
-    return pd.DataFrame(rows)
+    best = max(per_draw, key=lambda p: per_draw[p]["auc"].mean())
+    paired = []
+    for other in per_draw:
+        if other == best:
+            continue
+        for k in per_draw[best]:
+            diff = per_draw[best][k] - per_draw[other][k]
+            paired.append({"best": best, "other": other, "metric": k, "mean_diff": diff.mean(),
+                           "ci_low": np.quantile(diff, 0.025), "ci_high": np.quantile(diff, 0.975),
+                           "share_best_ahead": (diff > 0).mean(), "n_boot": len(diff)})
+    return pd.DataFrame(rows), pd.DataFrame(paired)
 
 
 # ---- E11: interpretation ---------------------------------------------------------------------

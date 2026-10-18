@@ -113,8 +113,10 @@ def main(argv=None):
     if "e9" in a.experiments:
         save(E.e9_cost(df, mission, fitted), "e9_policy_cost")
     if "e10" in a.experiments:
-        keep = {k: v for k, v in fitted.items() if k.split()[0] in ("P2", "P4", "P5", "P6")}
-        save(E.e10_bootstrap(df, mission, keep, n_boot=a.n_boot), "e10_bootstrap")
+        keep = {k: v for k, v in fitted.items() if k.split()[0] in ("P2", "P4", "P5", "P6", "P7")}
+        boot, paired = E.e10_bootstrap(df, mission, keep, n_boot=a.n_boot)
+        save(boot, "e10_bootstrap")
+        save(paired, "e10_bootstrap_paired")
     if "e11" in a.experiments:
         best, perm, single = E.e11_importance(df, mission, fitted)
         save(perm, "e11_permutation_importance")
