@@ -1,11 +1,12 @@
-# Enriched track-wise feature set
+# Enriched track-wise feature set (EarthCARE)
 
 This document describes the dataset-preparation output
-`missions/earthcare/data/EarthCare_trackwise_decisions.parquet`. It does not build or train
-the reinforcement-learning agent. Each saved row represents one one-minute CPR
-decision opportunity. The source has 351,639 rows, 1,161 missing decision IDs,
-and 49 non-consecutive decision discontinuities. All task artifacts are aligned
-by the `decision` key; no row-position alignment is used.
+`missions/earthcare/data/EarthCare_trackwise_decisions.parquet`, built as described in
+[`EarthCare_trackwise_method.md`](./EarthCare_trackwise_method.md). It does not build or train
+the reinforcement-learning agent. Each row represents one one-minute CPR decision
+opportunity. The dataset has 352,800 rows × 40 columns, with decision IDs 0 to 352,799 and
+no gaps. All task artifacts are aligned by the `decision` key; no row-position alignment is
+used.
 
 ## Scientific framing
 
@@ -33,6 +34,9 @@ RL simulation. ATLID could in principle provide some of them, but ATLID draws
 310 W versus CPR's 308 W, so this project does not treat ATLID as an always-on
 context sensor.
 
+The baselines encode `solar_hour` as its sine and cosine (`sin_sh`, `cos_sh`, computed at load
+time), since it is cyclic; the parquet stores the raw hour.
+
 `tautot_mean` and `tautot_max` are marked daylight-only because realistic MSI
 optical-depth retrievals require daylight. In addition, MSI optical thickness
 would describe the topmost observed cloud, while model TAUTOT is a column total;
@@ -40,16 +44,13 @@ the two diverge in multilayer scenes.
 
 ## `lwtup_fore`: forward-region proxy
 
-The corrected construction is:
+The construction is:
 
 ```text
-valid_fore = (
-    decision.shift(-1) - decision == 1
-    and g5_step.shift(-1) == g5_step
-    and lwtup_mean.shift(-1) is finite
-)
-lwtup_fore = lwtup_mean.shift(-1) where valid_fore
+lwtup_fore = lwtup_mean.shift(-1) where g5_step.shift(-1) == g5_step
 ```
+
+Decisions are consecutive (no gaps), so the next row is always the next minute.
 
 It is a geometric forward-region proxy for BBR: the next decision samples a
 region that the fore view may observe ahead of the spacecraft. It is not a true
@@ -58,37 +59,42 @@ mean, restricted to the same G5NR weather step, whereas a real BBR fore view has
 different footprint geometry and approximately 10 km resolution. The same-step
 guard prevents the feature from silently crossing a weather-model update.
 
-For the corrected output, 339,859 values are finite and 11,780 are NaN:
-1 final-row NaN, 49 gap-boundary NaNs, 11,717 G5NR weather-step-boundary NaNs,
-and 13 NaNs caused by a missing next `lwtup_mean`. `field` and `g5_step`
-transitions agree for all observed transitions.
+341,040 values are finite and 11,760 are NaN: exactly one per G5NR weather
+step, the last minute before the snapshot changes (including the final row).
+`lwtup_mean` itself is never missing.
 
 ## Missing-target hygiene
 
 The eight validity flags distinguish missing or corrupt targets from legitimate
-zeros. The audited source counts are:
+zeros. In this dataset every target is finite and valid:
 
-| Target | Existing NaNs | Finite corrupt values | Legitimate zeros |
+| Target | NaNs | Finite corrupt values | Legitimate zeros |
 |---|---:|---:|---:|
-| `prectot_swath` | 26 | 0 | 5,323 |
-| `prectot_nadir` | 24 | 0 | 9,204 |
-| `preccon_swath` | 10 | 0 | 183,398 |
-| `preccon_nadir` | 10 | 0 | 209,331 |
-| `iwp_swath` | 0 | 9 | 25,816 |
-| `iwp_nadir` | 0 | 6 | 37,026 |
-| `lwp_swath` | 0 | 6 | 13,257 |
-| `lwp_nadir` | 0 | 3 | 19,694 |
+| `prectot_swath` | 0 | 0 | 4,821 |
+| `prectot_nadir` | 0 | 0 | 8,654 |
+| `preccon_swath` | 0 | 0 | 181,983 |
+| `preccon_nadir` | 0 | 0 | 208,151 |
+| `iwp_swath` | 0 | 0 | 24,474 |
+| `iwp_nadir` | 0 | 0 | 35,556 |
+| `lwp_swath` | 0 | 0 | 12,392 |
+| `lwp_nadir` | 0 | 0 | 19,053 |
 
-The 24 finite corrupt values are identified by the extraction hygiene rule
-`finite and abs(value) >= 1e6`, which catches float32 fill/sentinel values. They
-are converted to NaN in the enriched parquet, and their validity flags are
-false. There are 94 invalid entries in total (70 pre-existing NaNs plus 24
-finite corrupt values). The validity flags mark 51 unique decisions with at
-least one invalid target; the 24 finite corrupt values themselves occur in 15
-unique decisions. No imputation occurred.
-This matters because `target > threshold` evaluates NaN as `False` in ordinary
-boolean code, silently turning missing truth into an apparent negative unless
-the validity flag is checked first.
+The extractor drops float32 fill/sentinel values (`abs(value) >= 1e6`) before
+averaging, and the enrichment applies the same rule to the targets, marking any
+hit invalid and setting it to NaN; none remained. A separate physical-range audit
+(precipitation 0–0.1 kg m⁻² s⁻¹, cloud fractions 0–1, and so on) found no
+out-of-range value in any column. It did find, before the final rebuild, 3
+decisions with corrupted precipitation (652–60,030 kg m⁻² s⁻¹) from one bad
+server response; that extraction block was re-downloaded
+([`EarthCare_trackwise_method.md`](./EarthCare_trackwise_method.md) §4.5).
+No imputation occurred.
+The flags still matter for code that reuses this pipeline: `target > threshold`
+evaluates NaN as `False` in ordinary boolean code, silently turning missing truth
+into an apparent negative unless the validity flag is checked first.
+
+The only missing feature values are `cldtmp_mean` (17,425 rows, 4.9%: G5NR
+reports no cloud-top temperature anywhere in the swath; median optical depth 0,
+none rainy) and `lwtup_fore` (11,760 rows, above).
 
 ## Land and water fractions
 
@@ -108,17 +114,16 @@ land = frland + frlandice
 water = frocean + frlake
 ```
 
-The feature calculation uses the cached true nadir orbit propagation, with all
-60 one-second samples per decision. It aligns by the actual decision ID, not by
-row position, so the missing decision IDs cannot shift later orbit samples.
+The feature calculation uses the extractor's own TLE-set nadir propagation
+(`extract_trackwise.nadir`), with all 60 one-second samples per decision.
 Both output fractions are continuous values in [0, 1]. The land-fraction mean
-is 0.3388 and the water-fraction mean is 0.6608; the mean sum is 0.9997. The
-distribution is strongly bimodal: 207,132 decisions are in the [0, 0.1) bin
-and 94,506 in [0.9, 1.0), with 17.09% mixed-surface decisions, defined as
+is 0.3387 and the water-fraction mean is 0.6610; the mean sum is 0.9997. The
+distribution is strongly bimodal: 207,941 decisions are in the [0, 0.1) bin
+and 94,822 in [0.9, 1.0], with 17.11% mixed-surface decisions, defined as
 `0.05 < land_frac_nadir < 0.95`. Because each decision averages 60 one-second
 nadir samples over a long along-track segment, these are not necessarily
 individual shoreline grid cells. The orbit-sampled mean land fraction is
-0.338833. This is plausible for a near-polar ground track, but it is not
+0.3387. This is plausible for a near-polar ground track, but it is not
 directly comparable to an area-weighted global land fraction because the orbit
 does not sample Earth uniformly by surface area.
 
@@ -140,22 +145,22 @@ ablation.
 
 ## Autocorrelation diagnostic
 
-Only finite pairs satisfying `decision[i] - decision[i-k] == k` were used.
-This excludes all pairs crossing the 49 decision discontinuities.
+Decisions are consecutive, so every pair of rows `k` apart is `k` minutes apart.
 
 | Variable | k=1 (pairs) | k=2 (pairs) | k=3 (pairs) | k=5 (pairs) | k=10 (pairs) | k=30 (pairs) |
 |---|---:|---:|---:|---:|---:|---:|
-| `preccon_nadir` | 0.1160 (351,575) | 0.0566 (351,522) | 0.0385 (351,469) | 0.0249 (351,395) | -0.0032 (351,224) | -0.0161 (350,653) |
-| `prectot_nadir` | 0.1712 (351,555) | 0.0603 (351,499) | 0.0160 (351,441) | 0.0112 (351,369) | 0.0059 (351,199) | -0.0078 (350,628) |
-| `tautot_mean` | 0.6285 (351,557) | 0.3701 (351,501) | 0.2300 (351,445) | 0.0668 (351,367) | -0.0544 (351,194) | -0.0307 (350,623) |
+| `preccon_nadir` | 0.1145 (352,799) | 0.0509 (352,798) | 0.0401 (352,797) | 0.0297 (352,795) | -0.0041 (352,790) | -0.0166 (352,770) |
+| `prectot_nadir` | 0.1059 (352,799) | 0.0255 (352,798) | 0.0189 (352,797) | 0.0165 (352,795) | 0.0037 (352,790) | -0.0113 (352,770) |
+| `tautot_mean` | 0.6388 (352,799) | 0.3813 (352,798) | 0.2371 (352,797) | 0.0656 (352,795) | -0.0427 (352,790) | -0.0366 (352,770) |
 
-The precipitation series fall below 1/e by the first sampled lag, showing weak
-precipitation persistence at one-minute spacing. `tautot_mean` crosses the
-1/e level between approximately lags 2 and 3 and retains structure for roughly
-two to three steps. This does not prove every sequential feature is useless; it
-does show that carrying a precipitation observation forward at this cadence is
-likely stale. A 10-second cadence is only a possible future experiment and was
-not tested; it would require re-extraction.
+The precipitation series fall below 1/e by the first lag, showing weak
+precipitation persistence at one-minute spacing (the nadir point moves about
+450 km per minute). `tautot_mean` crosses the 1/e level between lags 2 and 3;
+`cldtot_mean` behaves the same (lag-1 0.651) and `lwtup_mean` persists longest
+(lag-1 0.838, below 1/e after 6 minutes). This does not prove every sequential
+feature is useless; it does show that carrying a precipitation observation
+forward at this cadence is likely stale. A 10-second cadence is only a possible
+future experiment and was not tested; it would require re-extraction.
 
 ## For the RL phase — not implemented in dataset preparation
 
@@ -175,12 +180,12 @@ baked into this parquet:
 
 ## Limitations
 
-The dataset retains 1,161 missing decision IDs and 49 discontinuities. GEOS-5
-diagnostics are proxies rather than EarthCARE retrievals; no forward model was
+GEOS-5 diagnostics are proxies rather than EarthCARE retrievals; no forward model was
 applied. `lwtup_fore` approximates BBR forward geometry but is not a BBR
 footprint. Precipitation persistence is weak at one-minute spacing. Realistic
-MSI optical-depth retrievals are daylight-limited. Same-minute decision-time
-causality is not resolved by dataset preparation and must be enforced by the RL
-environment. Orbit alignment uses the fixed TLE and cached one-second
-propagation, so future orbit-estimation changes would require a new geometry
-calculation.
+MSI optical-depth retrievals are daylight-limited. EarthCARE samples only about
+14:00 and 02:00 local time, so every statistic here is conditional on those
+times. Same-minute decision-time causality is not resolved by dataset
+preparation and must be enforced by the RL environment. Orbit geometry comes
+from the historical TLE set in `missions/earthcare/tle/`; a different orbit
+source would require a new geometry calculation.
