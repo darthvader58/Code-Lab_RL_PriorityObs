@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create the current trackwise CSV and Cesium exports from the parquet file."""
+"""Create the EarthCARE trackwise CSV and Cesium exports in missions/earthcare/exports/."""
 import json
 import sys
 from pathlib import Path
@@ -9,10 +9,12 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import extract_trackwise as X  # noqa: E402
-SOURCE = ROOT / "trackwise_decisions.parquet"
-FULL_CSV = ROOT / "trackwise_decisions_full.csv"
-KEPLER_CSV = ROOT / "trackwise_decisions_kepler.csv"
-CZML_DIR = ROOT / "trackwise_czml"
+MISSION_DIR = ROOT / "missions" / "earthcare"
+SOURCE = MISSION_DIR / "data" / "EarthCare_trackwise_decisions.parquet"
+EXPORTS = MISSION_DIR / "exports"
+FULL_CSV = EXPORTS / "EarthCare_trackwise_decisions_full.csv"
+KEPLER_CSV = EXPORTS / "EarthCare_trackwise_decisions_kepler.csv"
+CZML_DIR = EXPORTS / "czml"
 
 MM_PER_KG_M2_S = 3600.0
 ALTITUDE_M = 394_000.0
@@ -189,6 +191,7 @@ def main():
     rows = rows.copy()
     rows["fire"] = pd.NA
     rows.loc[valid, "fire"] = (rows.loc[valid, "prectot_nadir"] > threshold).astype("int8")
+    EXPORTS.mkdir(parents=True, exist_ok=True)
     rows.to_csv(FULL_CSV, index=False)
     rows.iloc[::max(len(rows) // 20_000, 1)].to_csv(KEPLER_CSV, index=False)
     print(f"full CSV:   {FULL_CSV} ({len(rows):,} rows)")
@@ -203,7 +206,7 @@ def main():
           f"training label fire is {100 * rows.loc[valid, 'fire'].mean():.1f}% positive)")
 
     CZML_DIR.mkdir(exist_ok=True)
-    for old in CZML_DIR.glob("trackwise_decisions_*.czml"):
+    for old in CZML_DIR.glob("EarthCare_trackwise_decisions_*.czml"):
         old.unlink()
     rows = rows.sort_values("time").reset_index(drop=True)
     # Satellite at each decision time; markers at mid-minute (footprint centre).
@@ -215,7 +218,7 @@ def main():
     window = ((rows["time"] - start) // pd.Timedelta(days=CZML_DAYS)).astype(int)
     for k, segment in rows.groupby(window):
         first, last = segment["time"].min(), segment["time"].max()
-        path = CZML_DIR / f"trackwise_decisions_month{k + 1:02d}_{first:%Y%m%d}-{last:%Y%m%d}.czml"
+        path = CZML_DIR / f"EarthCare_trackwise_decisions_month{k + 1:02d}_{first:%Y%m%d}-{last:%Y%m%d}.czml"
         packets, fires = build_czml(
             f"EarthCARE trackwise CPR gating, month {k + 1}",
             segment, segment, multiplier=300, beams=True,
@@ -226,7 +229,7 @@ def main():
     # Full run: whole record, thinned so Cesium loads it quickly.
     track = rows.iloc[::FULL_TRACK_STEP]
     markers = rows.iloc[::max(len(rows) // FULL_MARKERS, 1)]
-    path = CZML_DIR / "trackwise_decisions_full_downsampled.czml"
+    path = CZML_DIR / "EarthCare_trackwise_decisions_full_downsampled.czml"
     packets, fires = build_czml(
         "EarthCARE trackwise CPR gating, full run (downsampled)",
         track, markers, multiplier=3600, beams=False,

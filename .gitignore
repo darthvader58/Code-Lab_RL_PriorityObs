@@ -18,3 +18,6 @@ __pycache__/
 
 # G5NR constants cache (task_outputs/fetch_g5nr_constants.py)
 task_outputs/const_cache/
+
+# per-mission CSV/CZML exports (task_outputs/export_trackwise.py)
+missions/*/exports/
