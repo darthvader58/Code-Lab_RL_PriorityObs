@@ -19,7 +19,8 @@ class Mission:
     results_dir: Path              # missions/<name>/results/
     label_col: str                 # precipitation in the radar's own footprint
     swath_col: str                 # precipitation over the passive swath (label-geometry comparison)
-    convective_col: str
+    convective_col: str            # convective precipitation in the radar footprint
+    convective_swath_col: str      # convective precipitation over the passive swath
     tiers: dict = field(default_factory=dict)
     # time-blocked split by G5NR weather time (03_dataset.md §3.3, 07_experiments.md E1)
     train_months: tuple = ("2005-06", "2005-07", "2005-08", "2005-09")
@@ -36,6 +37,7 @@ EARTHCARE = Mission(
     label_col="prectot_nadir",
     swath_col="prectot_swath",
     convective_col="preccon_nadir",
+    convective_swath_col="preccon_swath",
     tiers={
         "A": ["cldtot_mean", "cldtmp_mean", "tautot_mean", "tautot_max", "lwtup_mean",
               "lwtup_fore"] + GEOMETRY,

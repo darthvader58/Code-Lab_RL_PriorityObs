@@ -108,25 +108,28 @@ def e3_capture(df, mission, include_mlp=False, curve=np.round(np.linspace(0.01, 
 # ---- E4: label geometry ----------------------------------------------------------------------
 
 def e4_label_geometry(df, mission, kind="lgbm"):
-    cols = [mission.label_col, mission.swath_col]
-    tr, va, te = _blocks(df, mission, cols)
-    rows = []
-    for train_on in cols:
-        pol = LearnedPolicy(kind, mission.tiers["A"])
-        lab_tr = label_fn(train_on, mission.threshold)
-        pol.fit(tr, lab_tr(tr))
-        th = threshold_for(pol.score(va), D_MAIN)
-        s = pol.score(te)
-        for score_on in cols:
-            g = gate_metrics(s >= th, label_fn(score_on, mission.threshold)(te), te[score_on], s)
-            rows.append({"trained_on": train_on, "scored_on": score_on, "auc": g["auc"],
-                         "capture@20%": g["capture"], "base_rate": g["base_rate"]})
-    rates = {c: (te[c] >= mission.threshold).mean() for c in cols}
-    swath_pos = te[mission.swath_col] >= mission.threshold
-    nadir_neg = te[mission.label_col] < mission.threshold
-    extra = {"positive_rate": rates,
-             "swath_pos_label_neg_share": float((swath_pos & nadir_neg).sum() / swath_pos.sum())}
-    return pd.DataFrame(rows), extra
+    """2 x 2 train/score grid (radar footprint vs. passive swath) for total and convective rain."""
+    pairs = {"prectot": (mission.label_col, mission.swath_col),
+             "preccon": (mission.convective_col, mission.convective_swath_col)}
+    tr, va, te = _blocks(df, mission, [c for p in pairs.values() for c in p])
+    rows, rates, share = [], {}, {}
+    for variable, cols in pairs.items():
+        for train_on in cols:
+            pol = LearnedPolicy(kind, mission.tiers["A"])
+            pol.fit(tr, label_fn(train_on, mission.threshold)(tr))
+            th = threshold_for(pol.score(va), D_MAIN)
+            s = pol.score(te)
+            for score_on in cols:
+                g = gate_metrics(s >= th, label_fn(score_on, mission.threshold)(te), te[score_on], s)
+                rows.append({"variable": variable, "trained_on": train_on, "scored_on": score_on,
+                             "auc": g["auc"], "capture@20%": g["capture"],
+                             "precision@20%": g["precision"], "base_rate": g["base_rate"]})
+        footprint_col, swath_col = cols
+        rates.update({c: float((te[c] >= mission.threshold).mean()) for c in cols})
+        swath_pos = te[swath_col] >= mission.threshold
+        share[variable] = float((swath_pos & (te[footprint_col] < mission.threshold)).sum()
+                                / swath_pos.sum())
+    return pd.DataFrame(rows), {"positive_rate": rates, "swath_pos_label_neg_share": share}
 
 
 # ---- E5: feature tiers x day/night -----------------------------------------------------------
