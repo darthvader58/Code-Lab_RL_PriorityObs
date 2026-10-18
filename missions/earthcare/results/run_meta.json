@@ -43,9 +43,14 @@
   "e4": {
     "positive_rate": {
       "prectot_nadir": 0.12755155605549306,
-      "prectot_swath": 0.2785151856017998
+      "prectot_swath": 0.2785151856017998,
+      "preccon_nadir": 0.011683539557555305,
+      "preccon_swath": 0.05156355455568054
     },
-    "swath_pos_label_neg_share": 0.5420301561658589
+    "swath_pos_label_neg_share": {
+      "prectot": 0.5420301561658589,
+      "preccon": 0.7734147760325771
+    }
   },
   "e11_best_policy": "P6 gradient boosting"
 }
