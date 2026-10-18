@@ -90,7 +90,7 @@ be reproduced.
 
 ```python
 import pandas as pd
-df = pd.read_parquet("trackwise_decisions.parquet")
+df = pd.read_parquet("missions/earthcare/data/EarthCare_trackwise_decisions.parquet")
 thr = 1 / 3600  # 1 mm/hr in kg m-2 s-1
 for c in ["prectot_nadir", "prectot_swath", "preccon_nadir", "preccon_swath"]:
     v = df[c].dropna()

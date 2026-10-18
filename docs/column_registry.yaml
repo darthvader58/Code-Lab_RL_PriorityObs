@@ -1,4 +1,4 @@
-# Registry for trackwise_decisions.parquet.
+# Registry for missions/earthcare/data/EarthCare_trackwise_decisions.parquet.
 # Tiers describe future observation eligibility, not whether a value is stored.
 columns:
   - name: tautot_mean

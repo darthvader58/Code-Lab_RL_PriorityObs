@@ -4,8 +4,9 @@
     python3 task_outputs/fetch_g5nr_constants.py                     # once: land/water grid
     python3 task_outputs/enrich_trackwise.py ~/trackwise_run/cache_8mo_jun2005_season
 
-Reads the extraction parts and task_outputs/const_cache/, writes trackwise_decisions.parquet
-(352,800 x 40, columns in docs/column_registry.yaml order) and task_outputs/enrich_report.json.
+Reads the extraction parts and task_outputs/const_cache/, writes
+missions/earthcare/data/EarthCare_trackwise_decisions.parquet (352,800 x 40, columns in
+docs/column_registry.yaml order) and missions/earthcare/data/enrich_report.json.
 Per-second nadir points come from extract_trackwise.nadir(), the same TLE-set propagation the
 extraction used. Column definitions are documented in docs/feature_set.md.
 """
@@ -24,8 +25,9 @@ sys.path.insert(0, str(ROOT))
 import extract_trackwise as X  # noqa: E402
 
 CONST = ROOT / "task_outputs" / "const_cache"
-OUT = ROOT / "trackwise_decisions.parquet"
-REPORT = ROOT / "task_outputs" / "enrich_report.json"
+DATA = ROOT / "missions" / "earthcare" / "data"
+OUT = DATA / "EarthCare_trackwise_decisions.parquet"
+REPORT = DATA / "enrich_report.json"
 REGISTRY = ROOT / "docs" / "column_registry.yaml"
 
 N_DEC = X.N_FIELDS * X.PER_FIELD                       # 352,800
@@ -121,6 +123,7 @@ def main():
         df.loc[~df[f"{c}_valid"], c] = np.nan
 
     out = df[registry_order()]
+    DATA.mkdir(parents=True, exist_ok=True)
     assert out.shape == (N_DEC, 40), out.shape
     out.to_parquet(OUT, index=False)
     digest = hashlib.sha256(OUT.read_bytes()).hexdigest()

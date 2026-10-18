@@ -1,7 +1,7 @@
 # Enriched track-wise feature set
 
 This document describes the dataset-preparation output
-`trackwise_decisions.parquet`. It does not build or train
+`missions/earthcare/data/EarthCare_trackwise_decisions.parquet`. It does not build or train
 the reinforcement-learning agent. Each saved row represents one one-minute CPR
 decision opportunity. The source has 351,639 rows, 1,161 missing decision IDs,
 and 49 non-consecutive decision discontinuities. All task artifacts are aligned
