@@ -528,7 +528,9 @@ Main findings:
   successive policies. LightGBM beats the neural network on every resample (AUC +0.004
   [+0.003, +0.005]; capture@20% +1.4 points [+0.8, +2.0]).
 - **Label geometry (E4).** Trained on nadir rain, the policy catches 66.4% of nadir rain but 51.1%
-  of swath rain at 20% duty; the label must match the radar's footprint.
+  of swath rain at 20% duty, while its precision looks like 75.0% on the swath label against 44.7%
+  on nadir. For convective rain, 77% of swath-convective minutes have none at nadir and precision
+  goes from 5.9% (nadir) to 25.5% (swath). The label must match the radar's footprint.
 - **Night (E5).** Without optical depth (night-capable inputs), the switched day/night policy keeps
   89% of its full skill; geometry alone keeps 57%.
 - **Regions (E6).** Ranking is best over land (AUC 0.950) and poleward of 60° (0.940), weakest in
@@ -537,7 +539,8 @@ Main findings:
   `cldtot_mean`.
 - **Cost (E9).** Logistic regression has 16 parameters (3 kB), the neural network 5,249 (134 kB),
   LightGBM 18,300 (1.05 MB); all take about 1 ms per decision in Python (0.8–1.3 ms), against a
-  60 s decision interval.
+  60 s decision interval. This was timed on a laptop; timing on a Raspberry Pi–class board or a
+  flight-representative processor has not been done (paper Limitation 11).
 
 **The bar for an RL policy on EarthCARE:** beat LightGBM's capture at the same duty cycle on the same
 test period (66.4% at 20%; AUC 0.893).

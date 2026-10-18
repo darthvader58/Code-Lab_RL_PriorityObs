@@ -57,12 +57,24 @@ label used in the secondary analysis; the primary GPM label measures the radar's
 
 LightGBM on Tier A, time-blocked test (Nov 2005 – Jan 2006), capture at 20% duty and AUC:
 
+**Total precipitation (`prectot`)**, capture@20% / precision@20% / AUC:
+
 | trained on ↓ / scored on → | nadir (what the radar measures) | swath |
 |---|---|---|
-| **nadir** | **66.4%** (AUC 0.893) | 51.1% (AUC 0.897) |
-| **swath** | 64.7% (AUC 0.890) | 50.7% (AUC 0.899) |
+| **nadir** | **66.4% / 44.7% / 0.893** | 51.1% / 75.0% / 0.897 |
+| **swath** | 64.7% / 44.0% / 0.890 | 50.7% / 75.3% / 0.899 |
 
-Two results:
+**Convective precipitation (`preccon`)**, same layout:
+
+| trained on ↓ / scored on → | nadir | swath |
+|---|---|---|
+| **nadir** | **98.8% / 5.9% / 0.957** | 97.1% / 25.5% / 0.962 |
+| **swath** | 99.1% / 5.9% / 0.959 | 97.7% / 25.7% / 0.965 |
+
+Test-block positive rates: total 12.8% (nadir) vs. 27.9% (swath); convective 1.2% vs. 5.2%.
+54.2% of swath-rainy minutes and **77.3% of swath-convective minutes** have nothing at nadir.
+
+Results:
 
 - **Ranking barely depends on the label.** AUC is 0.89–0.90 in all four cells, and a policy trained
   on swath rain loses only 1.7 points of nadir capture against one trained on nadir rain. The
@@ -72,14 +84,15 @@ Two results:
   cover a smaller share of it. A swath-scored study would report a different, and not comparable,
   number from the one the radar would deliver. The headline numbers must use the radar's own
   footprint.
-- **What the swath label does inflate is precision.** With the radar on 20% of the time, about 71%
-  of radar-on minutes contain swath rain but only about 42% contain rain the radar can measure
-  (capture × base rate ÷ duty: 0.507 × 0.279 / 0.2 and 0.664 × 0.128 / 0.2). A swath-scored study
-  would claim the radar finds something worth measuring on most of its on-time; in fact it does so
-  on fewer than half.
-
-The convective (`preccon`) version of the grid is not run yet; E7 reports the convective nadir label
-alone (LightGBM AUC 0.957, capture 30.4% at d = its 1.2% base rate).
+- **What the swath label does inflate is precision.** With the radar on 20% of the time, 75.0% of
+  radar-on minutes contain swath rain but only 44.7% contain rain the radar can measure. A
+  swath-scored study would claim the radar finds something worth measuring on three quarters of its
+  on-time; in fact it does so on fewer than half.
+- **The effect is larger for convective precipitation.** The swath label inflates the convective
+  positive class 4.4× and its precision 4.3× (25.5% vs. 5.9%). Capture at 20% duty is not
+  informative here (97–99% in every cell), because convective minutes are rare enough (1.2–5.2%)
+  for a 20% budget to cover almost all of them; at a budget equal to the convective base rate the
+  nadir-trained policy catches 30.4% (E7). Ranking stays excellent either way (AUC 0.957–0.965).
 
 ## 4.6 Connection to the earlier clustering design
 
@@ -92,9 +105,10 @@ problems by scoring only the cells the radar could have sampled.
 
 Any targeting study for a nadir active sensor (radar or lidar) that uses imager-scale or gridded
 truth will overstate how often there is something to measure: on EarthCARE, 2.2× more rainy
-minutes, and a precision of ~71% instead of ~42% at a 20% budget. Capture under a fixed budget moves
-the other way (51% vs. 66%), so swath-scored and footprint-scored numbers are not comparable in
-either direction. The fix is cheap — compute the label from the instrument footprint — and the
+minutes and a precision of 75% instead of 45% at a 20% budget, and for convective precipitation 4.4×
+more minutes and a precision of 26% instead of 6%. Capture under a fixed budget moves the other way
+for total precipitation (51% vs. 66%), so swath-scored and footprint-scored numbers are not
+comparable in either direction. The fix is cheap — compute the label from the instrument footprint — and the
 dataset ships both labels so the effect can be reproduced.
 
 ---

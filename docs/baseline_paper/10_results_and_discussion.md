@@ -57,8 +57,10 @@ intensity, reaches 91.7% of the amount."
 Report: the 2 × 2 grid.
 
 EarthCARE result (filled): "Scoring against the imager swath more than doubles the positive class
-(13.7% → 30.0% of minutes) and inflates precision at a 20% budget from ~42% to ~71%: a swath-scored
-study would claim the radar finds rain on most of its on-time when it does so on fewer than half.
+(13.7% → 30.0% of minutes) and inflates precision at a 20% budget from 44.7% to 75.0%: a
+swath-scored study would claim the radar finds rain on most of its on-time when it does so on fewer
+than half. For convective precipitation the inflation is larger: 77% of swath-convective minutes have
+none at nadir, and precision rises from 5.9% to 25.5%.
 Under the same budget, capture moves the other way (51% on the swath label vs. 66% on the nadir
 label), because the larger swath class cannot be covered by 20% of minutes. Ranking quality is
 unaffected (AUC 0.89–0.90 in all four train/score combinations), so the label choice changes the

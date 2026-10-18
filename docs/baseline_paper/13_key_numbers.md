@@ -106,6 +106,9 @@ Tier A = 13 inputs (`cldtot_mean`, `cldtmp_mean`, `tautot_mean`, `tautot_max`, `
 | leave-one-month-out AUC (P5) | 0.811 – 0.844 over 8 months | E2 |
 | nadir-trained policy, capture@20% on nadir / swath labels | 66.4% / 51.1% | E4 |
 | swath-trained policy, capture@20% on nadir / swath labels | 64.7% / 50.7% | E4 |
+| precision@20%, nadir-trained, on nadir / swath labels (`prectot`) | 44.7% / 75.0% | E4 |
+| convective: test positive rate nadir / swath; swath-positive & nadir-negative | 1.2% / 5.2%; 77.3% | E4 |
+| convective: precision@20% on nadir / swath labels; AUC range | 5.9% / 25.5%; 0.957–0.965 | E4 |
 | day capture@20%, Tier A / A without `tautot` / B / C | 67.6% / 55.1% / 55.9% / 33.2% | E5 |
 | night capture@20%, A without `tautot` / B / C | 49.8% / 49.8% / 33.1% | E5 |
 | switched day/night retention vs. Tier A | A−τ 89.2%, B 90.2%, C 56.7% | E5 |
