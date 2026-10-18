@@ -1,7 +1,7 @@
 # Why Threshold-Based Cloud Clustering Does Not Fit This Problem
 
-**Applies to:** `geos5data_0.5deg.ipynb` (0.5° resolution) and `geos5data_0.0625deg.ipynb`
-(0.0625° resolution). Both notebooks implement the same method — a brightness-temperature
+**Applies to:** `archive/clustering_notebooks/geos5data_0.5deg.ipynb` (0.5° resolution) and
+`archive/clustering_notebooks/geos5data_0.0625deg.ipynb` (0.0625° resolution), both archived. Both notebooks implement the same method — a brightness-temperature
 threshold followed by connected-component clustering — at different spatial resolutions. This
 document explains what that method does, and why it is the wrong tool for the specific decision
 problem this project needs a dataset for.
