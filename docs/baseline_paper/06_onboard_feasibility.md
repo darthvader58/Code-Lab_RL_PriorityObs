@@ -12,20 +12,27 @@ Training happens on the ground. Only the frozen policy runs onboard.
 
 ## 6.2 Policy cost
 
-One decision per minute, 12 inputs. Fill in the measured values; the estimates below are
-arithmetic, not benchmarks.
+One decision per minute, 13 inputs (Tier A). Measured on EarthCARE (E9):
 
-| policy | operations per decision (estimate) | parameters | memory (float32) |
-|---|---|---|---|
-| logistic regression | 12 multiply-adds + 1 sigmoid | 13 | ~52 B |
-| gradient-boosted trees (200 trees, depth 6) | ~1,200 comparisons | ~25k node values | ~100–200 kB |
-| MLP 12-64-64-1 | ~5,000 multiply-adds | ~5,000 | ~20 kB |
+| policy | operations per decision | parameters | serialized size | wall time per decision (Python, laptop CPU) |
+|---|---|---|---|---|
+| P2 geometry LR | ~7 multiply-adds + 1 sigmoid | 8 | 2.8 kB | 0.85 ms |
+| P5 logistic regression | ~15 multiply-adds + 1 sigmoid | 16 | 3.3 kB | 0.83 ms |
+| P7 MLP 15-64-64-1 | ~5,120 multiply-adds | 5,249 | 134 kB | 1.30 ms |
+| P6 LightGBM, 300 trees (mean depth 11.2) | ~3,350 comparisons | 18,300 | 1.05 MB | 1.06 ms |
 
-A radiation-hardened LEON-class flight processor executes on the order of tens to hundreds of
-millions of instructions per second. Even the MLP is well under a millisecond per decision, against a
-60-second decision interval. **[TO RUN]:** time each policy on a constrained CPU (e.g., a single core
-with frequency capped, or a Raspberry Pi–class board) and report wall time per decision. State
-clearly that this is a proxy, not flight hardware.
+The serialized sizes include the scikit-learn/LightGBM object overhead; the raw parameters are
+smaller (16 floats for logistic regression, ~21 kB for the MLP in float32). The wall times are
+dominated by Python call overhead, not arithmetic, and vary by about ±0.3 ms between runs on the same
+laptop; the four policies are all about 1 ms per decision against a 60-second decision interval. A
+radiation-hardened LEON-class flight processor executes on the order of tens to hundreds of millions
+of instructions per second, so even the largest policy (~5,000 multiply-adds) needs well under a
+millisecond of arithmetic per decision. **[TO RUN]:**
+time each policy on a constrained CPU (e.g., a single core with frequency capped, or a Raspberry
+Pi–class board). State clearly that this is a proxy, not flight hardware.
+
+LightGBM's extra 6.1 capture points over logistic regression cost 320× the model size; the MLP gets
+within 1.4 points of LightGBM at 1/8 of its size.
 
 **Claim for the paper:** running the policy is not the bottleneck. The bottleneck is the inputs.
 
@@ -33,9 +40,10 @@ clearly that this is a proxy, not flight hardware.
 
 | tier | features | needs onboard retrieval? | works at night? |
 |---|---|---|---|
-| **A — full** | all 12 always-available: `cldtot_mean`, `cldtmp_mean`, `tautot_mean`, `tautot_max`, `lwtup_mean`, `lwtup_fore`, `solar_hour`, `lat`, `sin_lon`, `cos_lon`, `land_frac_nadir`, `ocean_frac_nadir` | yes (cloud fraction, optical depth, cloud-top temperature) | no (`tautot` needs daylight) |
-| **B — cheap** | `cldtmp_mean`, `lwtup_mean`, `lwtup_fore` + Tier C | approximately no: thermal-infrared quantities close to brightness temperatures | yes |
-| **C — geometry** | `lat`, `solar_hour`, `sin_lon`, `cos_lon`, `land_frac_nadir`, `ocean_frac_nadir` | none (orbit propagation + a static land mask) | yes |
+| **A — full** | 13: `cldtot_mean`, `cldtmp_mean`, `tautot_mean`, `tautot_max`, `lwtup_mean`, `lwtup_fore` + Tier C | yes (cloud fraction, optical depth, cloud-top temperature) | no (`tautot` needs daylight) |
+| **A − τ** | Tier A without `tautot_mean`, `tautot_max` (11) | yes (cloud fraction, cloud-top temperature) | yes |
+| **B — cheap** | `cldtmp_mean`, `lwtup_mean`, `lwtup_fore` + Tier C (10) | approximately no: thermal-infrared quantities close to brightness temperatures | yes |
+| **C — geometry** | `lat`, `sin_sh`, `cos_sh` (sine/cosine of `solar_hour`), `sin_lon`, `cos_lon`, `land_frac_nadir`, `ocean_frac_nadir` (7) | none (orbit propagation + a static land mask) | yes |
 
 Honesty notes for the paper:
 - `cldtmp_mean` is itself a model cloud-top temperature, not a raw radiance. It is the closest
@@ -47,24 +55,36 @@ Honesty notes for the paper:
 
 ## 6.4 Day vs. night
 
-`tautot_mean` and `tautot_max` are daylight-only for a real imager. Define day by solar zenith angle
-(or, as a first pass, `solar_hour` between 06 and 18 local) and report every tier separately for:
+`tautot_mean` and `tautot_max` are daylight-only for a real imager. Day is defined as `solar_hour`
+between 06 and 18 local (a first pass; solar zenith angle would be more exact), and every tier is
+reported separately for:
 
 - day decisions (Tier A valid),
 - night decisions (Tier A must drop `tautot*`; Tier B and C unchanged),
-- all decisions with a day/night switch (Tier A by day, Tier B by night).
+- all decisions with a day/night switch (each tier by day, the same tier without `tautot*` by night).
 
 The switched policy is the realistic onboard configuration.
 
-## 6.5 The result to report [TO RUN]
+## 6.5 Result (EarthCARE, E5)
 
-**Skill retention** = capture@d (Tier B) ÷ capture@d (Tier A), at each budget *d*, overall and
-at night.
+**Skill retention** = capture@d (tier, switched day/night) ÷ capture@d (Tier A, switched), at 20%
+duty with LightGBM:
 
-If Tier B retains most of Tier A's capture, the paper can state that useful radar gating does not
-require onboard cloud retrievals, only thermal-infrared quantities and a microcontroller-sized model.
-If it does not, the paper states the opposite: the gating value depends on onboard retrievals, which
-sets a hardware requirement for future missions. Either result is publishable.
+| tier | day capture@20% | night capture@20% | switched capture@20% | retention vs. A |
+|---|---|---|---|---|
+| A (full) | 67.6% | n/a (`tautot` invalid) | 58.5% | 100% |
+| A − τ | 55.1% | 49.8% | 52.1% | 89.2% |
+| B (cheap) | 55.9% | 49.8% | 52.7% | 90.2% |
+| C (geometry) | 33.2% | 33.1% | 33.2% | 56.7% |
+
+(The switched values are lower than the day-only ones because night minutes have no optical depth.)
+
+**Finding:** Tier B retains 90% of Tier A's switched capture, and at night it matches the richer
+A − τ tier exactly (49.8%). Useful radar gating on EarthCARE therefore does **not** require onboard
+cloud retrievals: thermal-infrared-like quantities plus orbit geometry and a model of 3 kB – 1 MB are
+enough. Optical depth adds ~12 points by day (67.6% vs. 55.9%), so a daytime optical-depth retrieval
+is worth having but not required. Geometry alone (Tier C) keeps only 57%, so the passive sensor
+contributes most of the skill.
 
 ## 6.6 Latency budget (one paragraph in the paper)
 

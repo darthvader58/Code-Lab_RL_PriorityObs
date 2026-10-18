@@ -18,9 +18,9 @@ form with the PR-swath label, and GPM uses the added-value label of §5.8.
 ### Formal statement (LaTeX-ready)
 
 Let $\mathcal{D} = \{(x_t, y_t, r_t)\}_{t=1}^{T}$ be the decisions in an evaluation block, with
-always-available features $x_t \in \mathbb{R}^{12}$, binary label
+always-available features $x_t \in \mathbb{R}^{13}$ (Tier A, §6.3), binary label
 $y_t = \mathbb{1}[r_t \ge \tau]$, nadir precipitation rate $r_t$ (`prectot_nadir`), and threshold
-$\tau = 1\,\mathrm{mm\,h^{-1}}$. A gating policy $\pi: \mathbb{R}^{12} \to \{0,1\}$ must satisfy
+$\tau = 1\,\mathrm{mm\,h^{-1}}$. A gating policy $\pi: \mathbb{R}^{13} \to \{0,1\}$ must satisfy
 the budget
 
 $$\frac{1}{T}\sum_{t=1}^{T} \pi(x_t) \le d .$$
@@ -35,8 +35,7 @@ $$\mathrm{precision}@d = \frac{\sum_t \pi_d(x_t)\, y_t}{\sum_t \pi_d(x_t)}, \qqu
 \mathrm{lift}@d = \frac{\mathrm{capture}@d}{d}.$$
 
 Reference values: random gating gives $\mathrm{capture}@d = d$; the oracle gives
-$\min(1, d/\bar{y})$ with base rate $\bar{y}$ (≈ 0.13 for EarthCARE in the earlier extraction,
-**[TO RERUN]**).
+$\min(1, d/\bar{y})$ with base rate $\bar{y}$ (0.128 on the EarthCARE test block).
 
 Because decisions are scored independently and $\pi$ does not affect future observations, this is
 a contextual bandit with a budget, and the budget-optimal static policy is a threshold on
@@ -45,14 +44,13 @@ future state (battery, switching cost) or future observations (`cpr_conditional`
 
 ## 5.2 Labels
 
-- **EarthCARE primary:** *y_t* = 1 if `prectot_nadir` ≥ 1 mm/hr (base rate ≈ 13% in the earlier
-  extraction, **[TO RERUN]**).
+- **EarthCARE primary:** *y_t* = 1 if `prectot_nadir` ≥ 1 mm/hr (base rate 13.7% overall, 12.8% in
+  the test block).
 - **TRMM primary:** *y_t* = 1 if the maximum `prectot` in the PR swath ≥ 1 mm/hr **[TO BUILD]**.
 - **GPM primary:** the radar's added value beyond GMI (§5.8) **[TO BUILD]**.
-- **Secondary (all):** convective, `preccon` ≥ 1 mm/hr in the radar footprint (EarthCARE ≈ 1% in the
-  earlier extraction).
+- **Secondary (all):** convective, `preccon` ≥ 1 mm/hr in the radar footprint (EarthCARE 1.2%).
 - **Sensitivity:** thresholds 0.1 and 5 mm/hr, and the median-split `fire` label used by the
-  current notebook/CZML export (~0.09 mm/hr, ~50% positive).
+  CZML export (0.097 mm/hr on EarthCARE, ~47% positive in the test block).
 
 Why 1 mm/hr is primary: it is a physically meaningful rain-rate threshold and gives a realistic
 minority class. A median split is balanced by construction, which hides the base-rate problem the
@@ -80,14 +78,14 @@ Report capture@d as a curve over *d* ∈ [0, 1] and as a table at *d* ∈ {5, 10
 
 | # | policy | inputs | how the gate is set |
 |---|---|---|---|
-| P0 | always-on | none | fires every decision (*d* = 100%); upper bound without a budget |
+| P0 | always-on | none | fires every decision (*d* = 100%); the right end of every capture curve, so not run separately |
 | P1 | random | none | fires with probability *d* |
 | P2 | geometry-only | Tier C features | logistic regression on geometry; thresholded to *d* |
-| P3 | latitude band | `lat` | fires inside the band(s) with the highest training-set positive rate, widened until the budget is met |
+| P3 | latitude band | `lat` | score = training-set positive rate of the decision's 5° latitude band; thresholded to *d* |
 | P4 | single threshold | `tautot_mean` (night: `cldtmp_mean`) | fires above the quantile that meets *d* |
 | P5 | logistic regression | Tier A (and B, C) | standardized features; thresholded to *d* |
-| P6 | gradient-boosted trees | Tier A (and B, C) | e.g., LightGBM / sklearn HistGradientBoosting; thresholded to *d* |
-| P7 | small MLP (optional) | Tier A | 12-64-64-1; included only to cost the "neural policy" option in Section 6 |
+| P6 | gradient-boosted trees | Tier A (and B, C) | LightGBM, 300 trees; NaN handled natively; thresholded to *d* |
+| P7 | small MLP | Tier A | 15-64-64-1 (13 features + 2 missing-value indicators), early stopping; costs the "neural policy" option in Section 6 |
 | P8 | oracle | true label | fires on positives first |
 
 **Threshold rule (all learned policies):** pick the score threshold that fires on exactly a
@@ -99,18 +97,22 @@ Report the realized test duty cycle next to capture, since it will drift slightl
 - Drop decisions whose target is invalid (`*_valid` flags) from scoring and report the count.
 - For features: gradient boosting handles NaN natively; for logistic regression, impute with the
   training-block median and add a missing-indicator column. Report how many rows were affected.
-- `lwtup_fore` is NaN at weather-step boundaries (~11.7k rows); keep it, with the indicator.
+- `lwtup_fore` is NaN at weather-step boundaries (11,760 rows on EarthCARE); keep it, with the
+  indicator. `cldtmp_mean` is NaN in 17,425 rows (no cloud top in the swath).
 - `tautot` at night: see Section 6. Do not silently feed nighttime optical depth to a policy that
   claims to be onboard-realistic.
 
-## 5.6 Preliminary results (earlier EarthCARE extraction, random 30% split — [TO RERUN])
+## 5.6 EarthCARE results (time-blocked test, Nov 2005 – Jan 2006)
 
-From [`../trackwise_method.md`](../trackwise_method.md) §4.3, against `prectot_nadir` ≥ 1 mm/hr:
-`tautot_mean` AUC 0.815, `tautot_max` 0.789, `cldtot_mean` 0.651, `cldtmp_mean` 0.622 (inverted),
-`lwtup_mean` 0.598 (inverted), `ocean_frac_nadir` 0.572; logistic regression on all 12 features
-AUC 0.837, AP 0.368 (base rate 13.0%). These show the signal exists. They come from the deleted,
-time-shifted extraction and a random split, so they are not paper results until recomputed on the
-new extraction under the time-blocked split.
+Full tables in `13_key_numbers.md` and `missions/earthcare/results/`. At 20% duty, capture of rainy
+minutes: random 19.7%, geometry LR 27.5%, latitude band 28.0%, single threshold 41.8%, logistic
+regression 60.3%, MLP 65.1%, **LightGBM 66.4% (AUC 0.893 [0.891, 0.896], AP 0.544)**, oracle 100%.
+Single features (E11): `tautot_mean` AUC 0.834, `tautot_max` 0.812, `cldtot_mean` 0.652,
+`cldtmp_mean` 0.619 (inverted). Both §5.7 conditions are met: the learned policies beat geometry by
+33–39 capture points, and the gap to the oracle at 20% duty (33.6 points) is the room left for RL.
+
+**The EarthCARE bar for an RL policy:** at the same duty cycle on the same test block, catch more
+rainy minutes than LightGBM (66.4% at 20%, 50.8% at 13%), or rank them better (AUC > 0.893).
 
 ## 5.7 What counts as a positive result
 

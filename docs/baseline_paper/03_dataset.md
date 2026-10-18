@@ -1,8 +1,8 @@
 # 3. The Track-Wise Datasets
 
-Source documents in this repo: [`../trackwise_method.md`](../trackwise_method.md),
+Source documents in this repo: [`../EarthCare_trackwise_method.md`](../EarthCare_trackwise_method.md),
 [`../feature_set.md`](../feature_set.md), [`../column_registry.yaml`](../column_registry.yaml),
-`extract_trackwise.py`.
+`extract_trackwise.py`, `task_outputs/enrich_trackwise.py`, and per mission `missions/<mission>/`.
 
 One dataset is built per mission with the same method (§3.1–3.5). The missions differ in orbit,
 passive sensor, and radar footprint (§3.6–3.8). Each dataset is trained and validated on its own.
@@ -70,25 +70,36 @@ partly to bound how much this matters.
 |---|---|
 | NORAD ID | 59908 |
 | orbit window | 2025-06-01 15:00 – 2026-02-01 15:00 UTC (historical TLE set, 2025-05-25 – 2026-02-08) |
-| orbit | sun-synchronous, ~97°; nodes at ~14:00 (descending) and ~02:00 (ascending) local time |
+| orbit | sun-synchronous, ~97°; nodes at 13:56–13:57 (descending) and 01:56–01:57 (ascending) local time over the window |
 | passive context | MSI, 150 km swath → `*_mean`, `tautot_max` over the swath |
 | radar footprint | CPR, nadir only → `*_nadir` = max over cells under the 60 one-second nadir points |
 | comparison truth | `*_swath` = max over cells in the 150 km MSI swath |
-| status | **extraction in progress**; all counts below are **[TO RERUN]** |
+| dataset | `missions/earthcare/data/EarthCare_trackwise_decisions.parquet`: 352,800 × 40, decisions 0–352,799, no gaps, SHA-256 `9fe09a93…2424` |
+| status | **complete** (extraction 30.6 h; enrichment; E1–E11) |
 
-Quality control and structure from the earlier extraction (time-shifted weather; deleted), to be
-recomputed on the new extraction before use:
+Quality control and structure:
 
-- Fill-value sentinels that look like ordinary finite numbers were found in 710 readings (0.20% of
-  rows) and set to NaN after physical-range checks; the extraction code now removes them at source.
-- Lag-*k* autocorrelation over consecutive decisions: `prectot_nadir` lag-1 0.171 (e-folding
-  1 min); `preccon_nadir` 0.116 (1 min); `tautot_mean` 0.628 (3 min).
-- Orbit-sampled land / water mean at nadir: 0.339 / 0.661.
+- **Fill values** (finite numbers like 10³⁵ that G5NR returns for missing data) are dropped at
+  extraction, before averaging.
+- **One corrupted server response** put physically impossible precipitation (up to 6 × 10⁴
+  kg m⁻² s⁻¹) into 3 decisions; the source grid was normal, so that block of 6,000 decisions was
+  re-downloaded, and the re-download matched the original everywhere else. A physical-range audit of
+  every weather column then finds **no out-of-range value** in the 352,800 rows.
+- **Validity.** All 8 targets are finite and valid in every row. The only missing features are
+  `cldtmp_mean` (4.9%; no cloud top anywhere in the swath, none rainy) and `lwtup_fore` (one row per
+  weather step, at the step boundary).
+- **Lag-*k* autocorrelation** over consecutive decisions: `prectot_nadir` lag-1 0.106 (e-folding
+  1 min); `preccon_nadir` 0.114 (1 min); `tautot_mean` 0.639 (3 min); `lwtup_mean` 0.838 (6 min).
+- **Orbit-sampled surface** at nadir: land 0.339, water 0.661; 17.1% of decisions mixed.
+- **Local-time sampling:** 82% of minutes fall within the six local hours around 14:00 and 02:00;
+  other hours are reached only near the poles.
 
-Nadir precipitation decorrelates within a minute (the ground track moves ~7 km/s, so ~420 km or ~60
+Nadir precipitation decorrelates within a minute (the ground track moves ~7.5 km/s, so ~450 km or ~60
 model cells per decision), but consecutive decisions inside the same 30-minute weather step share
 one weather field. A random row-level split therefore places near-duplicate weather in train and
-test. This holds for every mission and is why Section 7 requires a time-blocked split.
+test. This holds for every mission and is why Section 7 requires a time-blocked split. (For
+EarthCARE the effect on logistic regression turned out small: AUC 0.833 random vs. 0.837
+time-blocked; E1.)
 
 ## 3.7 TRMM **[TO BUILD]**
 
