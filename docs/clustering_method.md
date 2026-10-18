@@ -172,4 +172,4 @@ the orbit?* — a question that needs an answer at a fixed cadence, independent 
 connected cold region happens to exist, and that is corrupted rather than helped by summarizing
 large, mixed-precipitation areas into single rows. The right fix was not a better threshold or a
 better clustering algorithm — it was restructuring the dataset around the actual unit of the
-decision. That redesign is documented in [`trackwise_method.md`](./trackwise_method.md).
+decision. That redesign is documented in [`EarthCare_trackwise_method.md`](./EarthCare_trackwise_method.md).
