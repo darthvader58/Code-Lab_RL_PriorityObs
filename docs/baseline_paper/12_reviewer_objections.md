@@ -23,7 +23,9 @@ Before submission, quote a verified power or duty-cycle figure for one such miss
 **Response:** Two costs must be separated. The trained policy costs ~15 to ~5,000 operations per
 decision once a minute (16 to 18,300 parameters, 3 kB to 1 MB on EarthCARE) — negligible even for
 radiation-hardened processors, and onboard neural inference has already flown [giuffrida2022phisat].
-On EarthCARE, cheap thermal-infrared-like inputs keep 90% of the full-feature capture. The real constraint is producing the input
+On EarthCARE, cheap thermal-infrared-like inputs keep 90% of the full-feature capture. Timing was
+measured on a laptop, not on flight-like hardware; the paper states this as an assumption
+(Limitation 11) and lists hardware timing as future work. The real constraint is producing the input
 features; Tier B/C measure how much skill survives without onboard retrievals. Training happens on
 the ground. **Where:** §6, Table 5.
 

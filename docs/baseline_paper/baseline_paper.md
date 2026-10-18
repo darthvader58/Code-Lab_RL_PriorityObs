@@ -199,7 +199,9 @@ run continuously, so the budget models a future power-limited radar; decisions a
 independently. EarthCARE samples only ~14:00 and ~02:00 local time; TRMM and GPM sample all local
 times but only over many days. TRMM covers only the tropics and subtropics. GPM's passive context
 (microwave brightness temperatures) is not produced by G5NR, which forces a choice between a forward
-model, proxies, or real GPM data. Follow-ups: validation on real data, and sequential RL per mission.
+model, proxies, or real GPM data. Policy timing was measured on a laptop, not on flight-like hardware
+(Raspberry Pi–class or LEON-class timing is future work). Follow-ups: validation on real data,
+hardware timing, and sequential RL per mission.
 
 ## 10. One-sentence claim of the paper
 

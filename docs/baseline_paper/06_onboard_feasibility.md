@@ -27,9 +27,10 @@ dominated by Python call overhead, not arithmetic, and vary by about ±0.3 ms be
 laptop; the four policies are all about 1 ms per decision against a 60-second decision interval. A
 radiation-hardened LEON-class flight processor executes on the order of tens to hundreds of millions
 of instructions per second, so even the largest policy (~5,000 multiply-adds) needs well under a
-millisecond of arithmetic per decision. **[TO RUN]:**
-time each policy on a constrained CPU (e.g., a single core with frequency capped, or a Raspberry
-Pi–class board). State clearly that this is a proxy, not flight hardware.
+millisecond of arithmetic per decision. **Not measured here (Limitation 11):** timing on
+constrained or flight-representative hardware, such as a Raspberry Pi–class board or a LEON-class
+processor. The onboard claim above is an estimate from operation counts; a real-life use case needs
+that measurement (future work 7).
 
 LightGBM's extra 6.1 capture points over logistic regression cost 320× the model size; the MLP gets
 within 1.4 points of LightGBM at 1/8 of its size.

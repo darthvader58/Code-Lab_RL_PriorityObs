@@ -49,8 +49,8 @@ and GPM as future work in §8.3. The rest of the paper is unchanged.
 
 1. ☑ **Finish the EarthCARE extraction**, then run E1 (time-blocked split).
 2. ☑ Write `run_baselines.py --mission …` producing every table/figure in `11_figures_and_tables.md`.
-3. ☑ Run E2–E11 for EarthCARE; fill `07_experiments.md` and `13_key_numbers.md`. Still open for
-   EarthCARE: E9 timing on a constrained CPU, and the E4 grid for `preccon`.
+3. ☑ Run E2–E11 for EarthCARE; fill `07_experiments.md` and `13_key_numbers.md`. Hardware timing
+   (Raspberry Pi–class or flight-representative board) is deferred: Limitation 11, future work 7.
 3a. Repeat stages 2–4 for TRMM and GPM as time allows; decide D1 before writing.
 4. Replace every **[TO RUN]** in `00_abstract.md` and `baseline_paper.md`.
 5. Write §10 from the template.

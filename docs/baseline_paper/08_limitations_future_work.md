@@ -39,6 +39,16 @@
     proxies; §3.8), the GPM case differs from the other two in data source or fidelity. If real GPM
     data is used, its label comes from DPR products rather than G5NR, so GPM results are not on the
     same simulated weather as EarthCARE and TRMM.
+11. **Policy timing was measured on a laptop, not on flight-like hardware (assumption).** The
+    per-decision cost in §6.2 comes from Python on a laptop CPU (about 1 ms per decision, mostly
+    interpreter overhead) plus counted operations (at most ~5,000 multiply-adds or ~3,350 tree
+    comparisons). The claim that the policies fit onboard rests on two assumptions: that a flight
+    processor is no more than a few hundred times slower than the laptop, and that the policy would
+    be compiled (C or fixed-point) rather than run in Python. A radiation-hardened LEON-class
+    processor (tens to hundreds of MIPS) satisfies the first with a wide margin against the 60 s
+    decision interval, but this was not measured. Memory (3 kB to 1 MB serialized) was not checked
+    against a specific flight computer either. For a real-life use case, the policies should be timed
+    on representative hardware before any claim of onboard readiness (future work 7).
 
 ## 8.2 Future work
 
@@ -63,6 +73,13 @@
 6. **Forward-looking context.** Use imager pixels ahead of the nadir point along track (the MSI
    swath sees forward-of-nadir cells only marginally; a dedicated lookahead would connect this work
    to dynamic targeting). GMI's forward-looking footprint gives GPM a version of this already.
+7. **Timing on representative hardware.** Export each policy to a compiled form (e.g., C code
+   generated from the logistic-regression weights, a LightGBM model compiled with Treelite, a
+   fixed-point MLP) and time it on a low-power board: a Raspberry Pi–class single-board computer as
+   an accessible first step, then a flight-representative processor or its emulator (e.g., a LEON3/
+   LEON4 board, or an FPGA soft core) if the work moves toward a mission. Report time per decision,
+   peak memory, and energy per decision, alongside the cost of computing the input features, which
+   is expected to dominate (§6.1).
 
 ## 8.3 Mission staging and requirements
 
