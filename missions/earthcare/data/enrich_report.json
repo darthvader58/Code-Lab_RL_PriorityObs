@@ -1,0 +1,32 @@
+{
+  "rows": 352800,
+  "columns": 40,
+  "sha256": "9fe09a93c8b0640f73f23d8422f869573ca172c90c242a4536fdd08a3eb82424",
+  "tle_file": "missions/earthcare/tle/sat000059908.txt",
+  "orbit_start": "2025-06-01 15:00:00+00:00",
+  "g5_steps": [
+    803,
+    12562
+  ],
+  "locations_replaced_by_nadir": 5818,
+  "lwtup_fore_nan": 11760,
+  "invalid_targets": {
+    "prectot_swath": 0,
+    "prectot_nadir": 0,
+    "preccon_swath": 0,
+    "preccon_nadir": 0,
+    "iwp_swath": 0,
+    "iwp_nadir": 0,
+    "lwp_swath": 0,
+    "lwp_nadir": 0
+  },
+  "nan_counts": {
+    "cldtmp_mean": 17425,
+    "lwtup_fore": 11760
+  },
+  "land_frac_mean": 0.33871902652325964,
+  "water_frac_mean": 0.6609504714168563,
+  "mixed_surface_share": 0.17111678004535147,
+  "prectot_nadir_ge_1mm_hr": 0.1365249433106576,
+  "prectot_swath_ge_1mm_hr": 0.29986111111111113
+}
