@@ -9,7 +9,7 @@ Sun-synchronous orbit (nodes ~13:56 / 01:56 local), nadir-only Cloud Profiling R
 | `data/enrich_report.json` | row/column counts, sha256, NaN and validity counts for the dataset |
 | `results/` | baseline experiments E1-E11: one CSV per table, figures, `run_meta.json` |
 | `exports/` | CSV and Cesium CZML exports (not in git) |
-| `geos5data_0.0625deg_30mn_trackwise.ipynb` | exploration notebook for this dataset |
+| `EarthCare_trackwise.ipynb` | dataset checks and figures, and the E1-E11 baseline results explained |
 
 Rebuild, from the repository root (the code is shared across missions):
 
