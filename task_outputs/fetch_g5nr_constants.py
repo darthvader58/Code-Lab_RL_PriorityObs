@@ -24,14 +24,14 @@ def main():
     print(f"[fetch] opening {URL} with pydap", flush=True)
     ds = open_url(URL)
     print(f"[fetch] variables={list(ds.keys())}", flush=True)
-    lat = np.asarray(ds["lat"][:], dtype="float64")
-    lon = np.asarray(ds["lon"][:], dtype="float64")
+    lat = np.asarray(ds["lat"][:].data, dtype="float64")
+    lon = np.asarray(ds["lon"][:].data, dtype="float64")
     print(f"[fetch] axes: lat={lat.shape}, lon={lon.shape}", flush=True)
     np.save(os.path.join(CACHE_DIR, "lat.npy"), lat)
     np.save(os.path.join(CACHE_DIR, "lon.npy"), lon)
     for v in VARS:
         t1 = time.time()
-        arr = np.asarray(ds[v][0, :, :], dtype="float32")
+        arr = np.asarray(ds[v][0, :, :].data, dtype="float32")[0]
         np.save(os.path.join(CACHE_DIR, f"{v}.npy"), arr)
         print(f"[fetch] {v}: shape={arr.shape} min={np.nanmin(arr):.6g} max={np.nanmax(arr):.6g} mean={np.nanmean(arr):.6g} ({time.time()-t1:.1f}s)", flush=True)
     with open(marker, "w") as f:
