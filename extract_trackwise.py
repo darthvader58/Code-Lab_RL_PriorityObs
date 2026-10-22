@@ -214,6 +214,21 @@ def _nanmax(a):
 def _nanmean(a):
     a = _sane(a); return float(a.mean()) if a.size else float("nan")
 
+GRID = 0.0625                   # G5NR cell size, degrees
+
+def _nadir_cells(la, lo, nlat, nlon):
+    """Grid indices (lat, lon) of the cell under each nadir point. Longitude distance
+    wraps at +/-180 deg, so a point at 179.98 maps to the -180 column. Raises if a
+    point's cell is not in the slab."""
+    dlat = np.abs(la[:,None]-nlat[None,:])
+    dlon = np.abs(((lo[:,None]-nlon[None,:]+180) % 360) - 180)
+    ni, nj = dlat.argmin(axis=0), dlon.argmin(axis=0)
+    k = np.arange(len(nlat))
+    miss = (dlat[ni,k] > GRID/2 + 1e-9) | (dlon[nj,k] > GRID/2 + 1e-9)
+    if miss.any():
+        raise GeometryError(f"{int(miss.sum())} nadir points outside the weather slab")
+    return ni, nj
+
 def _cells_inside(geom, LO, LA, what):
     inside = shapely.contains_xy(geom, LO, LA)
     if not inside.any():
@@ -230,11 +245,7 @@ def reduce_decision(geom, rgeom, sub, nlat, nlon, features, labels):
     la = sub["lat"].values; lo = sub["lon"].values
     LO, LA = np.meshgrid(lo, la)
     inside = _cells_inside(geom, LO, LA, "passive")
-    keep = ((nlat>=la.min())&(nlat<=la.max())&(nlon>=lo.min())&(nlon<=lo.max()))
-    if not keep.all():
-        raise GeometryError(f"{int((~keep).sum())} nadir points outside the weather slab")
-    ni = np.abs(la[:,None]-nlat[None,:]).argmin(axis=0)
-    nj = np.abs(lo[:,None]-nlon[None,:]).argmin(axis=0)
+    ni, nj = _nadir_cells(la, lo, nlat, nlon)
     row = {f"{v}_mean": _nanmean(sub[v].values[inside]) for v in features}
     row["tautot_max"] = _nanmax(sub["tautot"].values[inside])
     for v in labels:
