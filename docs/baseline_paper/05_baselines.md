@@ -46,7 +46,9 @@ future state (battery, switching cost) or future observations (`cpr_conditional`
 
 - **EarthCARE primary:** *y_t* = 1 if `prectot_nadir` ≥ 1 mm/hr (base rate 13.7% overall, 12.8% in
   the test block).
-- **TRMM primary:** *y_t* = 1 if the maximum `prectot` in the PR swath ≥ 1 mm/hr **[TO BUILD]**.
+- **TRMM primary:** *y_t* = 1 if `prectot_radar` (maximum `prectot` in the PR swath) ≥ 1 mm/hr;
+  mass-capture is weighted by `prectot_radar_mean`, the mean over the PR swath (rain area × rate)
+  **[dataset pending]**.
 - **GPM primary:** the radar's added value beyond GMI (§5.8) **[TO BUILD]**.
 - **Secondary (all):** convective, `preccon` ≥ 1 mm/hr in the radar footprint (EarthCARE 1.2%).
 - **Sensitivity:** thresholds 0.1 and 5 mm/hr, and the median-split `fire` label used by the

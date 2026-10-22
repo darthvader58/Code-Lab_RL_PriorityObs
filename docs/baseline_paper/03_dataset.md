@@ -101,21 +101,27 @@ test. This holds for every mission and is why Section 7 requires a time-blocked 
 EarthCARE the effect on logistic regression turned out small: AUC 0.833 random vs. 0.837
 time-blocked; E1.)
 
-## 3.7 TRMM **[TO BUILD]**
+## 3.7 TRMM **[code ready; dataset pending]**
 
 | item | value |
 |---|---|
 | NORAD ID | 25063 |
-| orbit window | 2005-06-01 15:00 – 2006-02-01 15:00 UTC — the **same year** as G5NR, because TRMM was flying (historical TLE set, 2005-05-25 – 2006-02-08) |
-| orbit | 35°, precessing (~46-day cycle relative to the Sun); samples all local times; ~402 km after the 2001 boost |
-| passive context | VIRS (5 visible/infrared channels) → same MSI-style cloud proxies over the VIRS swath (~720 km); TMI optional (§3.9) |
-| radar footprint | PR, 13.8 GHz, cross-track scanning, ~245 km swath → label = max over cells in the PR swath |
-| comparison truth | max over cells in the VIRS swath |
-| coverage | the track never goes beyond ~35° latitude; the PR swath reaches a few degrees further |
+| orbit window | 2005-06-01 15:00 – 2006-02-01 15:00 UTC — the **same date** as G5NR, because TRMM was flying (historical TLE set, 380 TLEs, 2005-05-25 – 2006-02-08; one 3 d 0 h 23 min gap, allowed by a 3.5-day limit) |
+| orbit | 34.97°, precessing; samples all local times; 398.5–400.6 km in the window (after the 2001 boost) |
+| passive context | VIRS (5 visible/infrared channels, **833 km** swath, centred) → MSI-style cloud proxies over the VIRS swath; `lwtup_mean` stands in for the thermal-infrared window, since TRMM's CERES failed in 2000; no forward-view feature; TMI optional (§3.9) |
+| radar footprint | PR, 13.8 GHz, cross-track scanning, **247 km** swath, 5 km resolution → label `prectot_radar` = max over cells in the PR swath; `prectot_radar_mean` (mean over the PR swath) weights mass-capture |
+| comparison truth | max over the VIRS swath (`*_swath`) and along the nadir line (`*_nadir`, for comparison with EarthCARE's CPR) |
+| G5NR variables | 6 (`tautot, cldtot, cldtmp, lwtup, prectot, preccon`); no cloud-layer diagnostics and no ice/liquid water paths, which the PR does not measure |
+| coverage | nadir never beyond 35.1° latitude; the PR swath reaches ~37° |
 
-TRMM reuses almost the whole EarthCARE pipeline: the passive features are the same kind of cloud
-proxies, and only the swath widths and the radar footprint change. `solar_hour` now takes all values,
-so day/night splits (Section 6) have data on both sides at every latitude.
+Sources: NASA GES DISC TRMM product pages (post-boost PR and VIRS figures), NASA LaRC (CERES).
+Offline checks with the real TLE set and grid (`../TRMM_trackwise_method.md` §6): measured VIRS width
+827–851 km, PR 245–252 km, every footprint covers grid cells.
+
+TRMM reuses the whole EarthCARE pipeline (`extract_trackwise.py --mission trmm`): the passive
+features are the same kind of cloud proxies, and the swath widths, the radar footprint and the
+variable list change. `solar_hour` now takes all values, so day/night splits (Section 6) have data
+on both sides at every latitude.
 
 ## 3.8 GPM Core Observatory **[TO BUILD; data source open]**
 

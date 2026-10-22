@@ -102,7 +102,7 @@ The policy cost (§6.2) is the same for every mission. The feature cost is not.
 | mission | Tier A (full) | Tier B (cheap) | Tier C (geometry) | works at night? |
 |---|---|---|---|---|
 | EarthCARE | MSI-style cloud proxies + geometry (§6.3) | thermal-infrared-like proxies + geometry | geometry | Tier A no, B and C yes |
-| TRMM | VIRS-style cloud proxies + geometry; optionally + TMI | thermal-infrared-like proxies + geometry | geometry | Tier A no, B and C yes |
+| TRMM | VIRS-style cloud proxies (`cldtot`, `cldtmp`, `tautot` mean/max, `lwtup` as a thermal-IR window proxy) + geometry; no forward-view feature; optionally + TMI | `cldtmp_mean`, `lwtup_mean` + geometry | geometry | Tier A no, B and C yes |
 | GPM | all 13 GMI channels + geometry | a few GMI channels (e.g., 37 and 89 GHz) + geometry | geometry | yes, all tiers |
 
 - **TRMM** follows EarthCARE closely. Because TRMM samples all local times, its day/night split has

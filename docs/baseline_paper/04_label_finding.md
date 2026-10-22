@@ -10,7 +10,7 @@ does it depend on the radar's geometry?
 | mission | radar footprint | passive swath | footprint / swath width |
 |---|---|---|---|
 | EarthCARE | CPR nadir line (one ~7 km model cell wide) | MSI, 150 km | ~5% |
-| TRMM | PR scanned swath, ~245 km | VIRS, ~720 km | ~34% |
+| TRMM | PR scanned swath, 247 km | VIRS, 833 km | ~30% |
 | GPM | DPR scanned swath, ~245 km | GMI, ~885 km | ~28% |
 
 The effect should be largest for EarthCARE. For the scanning radars the radar sees a large part of

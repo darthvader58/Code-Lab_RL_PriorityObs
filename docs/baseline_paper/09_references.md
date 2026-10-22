@@ -82,10 +82,12 @@ source before citing it and convert to BibTeX in Overleaf.
   TRMM 25063 (1997-074A, launched 1997-11-27, re-entered 2015-06-16), GPM-CORE 39574 (2014-009C,
   launched 2014-02-27). Historical TLE sets per mission are obtained through the special data request
   form; cite the request date and record count for each set in the data-availability statement.
-- ? **[trmm_instruments]** TRMM instrument figures used in §3.7: PR 13.8 GHz, ~245 km swath and ~5 km
-  footprint after the 2001 altitude boost to ~402 km; VIRS 5 channels (0.63–12 µm), ~720 km swath;
-  TMI 9 channels (10.65–85.5 GHz). Figures from recall; confirm against [kummerow1998trmm] and the
-  NASA TRMM pages before citing, including the post-boost swath widths.
+- ✓ **[trmm_instruments]** TRMM instrument figures used in §3.7, verified Oct 2026 against the NASA
+  GES DISC product pages (TRMM_1B21 for the PR, TRMM_1B01 for VIRS): post-boost (after 24 Aug 2001)
+  PR swath 247 km, 5.0 km resolution (pre-boost 215 km, 4.3 km); VIRS swath 833 km, 2.4 km
+  resolution (pre-boost ~720 km), channels 0.63, 1.6, 3.75, 10.8, 12 µm. CERES on TRMM operated
+  Jan–Aug 1998 and Mar 2000 only (NASA LaRC CERES). Still from recall: TMI 9 channels
+  (10.65–85.5 GHz); confirm against [kummerow1998trmm] if TMI is used.
 - ? **[gpm_instruments]** GPM figures used in §3.8: DPR KuPR 13.6 GHz and KaPR 35.5 GHz, ~245 km
   swath (KaPR scan widened to the full Ku swath in 2018), ~5 km footprint; GMI 13 channels
   10.65–183.31 GHz, ~885 km swath; orbit ~407 km, 65°. Figures from recall; confirm against

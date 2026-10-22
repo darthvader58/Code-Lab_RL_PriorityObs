@@ -123,7 +123,7 @@ RQ1–RQ4 answer it for each mission separately; RQ5 answers it across missions.
 1. **Three track-wise datasets.** One-minute radar on/off decisions along each mission's real ground
    track (historical TLE sets, 1 s sampling), June 2005 – January 2006 of the GEOS-5 Nature Run
    (G5NR) at 0.0625° / 30 min, matched to G5NR by UTC time of day and day of year. EarthCARE
-   **done** (352,800 decisions, no gaps); TRMM **[TO BUILD]**; GPM **[TO BUILD; data source open,
+   **done** (352,800 decisions, no gaps); TRMM **[code ready; dataset pending]**; GPM **[TO BUILD; data source open,
    §5.8]**.
 2. **A label-geometry finding.** For EarthCARE, scoring against the imager swath instead of the nadir
    radar line inflates the positive rate 2.2× (13.7% → 30.0%), and 54.5% of swath-rainy minutes have
@@ -151,8 +151,8 @@ RQ1–RQ4 answer it for each mission separately; RQ5 answers it across missions.
   24-month record.
 - **Extraction:** per-decision bounding-box fetch, reduced to summary values and discarded (avoids a
   ~10 TB full download).
-- **Per mission:** the passive swath (MSI 150 km, VIRS ~720 km, GMI ~885 km) defines the context
-  features; the radar footprint (CPR nadir line, PR or DPR ~245 km swath) defines the label.
+- **Per mission:** the passive swath (MSI 150 km, VIRS 833 km, GMI ~885 km) defines the context
+  features; the radar footprint (CPR nadir line, PR 247 km or DPR ~245 km swath) defines the label.
 
 ## 5. Label geometry (→ `04_label_finding.md`)
 

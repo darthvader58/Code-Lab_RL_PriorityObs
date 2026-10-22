@@ -21,8 +21,10 @@ no numbers yet.
 | orbit window used | 2025-06-01 → 2026-02-01 15:00 UTC | 2005-06-01 → 2006-02-01 15:00 UTC | 2025-06-01 → 2026-02-01 15:00 UTC | `03_dataset.md` |
 | TLE set requested | 2025-05-25 → 2026-02-08 | 2005-05-25 → 2006-02-08 | 2025-05-25 → 2026-02-08 | CelesTrak special request |
 | local-time nodes | 13:56–13:57 / 01:56–01:57 | all local times | all local times | equator crossings of the nadir track over the window (EarthCARE) |
-| radar swath | nadir only | ~245 km | ~245 km | trmm_instruments, gpm_instruments (verify) |
-| passive swath | MSI 150 km | VIRS ~720 km | GMI ~885 km | same (verify) |
+| radar swath | nadir only | 247 km (PR, post-boost) | ~245 km | trmm_instruments (verified), gpm_instruments (verify) |
+| passive swath | MSI 150 km | VIRS 833 km | GMI ~885 km | trmm_instruments (verified), gpm_instruments (verify) |
+| altitude in window | ~394 km | 398.5–400.6 km | ~407 km | TLE sets (EarthCARE, TRMM); gpm_instruments |
+| TLEs / largest gap | 593 / 2 d 13.7 h | 380 / 3 d 0 h 23 min | — | TLE sets |
 | decisions per dataset | 352,800 | 352,800 | 352,800 | 11,760 G5NR steps × 30 |
 
 ## EarthCARE dataset

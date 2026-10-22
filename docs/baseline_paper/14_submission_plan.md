@@ -25,7 +25,7 @@ detail over three at surface level):
 | stage | mission | gate to move on |
 |---|---|---|
 | 1 | **EarthCARE** ☑ | season-aligned extraction complete (352,800 rows, no gaps); E1–E11 done (18 Oct 2026) |
-| 2 | **TRMM** | TLE set received; dataset built with PR-swath labels and VIRS-swath features; E1–E11 done |
+| 2 | **TRMM** ◐ | TLE set received ☑; code ready and checked offline ☑ (22 Oct 2026); dataset built with PR-swath labels and VIRS-swath features ☐; E1–E11 done ☐ |
 | 3 | **GPM** | decisions D2 and D3 made; dataset built; E1–E11 done |
 | 4 | comparison | E12 on the completed missions |
 

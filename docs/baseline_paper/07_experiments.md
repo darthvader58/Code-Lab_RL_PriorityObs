@@ -31,7 +31,7 @@ Per-mission status:
 | mission | dataset | E1–E11 |
 |---|---|---|
 | EarthCARE | ☑ 352,800 decisions, no gaps | ☑ (hardware timing deferred to future work) |
-| TRMM | ☐ TLE set received; dataset not built | ☐ |
+| TRMM | ◐ code ready and checked offline (`../TRMM_trackwise_method.md`); extraction not run | ☐ |
 | GPM | ☐ data source (D2) and label (D3) not decided | ☐ |
 
 ---
