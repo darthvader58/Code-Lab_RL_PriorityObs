@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
-"""Track-wise extraction, detached-run version of
-geos5data_0.0625deg_30mn_trackwise.ipynb.
+"""Track-wise extraction for one mission (settings in trackwise_missions.py).
 
 Block-structured so memory is FLAT: ground tracks, nadir points and slabs are
 built and discarded one 200-field block at a time. Resume = skip blocks whose
 parquet part already exists. A part is written only when every task in the
 block succeeded, so a resume always refetches an incomplete block instead of
-freezing its gaps in place.  Launch:  nohup python3 extract_trackwise.py &
+freezing its gaps in place.
+Launch (the cache folder is created in the working directory):
+    nohup python3 -u extract_trackwise.py --mission trmm > trmm.log &
 """
 import warnings; warnings.filterwarnings("ignore")
-import os, sys, gc, time as _time
+import argparse, os, sys, gc, time as _time
+from functools import lru_cache
 from datetime import datetime, timezone, timedelta
 import numpy as np, pandas as pd, shapely
 from joblib import Parallel, delayed
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import trackwise_missions  # noqa: E402
 
 # ---- configuration (mirrors the notebook) --------------------------------
 # ---- WEATHER WINDOW ------------------------------------------------------
@@ -61,39 +66,39 @@ TASK_TIMEOUT = 900
 # of the first 30 blocks. block_tracks is retried on that, and a block that is
 # still not saved is re-queued at the end of the run, up to BLOCK_PASSES times.
 TRACK_ATTEMPTS, BLOCK_PASSES = 3, 10
-CACHE = "cache_8mo_jun2005_season"
 G5NR_URL = ("https://opendap.nccs.nasa.gov/dods/OSSE/G5NR/Ganymed/7km/"
             "0.0625_deg/inst/inst30mn_2d_met1_Nx")
-MSI = ["tautot","tauhgh","taulow","cldtot","cldhgh","cldmid","cldlow","cldtmp","lwtup"]
-LAB = ["prectot","preccon","iwp","lwp"]
-VARS = MSI + LAB
 # The orbit window must match the G5NR window in UTC time of day AND day of
-# year (season); only the year differs. 2025-06-01 15:00 pairs with G5NR
-# 2005-06-01 15:00 (step 803), and neither 8-month span crosses a 29 February.
-startdate = datetime(2025,6,1,15,0,tzinfo=timezone.utc)
+# year (season): each mission's startdate (trackwise_missions.py) sits at 15:00
+# UTC on 1 June, paired with G5NR 2005-06-01 15:00 (step 803).
 PER_FIELD = int(G5_STEP/DECISION)
-# Historical EarthCARE (NORAD 59908) element sets spanning the window, from a
-# CelesTrak special data request. A set of TLEs (not one) captures the orbit
-# maintenance flown during the window. TATC and the nadir propagation below both
-# use the TLE whose epoch is closest to each time.
-# missions/<mission>/tle/sat000<NORAD>.txt: CelesTrak historical request, 2025-05-25 -> 2026-02-08
-TLE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "missions", "earthcare", "tle", "sat000059908.txt")
-MAX_TLE_GAP = timedelta(days=3)
+# Each mission's orbit comes from historical element sets spanning the window
+# (missions/<mission>/tle/sat000<NORAD>.txt, CelesTrak special data request). A
+# set of TLEs (not one) captures the orbit maintenance flown during the window.
+# TATC and the nadir propagation below both use the TLE whose epoch is closest
+# to each time.
 
-def load_tles(path):
-    """Element sets in `path` -> chronological flat [line1, line2, ...] list.
-    Name lines and duplicate epochs are dropped."""
+class GeometryError(RuntimeError):
+    """A footprint or nadir track that does not fit its weather slab: a bug in the
+    geometry, never a download problem, so it stops the run instead of being retried."""
+
+def _is_geometry_error(e):
+    # by name: an exception raised in a loky worker comes back re-pickled, and a class
+    # defined in the __main__ script need not be the same object afterwards
+    return type(e).__name__ == "GeometryError"
+
+def load_tles(path, norad):
+    """Element sets for satellite `norad` in `path` -> chronological flat
+    [line1, line2, ...] list. Name lines and duplicate epochs are dropped."""
     from sgp4.api import Satrec
     from sgp4.conveniences import sat_epoch_datetime
     lines = [ln.rstrip() for ln in open(path) if ln.strip()]
     sets = {}
     for a, b in zip(lines, lines[1:]):
-        if a.startswith("1 ") and b.startswith("2 ") and a[2:7] == b[2:7] == "59908":
+        if a.startswith("1 ") and b.startswith("2 ") and a[2:7] == b[2:7] == norad:
             sets[sat_epoch_datetime(Satrec.twoline2rv(a, b))] = (a, b)
     return [ln for ep in sorted(sets) for ln in sets[ep]]
 
-TLE = load_tles(TLE_FILE)
 def log(m): print(f"[{datetime.now():%m-%d %H:%M:%S}] {m}", flush=True)
 
 # libnetcdf blocks forever on a stalled DAP transfer unless HTTP.TIMEOUT is set.
@@ -118,36 +123,60 @@ from tatc.schemas import PointedInstrument, Satellite, TwoLineElements
 from tatc.analysis import compute_ground_track
 from tatc.constants import timescale
 from skyfield.api import EarthSatellite, wgs84
-SAT = Satellite(name="EarthCare", orbit=TwoLineElements(tle=TLE),
-    instruments=[PointedInstrument(name="MSI",
-        field_of_regard=utils.swath_width_to_field_of_regard(394e3,150e3)+2*5.760868,
-        cross_track_field_of_view=utils.swath_width_to_field_of_view(394e3,150e3,5.760868),
-        along_track_field_of_view=utils.swath_width_to_field_of_view(394e3,10e3,5.760868),
-        roll_angle=5.760868, is_rectangular=True)])
-SFS = [EarthSatellite(TLE[2*k], TLE[2*k+1], "EarthCare", timescale)
-       for k in range(len(TLE)//2)]
 
-def check_tle_coverage(end):
-    """Fail early unless the TLE epochs bracket [startdate, end] with no gap
-    longer than MAX_TLE_GAP."""
-    ep = [sf.epoch.utc_datetime() for sf in SFS]
-    gaps = np.diff(ep) if len(ep) > 1 else np.array([timedelta(0)])
-    assert ep[0] <= startdate and ep[-1] >= end, \
-        f"TLEs span {ep[0]:%Y-%m-%d} .. {ep[-1]:%Y-%m-%d}, need {startdate:%Y-%m-%d} .. {end:%Y-%m-%d}"
-    assert max(gaps) <= MAX_TLE_GAP, f"largest TLE gap {max(gaps)} > {MAX_TLE_GAP}"
-    return len(ep), ep[0], ep[-1], max(gaps)
+def _instrument(inst, altitude_m):
+    """TATC instrument for a rectangular cross-track swath `inst.swath_m` wide,
+    centred `inst.roll_deg` off nadir (along-track extent 10 km per sample)."""
+    return PointedInstrument(name=inst.name,
+        field_of_regard=utils.swath_width_to_field_of_regard(altitude_m, inst.swath_m)
+                        + 2*inst.roll_deg,
+        cross_track_field_of_view=utils.swath_width_to_field_of_view(
+            altitude_m, inst.swath_m, inst.roll_deg),
+        along_track_field_of_view=utils.swath_width_to_field_of_view(
+            altitude_m, 10e3, inst.roll_deg),
+        roll_angle=inst.roll_deg, is_rectangular=True)
 
-def nadir(times):
-    """Sub-satellite lat/lon at `times` (list of datetimes), each time propagated
-    from the same closest-epoch TLE that TATC picks for the footprints."""
-    idx = np.asarray(SAT.orbit.get_closest_tle_index(list(times)))
-    lat = np.empty(len(times)); lon = np.empty(len(times))
-    times = np.asarray(times, dtype=object)
-    for k in np.unique(idx):
-        m = idx == k
-        sp = wgs84.subpoint(SFS[k].at(timescale.from_datetimes(list(times[m]))))
-        lat[m] = sp.latitude.degrees; lon[m] = sp.longitude.degrees
-    return lat, lon
+class Orbit:
+    """One mission's TLE set, TATC satellite (instrument 0 = passive sensor,
+    instrument 1 = scanning radar if any) and Skyfield propagators."""
+    def __init__(self, mission):
+        self.mission = mission
+        self.tle = load_tles(mission.tle_file, mission.norad)
+        inst = [_instrument(mission.passive, mission.altitude_m)]
+        if mission.radar:
+            inst.append(_instrument(mission.radar, mission.altitude_m))
+        self.sat = Satellite(name=mission.sat_name, orbit=TwoLineElements(tle=self.tle),
+                             instruments=inst)
+        self.sfs = [EarthSatellite(self.tle[2*k], self.tle[2*k+1], mission.sat_name, timescale)
+                    for k in range(len(self.tle)//2)]
+
+    def check_tle_coverage(self, end):
+        """Fail early unless the TLE epochs bracket [startdate, end] with no gap
+        longer than the mission's max_tle_gap."""
+        start, limit = self.mission.startdate, self.mission.max_tle_gap
+        ep = [sf.epoch.utc_datetime() for sf in self.sfs]
+        gaps = np.diff(ep) if len(ep) > 1 else np.array([timedelta(0)])
+        assert ep[0] <= start and ep[-1] >= end, \
+            f"TLEs span {ep[0]:%Y-%m-%d} .. {ep[-1]:%Y-%m-%d}, need {start:%Y-%m-%d} .. {end:%Y-%m-%d}"
+        assert max(gaps) <= limit, f"largest TLE gap {max(gaps)} > {limit}"
+        return len(ep), ep[0], ep[-1], max(gaps)
+
+    def nadir(self, times):
+        """Sub-satellite lat/lon at `times` (list of datetimes), each time propagated
+        from the same closest-epoch TLE that TATC picks for the footprints."""
+        idx = np.asarray(self.sat.orbit.get_closest_tle_index(list(times)))
+        lat = np.empty(len(times)); lon = np.empty(len(times))
+        times = np.asarray(times, dtype=object)
+        for k in np.unique(idx):
+            m = idx == k
+            sp = wgs84.subpoint(self.sfs[k].at(timescale.from_datetimes(list(times[m]))))
+            lat[m] = sp.latitude.degrees; lon[m] = sp.longitude.degrees
+        return lat, lon
+
+@lru_cache(maxsize=None)
+def orbit(name):
+    """The Orbit of mission `name` (built once per process)."""
+    return Orbit(trackwise_missions.get(name))
 SUB_PER_DEC = int(DECISION/SUB_STEP)
 
 # ---- worker-side DAP handle ----------------------------------------------
@@ -185,47 +214,73 @@ def _nanmax(a):
 def _nanmean(a):
     a = _sane(a); return float(a.mean()) if a.size else float("nan")
 
-def reduce_decision(geom, sub, nlat, nlon):
-    la = sub["lat"].values; lo = sub["lon"].values
-    if la.size == 0 or lo.size == 0: return None
-    LO, LA = np.meshgrid(lo, la)
+def _cells_inside(geom, LO, LA, what):
     inside = shapely.contains_xy(geom, LO, LA)
     if not inside.any():
-        c = geom.centroid; inside = np.zeros_like(LO, dtype=bool)
-        inside[np.abs(la-c.y).argmin(), np.abs(lo-c.x).argmin()] = True
+        raise GeometryError(f"no grid-cell centre inside the {what} footprint "
+                            f"(centroid {geom.centroid.y:.2f}, {geom.centroid.x:.2f})")
+    return inside
+
+def reduce_decision(geom, rgeom, sub, nlat, nlon, features, labels):
+    """One decision -> one row. Passive features are means over the passive
+    footprint `geom`; each label variable is a maximum over that footprint
+    (`_swath`), over the cells under the 60 one-second nadir points (`_nadir`)
+    and, for a scanning radar (`rgeom`), over the radar swath (`_radar`, with
+    its mean as `_radar_mean`)."""
+    la = sub["lat"].values; lo = sub["lon"].values
+    LO, LA = np.meshgrid(lo, la)
+    inside = _cells_inside(geom, LO, LA, "passive")
     keep = ((nlat>=la.min())&(nlat<=la.max())&(nlon>=lo.min())&(nlon<=lo.max()))
-    if not keep.any(): keep = np.ones_like(nlat, dtype=bool)
-    ni = np.abs(la[:,None]-nlat[keep][None,:]).argmin(axis=0)
-    nj = np.abs(lo[:,None]-nlon[keep][None,:]).argmin(axis=0)
-    row = {f"{v}_mean": _nanmean(sub[v].values[inside]) for v in MSI}
+    if not keep.all():
+        raise GeometryError(f"{int((~keep).sum())} nadir points outside the weather slab")
+    ni = np.abs(la[:,None]-nlat[None,:]).argmin(axis=0)
+    nj = np.abs(lo[:,None]-nlon[None,:]).argmin(axis=0)
+    row = {f"{v}_mean": _nanmean(sub[v].values[inside]) for v in features}
     row["tautot_max"] = _nanmax(sub["tautot"].values[inside])
-    for v in LAB:
+    for v in labels:
         arr = sub[v].values
         row[f"{v}_swath"] = _nanmax(arr[inside]); row[f"{v}_nadir"] = _nanmax(arr[ni,nj])
     row["n_swath_cells"] = int(inside.sum()); row["n_nadir_cells"] = len(set(zip(ni,nj)))
+    if rgeom is not None:
+        rin = _cells_inside(rgeom, LO, LA, "radar")
+        for v in labels:
+            arr = sub[v].values
+            row[f"{v}_radar"] = _nanmax(arr[rin]); row[f"{v}_radar_mean"] = _nanmean(arr[rin])
+        row["n_radar_cells"] = int(rin.sum())
     return row
 
-def process_task(fi, geoms, decs, times, nlats, nlons):
+def _lon_windows(geoms, pad):
+    """Longitude slices covering `geoms`. A task that crosses +/-180 deg gets two
+    tight slices, one each side of the dateline, from its actual extents."""
+    bs = [g.bounds for g in geoms]
+    lon0, lon1 = min(b[0] for b in bs), max(b[2] for b in bs)
+    if lon1 - lon0 <= 180:
+        return [slice(lon0-pad, lon1+pad)]
+    lons = np.concatenate([np.asarray(p.exterior.coords)[:, 0] for g in geoms
+                           for p in getattr(g, "geoms", [g])])
+    west, east = lons[lons > 0].min(), lons[lons < 0].max()
+    return [slice(west-pad, 180), slice(-180, east+pad)]
+
+def process_task(fi, geoms, rgeoms, decs, times, nlats, nlons, features, labels):
     """One small bbox (<=GROUP decisions). `fi` is the RELATIVE field index;
-    the absolute G5NR time index is FIELD_START + fi. Returns None when the
+    the absolute G5NR time index is FIELD_START + fi. `rgeoms` are the radar
+    footprints (None entries for a nadir-only radar). Returns None when the
     download failed (retryable), a list of rows otherwise."""
     g5i = FIELD_START + fi
     import xarray as xr
     pad = 0.13
-    bs = [g.bounds for g in geoms]
+    shapes = list(geoms) + [g for g in rgeoms if g is not None]
+    bs = [g.bounds for g in shapes]
     lat0,lat1 = min(b[1] for b in bs), max(b[3] for b in bs)
-    lon0,lon1 = min(b[0] for b in bs), max(b[2] for b in bs)
+    windows = _lon_windows(shapes, pad)
+    variables = list(features) + list(labels)
     sub = None
     for a in range(4):
         try:
             ds = _wds(force=(a > 0))    # retries always get a FRESH handle
             sel = dict(lat=slice(lat0-pad, lat1+pad))
-            if lon1-lon0 > 180:
-                w = ds[VARS].isel(time=g5i).sel(lon=slice(120,180), **sel).load()
-                e = ds[VARS].isel(time=g5i).sel(lon=slice(-180,-120), **sel).load()
-                sub = xr.concat([w,e], dim="lon")
-            else:
-                sub = ds[VARS].isel(time=g5i).sel(lon=slice(lon0-pad, lon1+pad), **sel).load()
+            parts = [ds[variables].isel(time=g5i).sel(lon=w, **sel).load() for w in windows]
+            sub = parts[0] if len(parts) == 1 else xr.concat(parts, dim="lon")
             # NCCS occasionally answers with a zero-size slab instead of an
             # error; the padded bbox always spans grid cells, so treat it as a
             # failed download (it once left a 3-decision gap).
@@ -237,29 +292,36 @@ def process_task(fi, geoms, decs, times, nlats, nlons):
             _time.sleep(min(4*2**a, 45))
     if sub is None: return None
     out = []
-    for g,d,t,nla,nlo in zip(geoms, decs, times, nlats, nlons):
-        r = reduce_decision(g, sub, nla, nlo)
-        if r is None: continue
+    for g,rg,d,t,nla,nlo in zip(geoms, rgeoms, decs, times, nlats, nlons):
+        r = reduce_decision(g, rg, sub, nla, nlo, features, labels)
         r.update(decision=int(d), field=int(fi), g5_step=int(g5i), time=t,
                  lat=g.centroid.y, lon=g.centroid.x)
         out.append(r)
     return out
 
-def block_tracks(f0, f1):
-    """Ground-track footprints + nadir points for one block of fields."""
+def _footprints(sat, decs, start, instrument_index):
+    """TATC footprint of each one-minute decision, sampled every second."""
+    return pd.concat(Parallel(n_jobs=WORKERS, backend="loky")(
+        delayed(compute_ground_track)(
+            sat, pd.date_range(start+int(i)*DECISION, start+int(i)*DECISION+DECISION,
+                               freq=SUB_STEP, inclusive="left"),
+            instrument_index=instrument_index, crs="spice")
+        for i in decs), ignore_index=True)
+
+def block_tracks(orb, f0, f1):
+    """Ground-track footprints (passive and, if any, radar) + nadir points for
+    one block of fields."""
+    start = orb.mission.startdate
     decs = np.array([f*PER_FIELD+k for f in range(f0,f1)
                      for k in range(min(DEC_PER_FIELD, PER_FIELD))])
-    gt = pd.concat(Parallel(n_jobs=WORKERS, backend="loky")(
-        delayed(compute_ground_track)(
-            SAT, pd.date_range(startdate+int(i)*DECISION,
-                               startdate+int(i)*DECISION+DECISION,
-                               freq=SUB_STEP, inclusive="left"), crs="spice")
-        for i in decs), ignore_index=True)
+    gt = _footprints(orb.sat, decs, start, 0)
+    gt["radar_geometry"] = (list(_footprints(orb.sat, decs, start, 1).geometry)
+                            if orb.mission.radar else [None]*len(gt))
     gt["decision"] = decs; gt["field"] = decs // PER_FIELD
     off = np.arange(SUB_PER_DEC)*SUB_STEP.total_seconds()
     secs = (decs[:,None]*DECISION.total_seconds() + off[None,:]).ravel()
-    times = (pd.to_datetime(startdate)+pd.to_timedelta(secs,unit="s")).to_pydatetime()
-    lat, lon = nadir(times)
+    times = (pd.to_datetime(start)+pd.to_timedelta(secs,unit="s")).to_pydatetime()
+    lat, lon = orb.nadir(times)
     nla = lat.astype("float32").reshape(len(decs), SUB_PER_DEC)
     nlo = lon.astype("float32").reshape(len(decs), SUB_PER_DEC)
     del lat, lon, times, secs
@@ -278,21 +340,33 @@ def run_tasks(tasks):
         for i, r in enumerate(gen):
             out[i] = r
     except Exception as e:      # stalled task (TimeoutError) or a killed worker
+        if _is_geometry_error(e):
+            raise
         kept = sum(r is not None for r in out)
         log(f"pool aborted ({type(e).__name__}): kept {kept}, "
             f"{len(tasks)-kept} tasks count as failed")
     return out
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--mission", required=True, choices=sorted(trackwise_missions.MISSIONS))
+    orb = orbit(ap.parse_args().mission)
+    m = orb.mission
+    CACHE = m.cache
     os.makedirs(CACHE, exist_ok=True)
     blocks = [(b, min(b+CHECKPOINT, N_FIELDS)) for b in range(0, N_FIELDS, CHECKPOINT)]
-    n_tle, ep0, ep1, gap = check_tle_coverage(startdate + N_FIELDS*G5_STEP)
+    n_tle, ep0, ep1, gap = orb.check_tle_coverage(m.startdate + N_FIELDS*G5_STEP)
+    log(f"mission: {m.title} (NORAD {m.norad}) | passive {m.passive.name} "
+        f"{m.passive.swath_m/1e3:.0f} km | radar "
+        + (f"{m.radar.name} {m.radar.swath_m/1e3:.0f} km swath" if m.radar else "nadir only")
+        + f" | {len(m.variables)} G5NR variables | cache {os.path.abspath(CACHE)}")
     log(f"orbit: {n_tle} TLEs, epochs {ep0:%Y-%m-%d %H:%M} .. {ep1:%Y-%m-%d %H:%M}, "
         f"largest gap {gap}")
     todo = [(a,b) for a,b in blocks
             if not os.path.exists(f"{CACHE}/rows_{a//CHECKPOINT:05d}.parquet")]
     log(f"window: G5NR steps {FIELD_START}..{FIELD_START+N_FIELDS-1} "
-        f"(2005-06-01 15:00 -> 2006-02-01 15:00, 8 months)")
+        f"(2005-06-01 15:00 -> 2006-02-01 15:00, 8 months); orbit from "
+        f"{m.startdate:%Y-%m-%d %H:%M} UTC")
     log(f"{N_FIELDS:,} fields x {DEC_PER_FIELD} decisions = "
         f"{N_FIELDS*DEC_PER_FIELD:,} rows | {N_FIELDS//CHECKPOINT+1} blocks | "
         f"{len(blocks)-len(todo)} cached | {len(todo)} to do | {WORKERS} workers")
@@ -306,7 +380,7 @@ def main():
         try:
             for att in range(1, TRACK_ATTEMPTS+1):
                 try:
-                    gt, nla, nlo, row_of = block_tracks(f0, f1); break
+                    gt, nla, nlo, row_of = block_tracks(orb, f0, f1); break
                 except Exception as e:
                     if att == TRACK_ATTEMPTS: raise
                     log(f"block {f0//CHECKPOINT}: footprints failed ({type(e).__name__}), "
@@ -318,8 +392,10 @@ def main():
                 for s in range(0, len(seg), GROUP):
                     ch = seg.iloc[s:s+GROUP]
                     ri = [row_of[int(d)] for d in ch.decision]
-                    args.append((int(fi), list(ch.geometry), list(ch.decision),
-                                 list(ch.time), [nla[i] for i in ri], [nlo[i] for i in ri]))
+                    args.append((int(fi), list(ch.geometry), list(ch.radar_geometry),
+                                 list(ch.decision), list(ch.time),
+                                 [nla[i] for i in ri], [nlo[i] for i in ri],
+                                 m.features, m.labels))
             res = run_tasks(args)
             flat = [r for rs in res if rs for r in rs]
             failed = [x for x, rs in zip(args, res) if rs is None]
@@ -332,15 +408,13 @@ def main():
                 res = run_tasks(failed)
                 flat += [r for rs in res if rs for r in rs]
                 failed = [x for x, rs in zip(failed, res) if rs is None]
-            want = sum(len(x[2]) for x in args)
+            want = sum(len(x[3]) for x in args)
             if failed:
                 log(f"block {f0//CHECKPOINT} INCOMPLETE: {len(failed)} tasks "
-                    f"({sum(len(x[2]) for x in failed)} decisions) still failing "
+                    f"({sum(len(x[3]) for x in failed)} decisions) still failing "
                     f"-> part NOT saved, rerun to resume")
             else:
-                if len(flat) != want:
-                    log(f"block {f0//CHECKPOINT}: {want-len(flat)} decisions had "
-                        f"an empty slab (not a download failure)")
+                assert len(flat) == want, f"{len(flat)} rows for {want} decisions"
                 pd.DataFrame(flat).to_parquet(
                     f"{CACHE}/rows_{f0//CHECKPOINT:05d}.parquet", index=False)
             el = _time.time()-t0
@@ -352,6 +426,8 @@ def main():
                 f"{el/n*(len(todo)-n)/3600:.1f} h{warn}")
             del gt, nla, nlo, args, res, flat, failed
         except Exception as e:
+            if _is_geometry_error(e):
+                raise
             log(f"block {f0//CHECKPOINT} FAILED: {type(e).__name__}: {e}")
         if (not os.path.exists(f"{CACHE}/rows_{f0//CHECKPOINT:05d}.parquet")
                 and tries[f0] < BLOCK_PASSES):
