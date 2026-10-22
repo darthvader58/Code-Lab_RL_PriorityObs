@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Create the EarthCARE trackwise CSV and Cesium exports in missions/earthcare/exports/."""
+"""Create the EarthCARE trackwise CSV exports in missions/earthcare/exports/ and the
+Cesium CZML files in missions/earthcare/cesium/."""
 import json
 import sys
 from pathlib import Path
@@ -14,7 +15,7 @@ SOURCE = MISSION_DIR / "data" / "EarthCare_trackwise_decisions.parquet"
 EXPORTS = MISSION_DIR / "exports"
 FULL_CSV = EXPORTS / "EarthCare_trackwise_decisions_full.csv"
 KEPLER_CSV = EXPORTS / "EarthCare_trackwise_decisions_kepler.csv"
-CZML_DIR = EXPORTS / "czml"
+CZML_DIR = MISSION_DIR / "cesium"
 
 MM_PER_KG_M2_S = 3600.0
 ALTITUDE_M = 394_000.0
@@ -180,24 +181,21 @@ def write_czml(path, packets):
     return path.stat().st_size / 1e6
 
 
-def main():
-    rows = pd.read_parquet(SOURCE)
-    expected = (X.N_FIELDS * X.PER_FIELD, 40)
-    if rows.shape != expected or not rows["decision"].is_unique:
-        raise ValueError(f"unexpected trackwise dataset: {rows.shape}")
-
+def add_fire(rows):
+    """Copy of `rows` with the balanced training label `fire` (median split of valid nadir precip)."""
     valid = rows["prectot_nadir_valid"]
     threshold = rows.loc[valid, "prectot_nadir"].quantile(0.50)
     rows = rows.copy()
     rows["fire"] = pd.NA
     rows.loc[valid, "fire"] = (rows.loc[valid, "prectot_nadir"] > threshold).astype("int8")
-    EXPORTS.mkdir(parents=True, exist_ok=True)
-    rows.to_csv(FULL_CSV, index=False)
-    rows.iloc[::max(len(rows) // 20_000, 1)].to_csv(KEPLER_CSV, index=False)
-    print(f"full CSV:   {FULL_CSV} ({len(rows):,} rows)")
-    print(f"Kepler CSV: {KEPLER_CSV} ({len(rows.iloc[::max(len(rows) // 20_000, 1)]):,} rows)")
+    return rows
 
-    # CZML-only display column; not written to the CSVs above.
+
+def export_czml(rows):
+    """Write the monthly and full-run CZML files for `rows` (with `fire`) into CZML_DIR."""
+    valid = rows["prectot_nadir_valid"]
+    rows = rows.copy()
+    # CZML-only display column; not written to the CSVs.
     rows["show"] = pd.NA
     rows.loc[valid, "show"] = (
         rows.loc[valid, "prectot_nadir"] * MM_PER_KG_M2_S >= SHOW_MM_HR).astype("int8")
@@ -205,7 +203,7 @@ def main():
           f"({100 * rows.loc[valid, 'show'].mean():.1f}% green; "
           f"training label fire is {100 * rows.loc[valid, 'fire'].mean():.1f}% positive)")
 
-    CZML_DIR.mkdir(exist_ok=True)
+    CZML_DIR.mkdir(parents=True, exist_ok=True)
     for old in CZML_DIR.glob("EarthCare_trackwise_decisions_*.czml"):
         old.unlink()
     rows = rows.sort_values("time").reset_index(drop=True)
@@ -237,6 +235,22 @@ def main():
     mb = write_czml(path, packets)
     print(f"CZML full:  {path.name} ({len(track):,} track samples, "
           f"{len(markers):,} markers, {fires:,} firing, {mb:.1f} MB)")
+
+
+def main():
+    rows = pd.read_parquet(SOURCE)
+    expected = (X.N_FIELDS * X.PER_FIELD, 40)
+    if rows.shape != expected or not rows["decision"].is_unique:
+        raise ValueError(f"unexpected trackwise dataset: {rows.shape}")
+
+    rows = add_fire(rows)
+    EXPORTS.mkdir(parents=True, exist_ok=True)
+    rows.to_csv(FULL_CSV, index=False)
+    rows.iloc[::max(len(rows) // 20_000, 1)].to_csv(KEPLER_CSV, index=False)
+    print(f"full CSV:   {FULL_CSV} ({len(rows):,} rows)")
+    print(f"Kepler CSV: {KEPLER_CSV} ({len(rows.iloc[::max(len(rows) // 20_000, 1)]):,} rows)")
+
+    export_czml(rows)
 
 
 if __name__ == "__main__":
