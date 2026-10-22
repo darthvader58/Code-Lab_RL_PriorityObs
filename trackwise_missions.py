@@ -31,6 +31,7 @@ class TrackwiseMission:
     altitude_m: float              # used only to convert swath widths into instrument angles
     passive: Instrument            # passive sensor: features are means over its swath
     radar: Instrument | None       # scanning radar swath; None = nadir-only radar
+    radar_name: str                # the active sensor being gated (CPR, PR)
     features: tuple                # G5NR variables averaged over the passive swath -> *_mean
     labels: tuple                  # G5NR variables taken as maxima -> *_swath, *_nadir, *_radar
     cache: str                     # extraction cache folder (relative to the working directory)
@@ -67,6 +68,7 @@ EARTHCARE = TrackwiseMission(
     altitude_m=394e3,
     passive=Instrument("MSI", 150e3, roll_deg=5.760868),
     radar=None,                    # CPR: nadir only
+    radar_name="CPR",
     features=("tautot", "tauhgh", "taulow", "cldtot", "cldhgh", "cldmid", "cldlow", "cldtmp",
               "lwtup"),
     labels=("prectot", "preccon", "iwp", "lwp"),
@@ -86,6 +88,7 @@ TRMM = TrackwiseMission(
     # post-boost (Aug 2001 onward) swaths, NASA GES DISC: VIRS 833 km, PR 247 km, both centred
     passive=Instrument("VIRS", 833e3),
     radar=Instrument("PR", 247e3),
+    radar_name="PR",
     # no cloud-layer diagnostics (PR does not reveal cloud layers) and no iwp/lwp (13.8 GHz PR does
     # not measure cloud water); lwtup stands in for the VIRS thermal-IR window (no CERES after 2000)
     features=("tautot", "cldtot", "cldtmp", "lwtup"),
