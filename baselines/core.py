@@ -202,11 +202,12 @@ def gate_metrics(fire, y, r, scores=None):
     return out
 
 
-def evaluate(policy, train, val, test, label, rate_col, budgets=BUDGETS):
-    """Fit on train, set each budget's threshold on val, score test. Returns (rows, test scores)."""
+def evaluate(policy, train, val, test, label, mass_col, budgets=BUDGETS):
+    """Fit on train, set each budget's threshold on val, score test; mass-capture is weighted by
+    `mass_col`. Returns (rows, test scores)."""
     policy.fit(train, label(train))
     s_val, s_test = policy.score(val), policy.score(test)
-    y, r = label(test), test[rate_col].to_numpy()
+    y, r = label(test), test[mass_col].to_numpy()
     rows = []
     for d in budgets:
         th = threshold_for(s_val, d)
@@ -214,13 +215,15 @@ def evaluate(policy, train, val, test, label, rate_col, budgets=BUDGETS):
     return rows, s_test
 
 
-def oracle_rows(test, label, rate_col, budgets=BUDGETS):
-    """P8: fires on the highest true rates first, so positives come before negatives."""
-    y, r = label(test), np.nan_to_num(test[rate_col].to_numpy())
+def oracle_rows(test, label, rank_col, mass_col, budgets=BUDGETS):
+    """P8: fires on the highest true label rates (`rank_col`) first, so positives come before
+    negatives; mass-capture is weighted by `mass_col`."""
+    y, r = label(test), np.nan_to_num(test[rank_col].to_numpy())
+    w = test[mass_col].to_numpy()
     order = np.argsort(-r, kind="stable")
     rows = []
     for d in budgets:
         fire = np.zeros(len(r), bool)
         fire[order[:int(round(d * len(r)))]] = True
-        rows.append({"d": d, **gate_metrics(fire, y, r, r)})
+        rows.append({"d": d, **gate_metrics(fire, y, w, r)})
     return rows

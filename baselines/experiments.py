@@ -53,7 +53,8 @@ def e1_split(df, mission):
     rows = []
     for name, part in (("random 30%", random_split(d)), ("time-blocked", blocked_split(d, mission))):
         tr, va, te = d[part == "train"], d[part == "val"], d[part == "test"]
-        res, _ = evaluate(LearnedPolicy("lr", mission.tiers["A"]), tr, va, te, lab, col, (0.13,))
+        res, _ = evaluate(LearnedPolicy("lr", mission.tiers["A"]), tr, va, te, lab,
+                          mission.mass_col, (0.13,))
         rows.append({"split": name, "n_train": len(tr), "n_test": len(te), **res[0]})
     return pd.DataFrame(rows)
 
@@ -90,10 +91,10 @@ def e3_capture(df, mission, include_mlp=False, curve=np.round(np.linspace(0.01, 
     tr, va, te = _blocks(df, mission, [col])
     table, curves, scores = [], [], {}
     for name, pol in policies(mission, include_mlp).items():
-        rows, s = evaluate(pol, tr, va, te, lab, col, tuple(curve))
+        rows, s = evaluate(pol, tr, va, te, lab, mission.mass_col, tuple(curve))
         scores[name] = (pol, s)
         curves += [{"policy": name, **r} for r in rows]
-    for name, rows in (("P8 oracle", oracle_rows(te, lab, col, tuple(curve))),):
+    for name, rows in (("P8 oracle", oracle_rows(te, lab, col, mission.mass_col, tuple(curve))),):
         curves += [{"policy": name, **r} for r in rows]
     curves = pd.DataFrame(curves)
     for name, g in curves.groupby("policy", sort=False):
@@ -108,9 +109,9 @@ def e3_capture(df, mission, include_mlp=False, curve=np.round(np.linspace(0.01, 
 # ---- E4: label geometry ----------------------------------------------------------------------
 
 def e4_label_geometry(df, mission, kind="lgbm"):
-    """2 x 2 train/score grid (radar footprint vs. passive swath) for total and convective rain."""
-    pairs = {"prectot": (mission.label_col, mission.swath_col),
-             "preccon": (mission.convective_col, mission.convective_swath_col)}
+    """Train/score grid over the mission's label geometries (radar footprint, passive swath, and
+    for TRMM the nadir line) for total and convective rain."""
+    pairs = mission.label_geometries
     tr, va, te = _blocks(df, mission, [c for p in pairs.values() for c in p])
     rows, rates, share = [], {}, {}
     for variable, cols in pairs.items():
@@ -124,7 +125,7 @@ def e4_label_geometry(df, mission, kind="lgbm"):
                 rows.append({"variable": variable, "trained_on": train_on, "scored_on": score_on,
                              "auc": g["auc"], "capture@20%": g["capture"],
                              "precision@20%": g["precision"], "base_rate": g["base_rate"]})
-        footprint_col, swath_col = cols
+        footprint_col, swath_col = cols[:2]
         rates.update({c: float((te[c] >= mission.threshold).mean()) for c in cols})
         swath_pos = te[swath_col] >= mission.threshold
         share[variable] = float((swath_pos & (te[footprint_col] < mission.threshold)).sum()
@@ -146,14 +147,14 @@ def e5_tiers(df, mission, kind="lgbm", curve=np.round(np.linspace(0.01, 1, 100),
                 row[f"{regime}_capture@20%"] = np.nan          # tautot is daylight-only
                 continue
             m = lambda f: f[f["is_day"] == sel]
-            res, _ = evaluate(LearnedPolicy(kind, feats), m(tr), m(va), m(te), lab, col,
-                              tuple(curve) if regime == "night" else (D_MAIN,))
+            res, _ = evaluate(LearnedPolicy(kind, feats), m(tr), m(va), m(te), lab,
+                              mission.mass_col, tuple(curve) if regime == "night" else (D_MAIN,))
             row[f"{regime}_capture@20%"] = [r for r in res if np.isclose(r["d"], D_MAIN)][0]["capture"]
             if regime == "night":
                 night_curves += [{"tier": tier, **r} for r in res]
         night_feats = [f for f in feats if not f.startswith("tautot")]
         sw = SwitchedPolicy(LearnedPolicy(kind, feats), LearnedPolicy(kind, night_feats))
-        res, _ = evaluate(sw, tr, va, te, lab, col, (D_MAIN,))
+        res, _ = evaluate(sw, tr, va, te, lab, mission.mass_col, (D_MAIN,))
         row["switched_capture@20%"] = res[0]["capture"]
         rows.append(row)
     out = pd.DataFrame(rows)
@@ -172,15 +173,12 @@ def e6_strata(df, mission, kind="lgbm"):
     th = threshold_for(pol.score(va), D_MAIN)                  # global threshold, not re-tuned
     s = pol.score(te)
     alat = te["lat"].abs()
-    strata = {
-        "tropics |lat|<23.5": alat < 23.5,
-        "subtropics 23.5-35": (alat >= 23.5) & (alat < 35),
-        "mid-latitudes 35-60": (alat >= 35) & (alat < 60),
-        "polar >60": alat >= 60,
+    strata = {name: (alat >= lo) & (alat < hi) for name, lo, hi in mission.lat_strata}
+    strata.update({
         "ocean": te["ocean_frac_nadir"] > 0.95,
         "land": te["land_frac_nadir"] > 0.95,
         "mixed": (te["ocean_frac_nadir"] <= 0.95) & (te["land_frac_nadir"] <= 0.95),
-    }
+    })
     rows = []
     for name, m in strata.items():
         m = m.to_numpy()
