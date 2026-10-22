@@ -15,11 +15,12 @@ Sun-synchronous orbit (nodes ~13:56 / 01:56 local), nadir-only Cloud Profiling R
 Rebuild, from the repository root (the code is shared across missions):
 
 ```
-python3 extract_trackwise.py                                   # 59 blocks into cache_8mo_jun2005_season/
-python3 task_outputs/fetch_g5nr_constants.py                   # once: G5NR land/water grid
-python3 task_outputs/enrich_trackwise.py <extraction cache dir>
-python  -m baselines.run_baselines --mission earthcare
-python3 task_outputs/export_trackwise.py                       # optional: CSV, and CZML into cesium/
+python3 extract_trackwise.py --mission earthcare                          # 59 blocks into cache_8mo_jun2005_season/
+python3 task_outputs/fetch_g5nr_constants.py                              # once: G5NR land/water grid
+python3 task_outputs/enrich_trackwise.py --mission earthcare <extraction cache dir>
+python  -m baselines.run_baselines --mission earthcare --mlp
+python3 task_outputs/export_trackwise.py --mission earthcare              # optional: CSV, and CZML into cesium/
+python3 task_outputs/build_notebook.py --mission earthcare                # notebook cells (then execute)
 ```
 
 Method: `docs/EarthCare_trackwise_method.md`. Columns: `missions/earthcare/column_registry.yaml`, `docs/feature_set.md`.

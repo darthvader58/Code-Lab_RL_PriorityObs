@@ -191,6 +191,13 @@ Skill holds across that variation: trained on the other months, each month score
   0–0.1 kg m⁻² s⁻¹, water paths 0–20 kg m⁻², optical depths 0–1,000). **No value in any of the 352,800
   rows is out of range.** The largest nadir precipitation is 247 mm/hr, a strong convective peak.
 - **Targets.** All 8 target columns are finite and valid in every row; nothing is imputed.
+- **Polar footprints (12 rows).** For 12 decisions at 80.8–82.2°S, where the 97° orbit turns, the
+  MSI footprint polygon contained no grid-cell centre, and the extractor of the time substituted
+  the cell nearest the polygon's centroid (`n_swath_cells` = 1 in those rows). The extractor no
+  longer has this fallback (October 2026, with the TRMM work): an empty footprint now stops the
+  run. The 12 rows are kept as extracted; re-extracting EarthCARE would first need a polar-footprint
+  fix. The same change made each nadir point's grid-cell lookup wrap at ±180°, which can differ from
+  the extracted rows only for nadir points within 0.03° of the dateline.
 - **Missing features.** `cldtmp_mean` is missing in 17,425 rows (4.9%), where G5NR reports no
   cloud-top temperature anywhere in the swath. These are scenes without optically measurable cloud
   (median optical depth 0, none rainy); the 35% of them with cloud fraction above 0.5 are 97%
