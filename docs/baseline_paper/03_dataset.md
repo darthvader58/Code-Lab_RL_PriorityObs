@@ -1,7 +1,7 @@
 # 3. The Track-Wise Datasets
 
 Source documents in this repo: [`../EarthCare_trackwise_method.md`](../EarthCare_trackwise_method.md),
-[`../feature_set.md`](../feature_set.md), [`../column_registry.yaml`](../column_registry.yaml),
+[`../feature_set.md`](../feature_set.md), [`../../missions/earthcare/column_registry.yaml`](../../missions/earthcare/column_registry.yaml),
 `extract_trackwise.py`, `task_outputs/enrich_trackwise.py`, and per mission `missions/<mission>/`.
 
 One dataset is built per mission with the same method (§3.1–3.5). The missions differ in orbit,

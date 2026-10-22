@@ -32,7 +32,7 @@ grey dashed reference lines; axes in percent.
 | Table 3 | Label positive rates, radar footprint vs. passive swath, per mission | `04_label_finding.md` | ◐ EarthCARE (§4.3) |
 | Table 4 | Policy results: AUC, AP, capture@{5,10,13,20,30,50}%, mass-capture | E3 | ◐ EarthCARE (`07_experiments.md` E3) |
 | Table 5 | Feature tiers × day/night + policy cost | E5, E9 | ◐ EarthCARE (`06_onboard_feasibility.md`) |
-| (supp.) | Full column registry | `../column_registry.yaml` | ☑ |
+| (supp.) | Full column registry, per mission | `missions/<mission>/column_registry.yaml` | ☑ EarthCARE |
 | (supp.) | Random vs. time-blocked split; leave-one-month-out | E1, E2 | ◐ EarthCARE |
 | (supp.) | Label-threshold sensitivity | E7 | ◐ EarthCARE |
 | Table 6 | Cross-mission comparison and transfer matrix | E12 | ☐ |

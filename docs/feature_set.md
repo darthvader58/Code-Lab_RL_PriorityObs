@@ -18,7 +18,7 @@ not as measurement-equivalent products.
 
 ## Feature tiers
 
-The complete machine-readable registry is [`column_registry.yaml`](./column_registry.yaml).
+The complete machine-readable registry is [`missions/earthcare/column_registry.yaml`](../missions/earthcare/column_registry.yaml).
 
 | Tier | Meaning | Columns |
 |---|---|---|

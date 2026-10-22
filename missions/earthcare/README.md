@@ -22,4 +22,4 @@ python  -m baselines.run_baselines --mission earthcare
 python3 task_outputs/export_trackwise.py                       # optional: CSV, and CZML into cesium/
 ```
 
-Method: `docs/EarthCare_trackwise_method.md`. Columns: `docs/column_registry.yaml`, `docs/feature_set.md`.
+Method: `docs/EarthCare_trackwise_method.md`. Columns: `missions/earthcare/column_registry.yaml`, `docs/feature_set.md`.
