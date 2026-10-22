@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Build the enriched EarthCARE trackwise dataset from the 59 extraction parts.
+"""Build a mission's enriched track-wise dataset from its 59 extraction parts.
 
-    python3 task_outputs/fetch_g5nr_constants.py                     # once: land/water grid
-    python3 task_outputs/enrich_trackwise.py ~/trackwise_run/cache_8mo_jun2005_season
+    python3 task_outputs/fetch_g5nr_constants.py                                  # once: land/water grid
+    python3 task_outputs/enrich_trackwise.py --mission earthcare ~/trackwise_run/cache_8mo_jun2005_season
+    python3 task_outputs/enrich_trackwise.py --mission trmm ~/trackwise_run/cache_trmm_8mo_jun2005
 
 Reads the extraction parts and task_outputs/const_cache/, writes
-missions/earthcare/data/EarthCare_trackwise_decisions.parquet (352,800 x 40, columns in
-docs/column_registry.yaml order) and missions/earthcare/data/enrich_report.json.
-Per-second nadir points come from extract_trackwise.nadir(), the same TLE-set propagation the
-extraction used. Column definitions are documented in docs/feature_set.md.
+missions/<mission>/data/<Prefix>_trackwise_decisions.parquet (columns in
+missions/<mission>/column_registry.yaml order) and missions/<mission>/data/enrich_report.json.
+Per-second nadir points come from extract_trackwise.Orbit.nadir(), the same TLE-set propagation the
+extraction used. Column definitions are documented in docs/feature_set.md (EarthCARE) and
+docs/TRMM_trackwise_method.md (TRMM).
 """
 import argparse
 import hashlib
@@ -23,17 +25,13 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import extract_trackwise as X  # noqa: E402
+import trackwise_missions  # noqa: E402
 
 CONST = ROOT / "task_outputs" / "const_cache"
-DATA = ROOT / "missions" / "earthcare" / "data"
-OUT = DATA / "EarthCare_trackwise_decisions.parquet"
-REPORT = DATA / "enrich_report.json"
-REGISTRY = ROOT / "docs" / "column_registry.yaml"
 
 N_DEC = X.N_FIELDS * X.PER_FIELD                       # 352,800
 N_PARTS = -(-X.N_FIELDS // X.CHECKPOINT)               # 59
-TARGETS = [f"{v}_{side}" for v in X.LAB for side in ("swath", "nadir")]
-MAX_OFFSET_KM = 100.0         # healthy footprint centroids sit ~40 km from nadir (5.76 deg roll)
+MAX_OFFSET_KM = 100.0         # healthy footprint centroids sit within ~50 km of nadir
 SENTINEL = 1e6                # float32 fill values; no target is physically near this
 EARTH_RADIUS_KM = 6371.0
 CHUNK = 6000                  # decisions per propagation chunk (one extraction block)
@@ -63,16 +61,16 @@ def load_constants():
     return lat, lon, f["frland"] + f["frlandice"], f["frocean"] + f["frlake"]
 
 
-def nadir_features(lat_ax, lon_ax, land, water):
+def nadir_features(orb, lat_ax, lon_ax, land, water):
     """Per decision: mid-minute nadir point, and land/water fraction over its 60 nadir samples."""
     off = np.arange(X.SUB_PER_DEC) * X.SUB_STEP.total_seconds()
     mid = np.empty((N_DEC, 2))
     land_f, water_f = np.empty(N_DEC), np.empty(N_DEC)
-    t0 = pd.Timestamp(X.startdate)
+    t0 = pd.Timestamp(orb.mission.startdate)
     for c0 in range(0, N_DEC, CHUNK):
         dec = np.arange(c0, min(c0 + CHUNK, N_DEC))
         secs = (dec[:, None] * X.DECISION.total_seconds() + off[None, :]).ravel()
-        la, lo = X.nadir((t0 + pd.to_timedelta(secs, unit="s")).to_pydatetime())
+        la, lo = orb.nadir((t0 + pd.to_timedelta(secs, unit="s")).to_pydatetime())
         la, lo = la.reshape(len(dec), -1), lo.reshape(len(dec), -1)
         mid[dec] = np.column_stack([la[:, X.SUB_PER_DEC // 2], lo[:, X.SUB_PER_DEC // 2]])
         i = np.rint((la - lat_ax[0]) / (lat_ax[1] - lat_ax[0])).astype(int)
@@ -89,21 +87,27 @@ def great_circle_km(lat1, lon1, lat2, lon2):
     return EARTH_RADIUS_KM * np.arccos(np.clip(c, -1.0, 1.0))
 
 
-def registry_order():
-    names = re.findall(r"^  - name: (\S+)", REGISTRY.read_text(), flags=re.M)
-    assert len(names) == 40, f"{len(names)} columns in {REGISTRY.name}, need 40"
-    return names
+def registry(path):
+    """(name, tier) for every column, in registry order."""
+    return re.findall(r"^  - name: (\S+)\n    tier: (\S+)", path.read_text(), flags=re.M)
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--mission", required=True, choices=sorted(trackwise_missions.MISSIONS))
     ap.add_argument("cache", help="extraction cache directory with the 59 rows_*.parquet parts")
-    cache = ap.parse_args().cache
+    a = ap.parse_args()
+    orb = X.orbit(a.mission)
+    m = orb.mission
+    reg = registry(m.registry)
+    names = [n for n, _ in reg]
+    targets = [n for n, tier in reg if tier == "target"]
+    out_path, report_path = m.data_path, m.data_path.parent / "enrich_report.json"
 
-    df = consolidate(cache)
-    log(f"consolidated {len(df):,} decisions from {N_PARTS} parts")
+    df = consolidate(a.cache)
+    log(f"{m.title}: consolidated {len(df):,} decisions from {N_PARTS} parts")
     lat_ax, lon_ax, land, water = load_constants()
-    mid, df["land_frac_nadir"], df["ocean_frac_nadir"] = nadir_features(lat_ax, lon_ax, land, water)
+    mid, df["land_frac_nadir"], df["ocean_frac_nadir"] = nadir_features(orb, lat_ax, lon_ax, land, water)
 
     # location: footprint centroid, replaced by the mid-minute nadir point where the planar centroid
     # is wrong (near the poles and where the footprint polygon is split at +/-180 deg)
@@ -113,39 +117,45 @@ def main():
     t = pd.to_datetime(df["time"])
     df["solar_hour"] = (t.dt.hour + t.dt.minute / 60 + df["lon"] / 15) % 24
 
-    # lwtup_fore: next decision's swath mean, only within the same G5NR weather step
-    same_step = df["g5_step"].shift(-1).eq(df["g5_step"])
-    df["lwtup_fore"] = df["lwtup_mean"].shift(-1).where(same_step)
+    # lwtup_fore (missions with a forward-looking radiometer): next decision's swath mean, only
+    # within the same G5NR weather step
+    if "lwtup_fore" in names:
+        same_step = df["g5_step"].shift(-1).eq(df["g5_step"])
+        df["lwtup_fore"] = df["lwtup_mean"].shift(-1).where(same_step)
 
     # target validity: finite and not a fill sentinel; invalid values become NaN, nothing imputed
-    for c in TARGETS:
+    for c in targets:
         df[f"{c}_valid"] = df[c].notna() & (df[c].abs() < SENTINEL)
         df.loc[~df[f"{c}_valid"], c] = np.nan
 
-    out = df[registry_order()]
-    DATA.mkdir(parents=True, exist_ok=True)
-    assert out.shape == (N_DEC, 40), out.shape
-    out.to_parquet(OUT, index=False)
-    digest = hashlib.sha256(OUT.read_bytes()).hexdigest()
+    out = df[names]
+    assert out.shape == (N_DEC, len(names)), out.shape
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out.to_parquet(out_path, index=False)
+    digest = hashlib.sha256(out_path.read_bytes()).hexdigest()
 
     report = {
         "rows": len(out), "columns": out.shape[1], "sha256": digest,
-        "tle_file": str(Path(X.TLE_FILE).relative_to(ROOT)), "orbit_start": str(X.startdate),
+        "tle_file": str(Path(m.tle_file).relative_to(ROOT)), "orbit_start": str(m.startdate),
         "g5_steps": [int(out["g5_step"].min()), int(out["g5_step"].max())],
         "locations_replaced_by_nadir": int(bad.sum()),
-        "lwtup_fore_nan": int(out["lwtup_fore"].isna().sum()),
-        "invalid_targets": {c: int((~out[f"{c}_valid"]).sum()) for c in TARGETS},
+    }
+    if "lwtup_fore" in names:
+        report["lwtup_fore_nan"] = int(out["lwtup_fore"].isna().sum())
+    report.update({
+        "invalid_targets": {c: int((~out[f"{c}_valid"]).sum()) for c in targets},
         "nan_counts": {c: int(n) for c, n in out.isna().sum().items() if n},
         "land_frac_mean": float(out["land_frac_nadir"].mean()),
         "water_frac_mean": float(out["ocean_frac_nadir"].mean()),
         "mixed_surface_share": float(((out["land_frac_nadir"] > 0.05)
                                       & (out["land_frac_nadir"] < 0.95)).mean()),
-        "prectot_nadir_ge_1mm_hr": float((out["prectot_nadir"] >= 1 / 3600).mean()),
-        "prectot_swath_ge_1mm_hr": float((out["prectot_swath"] >= 1 / 3600).mean()),
-    }
-    REPORT.write_text(json.dumps(report, indent=2) + "\n")
+    })
+    report.update({f"prectot_{g}_ge_1mm_hr": float((out[f"prectot_{g}"] >= 1 / 3600).mean())
+                   for g in m.geometries})
+    report_path.write_text(json.dumps(report, indent=2) + "\n")
     log(json.dumps(report, indent=2))
-    log(f"wrote {OUT.name} ({len(out):,} x {out.shape[1]}) and {REPORT.name}")
+    log(f"wrote {out_path.relative_to(ROOT)} ({len(out):,} x {out.shape[1]}) and "
+        f"{report_path.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
