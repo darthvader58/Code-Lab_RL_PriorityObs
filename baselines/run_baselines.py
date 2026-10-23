@@ -58,7 +58,7 @@ def main(argv=None):
     ap.add_argument("--data", help="default: the mission's data_path")
     ap.add_argument("--out", help="default: the mission's results_dir")
     ap.add_argument("--experiments", nargs="+", default=ALL, choices=ALL)
-    ap.add_argument("--mlp", action="store_true", help="include P7 (small MLP) in E3/E9")
+    ap.add_argument("--mlp", action="store_true", help="include P7 (small MLP) in E2/E3/E9")
     ap.add_argument("--n-boot", type=int, default=1000)
     a = ap.parse_args(argv)
 
@@ -84,7 +84,7 @@ def main(argv=None):
     if "e1" in a.experiments:
         save(E.e1_split(df, mission), "e1_split")
     if "e2" in a.experiments:
-        save(E.e2_lomo(df, mission), "e2_leave_one_month_out")
+        save(E.e2_lomo(df, mission, include_mlp=a.mlp), "e2_leave_one_month_out")
     if "e3" in a.experiments or need_fitted:
         table, curves, (_, _, _, scores) = E.e3_capture(df, mission, include_mlp=a.mlp)
         fitted = {k: v[0] for k, v in scores.items()}

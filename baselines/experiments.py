@@ -59,27 +59,31 @@ def e1_split(df, mission):
     return pd.DataFrame(rows)
 
 
-def e2_lomo(df, mission):
-    """Leave one G5NR month out; threshold from the training months (no separate val block)."""
+def e2_lomo(df, mission, include_mlp=False):
+    """Leave one G5NR month out for each learned policy (P5-P7); threshold from the training
+    months (no separate val block)."""
     col = mission.label_col
     lab = label_fn(col, mission.threshold)
     d = df[valid(df, col)]
     # the window ends 2006-02-01 15:00; fold that partial day into January so no "month" is tiny
     month = d["g5_month"].replace({"2006-02": "2006-01"})
+    learned = {k: p for k, p in policies(mission, include_mlp).items()
+               if k.split()[0] in ("P5", "P6", "P7")}
     rows = []
-    for m in sorted(month.unique()):
-        held = month == m
-        lo, hi = d.loc[held, "g5_step"].min(), d.loc[held, "g5_step"].max()
-        buffer = d["g5_step"].isin([lo - 1, lo, hi, hi + 1])
-        tr, te = d[~held & ~buffer], d[held & ~buffer]
-        pol = LearnedPolicy("lr", mission.tiers["A"]).fit(tr, lab(tr))
-        s_tr, s_te = pol.score(tr), pol.score(te)
-        base = lab(tr).mean()
-        row = {"held_out": m, "n_test": len(te)}
-        for name, dd in (("13%", 0.13), ("base_rate", base)):
-            g = gate_metrics(s_te >= threshold_for(s_tr, dd), lab(te), te[col], s_te)
-            row.update({"auc": g["auc"], "ap": g["ap"], f"capture@{name}": g["capture"]})
-        rows.append(row)
+    for policy, proto in learned.items():
+        for m in sorted(month.unique()):
+            held = month == m
+            lo, hi = d.loc[held, "g5_step"].min(), d.loc[held, "g5_step"].max()
+            buffer = d["g5_step"].isin([lo - 1, lo, hi, hi + 1])
+            tr, te = d[~held & ~buffer], d[held & ~buffer]
+            pol = LearnedPolicy(proto.kind, proto.features).fit(tr, lab(tr))
+            s_tr, s_te = pol.score(tr), pol.score(te)
+            base = lab(tr).mean()
+            row = {"policy": policy, "held_out": m, "n_test": len(te)}
+            for name, dd in (("13%", 0.13), ("base_rate", base)):
+                g = gate_metrics(s_te >= threshold_for(s_tr, dd), lab(te), te[col], s_te)
+                row.update({"auc": g["auc"], "ap": g["ap"], f"capture@{name}": g["capture"]})
+            rows.append(row)
     return pd.DataFrame(rows)
 
 

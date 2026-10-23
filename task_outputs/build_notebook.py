@@ -542,7 +542,7 @@ only one day, so it is merged into January).
 """)
 
     code(r"""
-e2 = r("e2_leave_one_month_out")
+e2 = r("e2_leave_one_month_out").query("policy == 'P5 logistic regression'")
 fig, ax = plt.subplots(figsize=(10, 3.8))
 ax.plot(e2.held_out, e2.auc, marker="o", label="AUC")
 ax.plot(e2.held_out, e2["capture@13%"], marker="s", label="capture @ 13% duty")

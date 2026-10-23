@@ -255,7 +255,7 @@ def fig_supplementary(res, out, log):
     save(fig, out, "figS2_feature_importance.png", log)
 
     # split robustness
-    e2 = pd.read_csv(res / "e2_leave_one_month_out.csv")
+    e2 = pd.read_csv(res / "e2_leave_one_month_out.csv").query("policy == 'P5 logistic regression'")
     e1 = pd.read_csv(res / "e1_split.csv").set_index("split")
     fig, ax = plt.subplots(figsize=(6.2, 3.2))
     ax.plot(e2.held_out, e2.auc, "o-", color=SLOTS[0], lw=2, ms=7, mec="white", mew=1.5,
