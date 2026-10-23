@@ -25,8 +25,12 @@ Report: AUC/AP/capture@13% under random vs. time-blocked splits; leave-one-month
 **EarthCARE (written):** "Skill is robust to the split: logistic regression scores AUC 0.833 on a
 random 30% split and 0.837 on the time-blocked split, consistent with nadir precipitation
 decorrelating within one decision (lag-1 autocorrelation 0.106). Holding out each month in turn gives
-AUC 0.811–0.844, so the skill is not tied to one season; the Northern-Hemisphere winter test block
-(0.837) sits inside that range. All further results use the time-blocked split."
+AUC 0.811–0.844 for logistic regression and 0.887–0.907 for gradient boosting, so the skill is not
+tied to one season. Training on summer only does cost the flexible models a little on winter:
+with the other winter months in training, Nov–Jan AUC rises by 0.006 (LR), 0.012 (LightGBM) and
+0.014 (MLP), an upper bound since those folds also train on 7 months instead of 4. The ranking is
+the same in every month, so the time-blocked numbers are conservative. All further results use the
+time-blocked split."
 
 ## 10.2 Gating value under a budget (E3) — the main result
 

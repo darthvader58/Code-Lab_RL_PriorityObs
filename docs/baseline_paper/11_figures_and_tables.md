@@ -19,7 +19,7 @@ earthcare` into `figures/earthcare/` and shown in `15_earthcare_results.md`.
 | Fig. 7 | Mission comparison: capture@d per mission at shared budgets; TRMM capture by local hour with EarthCARE's two sampling times marked | E12 | ☐ |
 | Fig. S1 | Bootstrap intervals per policy | E10 | ◐ `figS1_bootstrap.png` (EarthCARE) |
 | Fig. S2 | Feature importance for best policy | E11 | ◐ `figS2_feature_importance.png` (EarthCARE) |
-| Fig. S3 | AUC by held-out month vs. random and time-blocked splits | E1, E2 | ◐ `figS3_split_robustness.png` (EarthCARE) |
+| Fig. S3 | AUC by held-out month for P5–P7 vs. each model's summer-trained time-blocked test | E2, E3 | ◐ `figS3_split_robustness.png` (EarthCARE) |
 | Fig. S4 | Autocorrelation of the label and key features vs. lag, per mission | new parquets | ◐ notebook §5 (EarthCARE) |
 
 Numbering: this table is the only source of figure numbers. Every other file refers to figures

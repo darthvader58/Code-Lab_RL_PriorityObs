@@ -29,7 +29,7 @@ those belong in the paper.
 
 | research question | outcome | evidence | verdict |
 |---|---|---|---|
-| **RQ1:** can passive context predict rain under the nadir radar without temporal leakage? | AUC 0.893 [0.891, 0.896]; random vs. time-blocked split differ by only 0.004 AUC; every held-out month 0.811–0.844 (LR) | E1, E2, E10 | ✅ answered: yes |
+| **RQ1:** can passive context predict rain under the nadir radar without temporal leakage? | AUC 0.893 [0.891, 0.896]; random vs. time-blocked split differ by only 0.004 AUC; every held-out month 0.887–0.907 (LightGBM); summer-only training costs ≤ 0.014 AUC on winter | E1, E2, E10 | ✅ answered: yes |
 | **RQ2:** how much rain does a gate catch under a budget? | 66.4% of rainy minutes at 20% duty: 3.4× random (19.7%), 2.4× geometry-only (27.5%) | E3, E10 | ✅ answered: strong skill, with 33.6 points of headroom left for RL |
 | **RQ3:** does scoring against the imager swath distort results? | positive class 2.2× larger (13.7% → 30.0%); precision inflated from 44.7% to 75.0% | E4 | ✅ answered: yes, strongly |
 | **RQ4:** is it feasible onboard, and does it work at night? | night-capable inputs keep 89–90% of capture; policies need 16–18,300 parameters, ~1 ms per decision | E5, E9 | ✅ answered: yes, timed on a laptop only (§15.9) |
@@ -168,13 +168,27 @@ nothing. This matches the physics: thick, cold, high clouds are where a radar fi
 
 ![Split robustness](figures/earthcare/figS3_split_robustness.png)
 
-**Figure S3.** Logistic-regression AUC for each held-out month, against the random 30% and
-time-blocked splits.
+**Figure S3.** AUC for each held-out month (solid; trained on the other seven) for P5–P7, against
+each model's time-blocked test score (dashed; trained Jun–Sep only, scored Nov–Jan, shaded).
 
 - **No leakage inflation (E1).** A random split gives AUC 0.833 against 0.837 time-blocked, as
   expected from the short memory of nadir rain (lag-1 autocorrelation 0.106).
-- **No single-season artefact (E2).** Holding out each month gives AUC 0.811–0.844. The northern
-  summer months score lowest (0.811–0.826), and the winter test block (0.837) sits inside the range.
+- **A small seasonal penalty, larger for flexible models (E2).** Training only on Jun–Sep and testing
+  on Nov–Jan crosses a season. Holding out each winter month instead, with the other winter months
+  in training, shows what that costs:
+
+  | policy | Nov–Jan AUC, trained Jun–Sep | Nov–Jan AUC, trained on the other 7 months | gain | AP gain | AUC over all 8 held-out months |
+  |---|---|---|---|---|---|
+  | P5 logistic regression | 0.837 | 0.843 | +0.006 | 0.408 → 0.417 | 0.811–0.844 |
+  | P6 gradient boosting | 0.893 | 0.905 | +0.012 | 0.544 → 0.581 | 0.887–0.907 |
+  | P7 MLP | 0.889 | 0.903 | +0.014 | 0.527 → 0.569 | 0.879–0.905 |
+
+  The flexible models gain about twice as much as LR from seeing winter, consistent with them
+  learning some season-specific latitude patterns on top of the cloud physics. The gain is an upper
+  bound on the seasonal effect: the month-held-out models also train on 7 months instead of 4. The
+  penalty does not change the ranking (P6 ≥ P7 > P5 in every month), and the time-blocked numbers
+  reported elsewhere are the conservative ones. The northern summer months are the hardest to
+  predict for every model.
 - **Threshold-independent ranking (E7).** LightGBM beats logistic regression on all five labels (AUC
   0.893–0.957). Rare targets rank well but are hard to catch: at a budget equal to their frequency
   the gate catches 41.1% of ≥ 5 mm/hr minutes and 30.4% of convective minutes.

@@ -105,7 +105,8 @@ Tier A = 13 inputs (`cldtot_mean`, `cldtmp_mean`, `tautot_mean`, `tautot_max`, `
 | P6 − P7 paired difference | AUC +0.004 [+0.003, +0.005]; capture@20% +1.4 pts [+0.8, +2.0]; capture@13% +0.4 pts [−0.1, +0.9] | E10 |
 | P6 − P5 paired difference | AUC +0.056 [+0.054, +0.059]; capture@20% +6.1 pts [+5.3, +7.0] | E10 |
 | random vs. time-blocked split (P5, d = 13%) | AUC 0.833 vs. 0.837; capture 43.9% vs. 45.5% | E1 |
-| leave-one-month-out AUC (P5) | 0.811 – 0.844 over 8 months | E2 |
+| leave-one-month-out AUC (P5 / P6 / P7) | 0.811 – 0.844 / 0.887 – 0.907 / 0.879 – 0.905 over 8 months | E2 |
+| Nov–Jan AUC, trained Jun–Sep vs. on the other 7 months (P5 / P6 / P7) | 0.837 → 0.843 / 0.893 → 0.905 / 0.889 → 0.903 (gain +0.006 / +0.012 / +0.014; upper bound on the seasonal penalty) | E2, E3 |
 | nadir-trained policy, capture@20% on nadir / swath labels | 66.4% / 51.1% | E4 |
 | swath-trained policy, capture@20% on nadir / swath labels | 64.7% / 50.7% | E4 |
 | precision@20%, nadir-trained, on nadir / swath labels (`prectot`) | 44.7% / 75.0% | E4 |

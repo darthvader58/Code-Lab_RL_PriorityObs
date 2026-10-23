@@ -111,3 +111,12 @@ measurement and are never used as inputs. **Where:** §5.8, §3.8.
 band, and TRMM's results are described as tropical and subtropical only. TRMM is included because it
 flew during G5NR's own period and its visible/infrared scanner matches EarthCARE's imager closely,
 which isolates the effect of the orbit. **Where:** §3.7, E12, Limitation 9.
+
+### O15. "You train on summer and test on winter. Isn't the test unfair?"
+
+**Response:** Partly, and it is measured. The orbit is global, so June–September already holds
+southern-hemisphere winter, and most inputs describe cloud physics that does not change with the
+season. Leave-one-month-out puts the other winter months into training: Nov–Jan AUC rises by 0.006
+(logistic regression), 0.012 (LightGBM) and 0.014 (MLP), an upper bound because those folds also
+train on more months. The ranking P6 ≥ P7 > P5 holds in every held-out month, so the time-blocked
+numbers are a conservative, not a distorted, estimate. **Where:** §7 E2, §15.8, Fig. S3.
