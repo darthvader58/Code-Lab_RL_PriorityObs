@@ -17,10 +17,13 @@ earthcare` into `figures/earthcare/` and shown in `15_earthcare_results.md`.
 | Fig. 5 | Capture vs. duty cycle per feature tier, night only (or day/night panels) | E5 | ◐ `fig5_tiers_day_night.png` (EarthCARE) |
 | Fig. 6 | Skill by latitude band and surface type | E6 | ◐ `fig6_strata.png` (EarthCARE) |
 | Fig. 7 | Mission comparison: capture@d per mission at shared budgets; TRMM capture by local hour with EarthCARE's two sampling times marked | E12 | ☐ |
-| (supp.) | Autocorrelation of the label and key features vs. lag, per mission | new parquets | ◐ notebook §5 (EarthCARE) |
-| (supp.) | Feature importance for best policy | E11 | ◐ `figS2_feature_importance.png` (EarthCARE) |
-| (supp.) | Bootstrap intervals per policy | E10 | ◐ `figS1_bootstrap.png` (EarthCARE) |
-| (supp.) | AUC by held-out month vs. random and time-blocked splits | E1, E2 | ◐ `figS3_split_robustness.png` (EarthCARE) |
+| Fig. S1 | Bootstrap intervals per policy | E10 | ◐ `figS1_bootstrap.png` (EarthCARE) |
+| Fig. S2 | Feature importance for best policy | E11 | ◐ `figS2_feature_importance.png` (EarthCARE) |
+| Fig. S3 | AUC by held-out month vs. random and time-blocked splits | E1, E2 | ◐ `figS3_split_robustness.png` (EarthCARE) |
+| Fig. S4 | Autocorrelation of the label and key features vs. lag, per mission | new parquets | ◐ notebook §5 (EarthCARE) |
+
+Numbering: this table is the only source of figure numbers. Every other file refers to figures
+as "Fig. N" or "Fig. SN" from this table, and file names follow it (`figN_*.png`, `figSN_*.png`).
 
 Style: one colour per policy, kept identical across Fig. 3 and Fig. 5; random and oracle as
 grey dashed reference lines; axes in percent.

@@ -95,7 +95,7 @@ Policies P1–P8 from `05_baselines.md`, Tier A, time-blocked test set. EarthCAR
 
 (Oracle capture@d = min(1, d / ȳ). P4 uses `tautot_mean` by day and `cldtmp_mean` by night.)
 
-**Figure 1:** capture vs. duty cycle, all policies, with the random diagonal and the oracle curve
+**Fig. 3:** capture vs. duty cycle, all policies, with the random diagonal and the oracle curve
 (`figures/earthcare/fig3_capture_curves.png`; also `missions/earthcare/results/fig3_capture_curves.png`).
 
 ## E4 — Nadir vs. swath grid
@@ -124,7 +124,7 @@ EarthCARE (LightGBM):
 | B (cheap) | 55.9% | 49.8% | 52.7% | 90.2% |
 | C (geometry) | 33.2% | 33.1% | 33.2% | 56.7% |
 
-**Figure 2:** capture@d curves per tier, night only, and capture@20% by day/night
+**Fig. 5:** capture@d curves per tier, night only, and capture@20% by day/night
 (`figures/earthcare/fig5_tiers_day_night.png`).
 
 ## E6 — Stratified skill

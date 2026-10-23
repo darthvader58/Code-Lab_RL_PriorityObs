@@ -30,7 +30,7 @@ AUC 0.811–0.844, so the skill is not tied to one season; the Northern-Hemisphe
 
 ## 10.2 Gating value under a budget (E3) — the main result
 
-Report: Figure 1 and the capture table.
+Report: Fig. 3 and the capture table (Table 4).
 
 Sentence template: "At a 20% duty cycle, the best imager-driven gate captures [X]% of nadir
 precipitation events ([lift]× random), compared with [Y]% for geometry-only gating; the oracle
@@ -74,7 +74,7 @@ any specific published study is wrong unless you have checked its labels.
 
 ## 10.4 Onboard feasibility (E5, E9)
 
-Report: Figure 2, tier table, cost table.
+Report: Fig. 5, tier and cost table (Table 5).
 
 - *If Tier B retains most of Tier A:* "Useful gating does not require onboard cloud retrievals:
   thermal-infrared-like quantities and orbit geometry retain [R]% of full-feature capture, day and
