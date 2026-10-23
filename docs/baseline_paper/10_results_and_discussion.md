@@ -4,6 +4,8 @@ Each subsection says what to report. **EarthCARE paragraphs are written** from t
 `07_experiments.md` and `13_key_numbers.md`; the sentence templates remain for TRMM and GPM. Delete
 the outcomes that did not happen.
 
+EarthCARE figures and the per-question verdict are in `15_earthcare_results.md`.
+
 Report §10.1–10.6 **per mission** (EarthCARE first; TRMM and GPM as their own subsections or as
 columns in each table), then compare the missions in §10.8. Never pool the three datasets into one
 result.

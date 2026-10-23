@@ -2,23 +2,25 @@
 
 Aim for 6–7 figures and 5–6 tables in a full paper; a 4-page conference paper (e.g., IGARSS) keeps
 Fig. 1, Fig. 3, Fig. 4, Table 2 and Table 3 only, for EarthCARE. Multi-panel figures get one panel per
-mission (EarthCARE, TRMM, GPM) with identical axes. Status ◐ = EarthCARE panel exists (in
-`missions/earthcare/results/` or the notebook `missions/earthcare/EarthCare_trackwise.ipynb`), other
-missions to come.
+mission (EarthCARE, TRMM, GPM) with identical axes. Status ◐ = EarthCARE panel exists, other
+missions to come. EarthCARE figures are drawn by `python -m baselines.paper_figures --mission
+earthcare` into `figures/earthcare/` and shown in `15_earthcare_results.md`.
 
 ## Figures
 
 | # | content | source | status |
 |---|---|---|---|
 | Fig. 1 | Concept, one panel per mission: passive swath and radar footprint (CPR nadir line; PR/DPR scanned swath), one-minute decision segments | schematic | ☐ draw |
-| Fig. 2 | Map of decisions coloured by radar-footprint label, one panel per mission (shows TRMM's tropical band and EarthCARE's polar coverage) | new parquets; cartopy | ◐ notebook §4 (EarthCARE) |
+| Fig. 2 | Map of decisions coloured by radar-footprint label, one panel per mission (shows TRMM's tropical band and EarthCARE's polar coverage) | new parquets | ◐ `fig2_rain_map.png` (EarthCARE; 5° cells, no coastlines) |
 | Fig. 3 | **Main result:** capture vs. duty cycle for all policies, with random diagonal and oracle curve | E3 | ◐ `fig3_capture_curves.png` (EarthCARE) |
-| Fig. 4 | Radar footprint vs. passive swath: positive-rate bars and capture gap, per mission | E4 | ◐ data ready (EarthCARE); figure to draw |
-| Fig. 5 | Capture vs. duty cycle per feature tier, night only (or day/night panels) | E5 | ◐ `fig5_tiers_night.png` (EarthCARE) |
-| Fig. 6 | Skill by latitude band and surface type | E6 | ◐ notebook E6 (EarthCARE) |
+| Fig. 4 | Radar footprint vs. passive swath: positive-rate bars and capture gap, per mission | E4 | ◐ `fig4_label_geometry.png` (EarthCARE) |
+| Fig. 5 | Capture vs. duty cycle per feature tier, night only (or day/night panels) | E5 | ◐ `fig5_tiers_day_night.png` (EarthCARE) |
+| Fig. 6 | Skill by latitude band and surface type | E6 | ◐ `fig6_strata.png` (EarthCARE) |
 | Fig. 7 | Mission comparison: capture@d per mission at shared budgets; TRMM capture by local hour with EarthCARE's two sampling times marked | E12 | ☐ |
 | (supp.) | Autocorrelation of the label and key features vs. lag, per mission | new parquets | ◐ notebook §5 (EarthCARE) |
-| (supp.) | Feature importance for best policy | E11 | ◐ notebook E11 (EarthCARE) |
+| (supp.) | Feature importance for best policy | E11 | ◐ `figS2_feature_importance.png` (EarthCARE) |
+| (supp.) | Bootstrap intervals per policy | E10 | ◐ `figS1_bootstrap.png` (EarthCARE) |
+| (supp.) | AUC by held-out month vs. random and time-blocked splits | E1, E2 | ◐ `figS3_split_robustness.png` (EarthCARE) |
 
 Style: one colour per policy, kept identical across Fig. 3 and Fig. 5; random and oracle as
 grey dashed reference lines; axes in percent.
