@@ -101,7 +101,7 @@ Tier A = 13 inputs (`cldtot_mean`, `cldtmp_mean`, `tautot_mean`, `tautot_max`, `
 
 | quantity | value | experiment |
 |---|---|---|
-| P6 lift at 20% duty | 3.4× random | E3 |
+| P6 lift at 20% duty | 3.4× random's capture (66.4% / 19.7%); precision ÷ base rate (E3 `lift` column) 3.5× | E3 |
 | P6 − P7 paired difference | AUC +0.004 [+0.003, +0.005]; capture@20% +1.4 pts [+0.8, +2.0]; capture@13% +0.4 pts [−0.1, +0.9] | E10 |
 | P6 − P5 paired difference | AUC +0.056 [+0.054, +0.059]; capture@20% +6.1 pts [+5.3, +7.0] | E10 |
 | random vs. time-blocked split (P5, d = 13%) | AUC 0.833 vs. 0.837; capture 43.9% vs. 45.5% | E1 |
