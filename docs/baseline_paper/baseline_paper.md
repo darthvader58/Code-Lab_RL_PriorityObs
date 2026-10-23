@@ -52,6 +52,7 @@ expanded in its own file so it can be pasted into Overleaf section by section:
 | [`12_reviewer_objections.md`](./12_reviewer_objections.md) | Anticipated objections and responses |
 | [`13_key_numbers.md`](./13_key_numbers.md) | Every number in the paper with its source file |
 | [`14_submission_plan.md`](./14_submission_plan.md) | Venues, staging of the three missions, Overleaf section map |
+| [`15_earthcare_results.md`](./15_earthcare_results.md) | EarthCARE results report: figures, summary tables, verdict per research question |
 
 **Reading order for writing:** this file → `13_key_numbers.md` → sections 00–08 → run
 `07_experiments.md` → `10_results_and_discussion.md` → `12_reviewer_objections.md` →
@@ -63,6 +64,11 @@ mission does not exist yet. Do not submit with any of these markers left.
 **Status (18 Oct 2026):** EarthCARE is complete: dataset built (352,800 decisions, no gaps), E1–E11
 run including P7, results in `missions/earthcare/results/`, every EarthCARE number in
 `13_key_numbers.md`. TRMM and GPM are not started.
+
+**Update (22 Oct 2026):** the EarthCARE figures are drawn (`python -m baselines.paper_figures
+--mission earthcare` → `figures/earthcare/`) and collected with the result tables and a verdict per
+research question in `15_earthcare_results.md`. Verdict: RQ1–RQ4 answered for EarthCARE; RQ5 waits
+for TRMM.
 
 ---
 
