@@ -210,7 +210,7 @@ def fig_strata(res, out, log):
     save(fig, out, "fig6_strata.png", log)
 
 
-def fig_supplementary(res, out, log):
+def fig_supplementary(m, res, out, log):
     # bootstrap intervals
     b = pd.read_csv(res / "e10_bootstrap.csv")
     fig, axes = plt.subplots(1, 2, figsize=(10, 3))
@@ -255,18 +255,24 @@ def fig_supplementary(res, out, log):
     save(fig, out, "figS2_feature_importance.png", log)
 
     # split robustness
-    e2 = pd.read_csv(res / "e2_leave_one_month_out.csv").query("policy == 'P5 logistic regression'")
-    e1 = pd.read_csv(res / "e1_split.csv").set_index("split")
-    fig, ax = plt.subplots(figsize=(6.2, 3.2))
-    ax.plot(e2.held_out, e2.auc, "o-", color=SLOTS[0], lw=2, ms=7, mec="white", mew=1.5,
-            label="leave-one-month-out")
-    ax.axhline(e1.loc["time-blocked", "auc"], color=SLOTS[1], lw=1.5,
-               label=f"time-blocked test ({e1.loc['time-blocked', 'auc']:.3f})")
-    ax.axhline(e1.loc["random 30%", "auc"], color=REF, lw=1.2, ls="--",
-               label=f"random 30% split ({e1.loc['random 30%', 'auc']:.3f})")
-    ax.set(ylim=(0.78, 0.87), ylabel="ROC-AUC (logistic regression)", xlabel="held-out month",
-           title="Skill by held-out month vs. the two splits")
-    ax.legend(fontsize=7.5, loc="lower right")
+    # solid: each month held out, trained on the other seven; dashed: the summer-trained
+    # time-blocked test, drawn only over the months it scores
+    e2 = pd.read_csv(res / "e2_leave_one_month_out.csv")
+    blocked = pd.read_csv(res / "e3_capture_table.csv").set_index("policy")["auc"]
+    months = list(dict.fromkeys(e2.held_out))
+    test = [i for i, mo in enumerate(months) if mo >= m.test_months[0]]
+    fig, ax = plt.subplots(figsize=(6.6, 3.6))
+    for p, g in e2.groupby("policy", sort=False):
+        c = POLICY_COLOR[p]
+        ax.plot(range(len(g)), g.auc, "o-", color=c, lw=2, ms=6, mec="white", mew=1.2,
+                label=f"{p.split()[0]} leave-one-month-out")
+        ax.hlines(blocked[p], test[0] - 0.3, test[-1] + 0.3, color=c, lw=1.5, ls="--",
+                  label=f"{p.split()[0]} trained Jun–Sep only ({blocked[p]:.3f})")
+    ax.axvspan(test[0] - 0.5, test[-1] + 0.5, color=REF, alpha=0.08, lw=0)
+    ax.set_xticks(range(len(months)), months)
+    ax.set(ylim=(0.78, 0.93), ylabel="ROC-AUC", xlabel="held-out month",
+           title="Skill by held-out month vs. the summer-trained test block")
+    ax.legend(fontsize=7, loc="lower left", ncol=2)
     fig.tight_layout()
     save(fig, out, "figS3_split_robustness.png", log)
 
@@ -284,7 +290,7 @@ def main(argv=None):
     fig_label_geometry(m, res, out, log)
     fig_tiers(res, out, log)
     fig_strata(res, out, log)
-    fig_supplementary(res, out, log)
+    fig_supplementary(m, res, out, log)
     print(f"wrote {len(log)} figures to {out}:", *log, sep="\n  ")
 
 
