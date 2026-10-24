@@ -537,21 +537,41 @@ display(Markdown(
     md(r"""
 ## E2. Does skill hold across months?
 
-Each month is held out in turn, and the model is trained on all the others (Feb 2006 has
-only one day, so it is merged into January).
+Each month is held out in turn, and each learned policy (P5–P7) is trained on all the others,
+with a buffer at the month's edges (Feb 2006 has only one day, so it is merged into January).
+The main split trains on Jun–Sep only and tests on Nov–Jan, which crosses a season. Comparing the
+two on the same winter months shows how much that costs each model (dashed line = trained Jun–Sep
+only).
 """)
 
     code(r"""
-e2 = r("e2_leave_one_month_out").query("policy == 'P5 logistic regression'")
+e2 = r("e2_leave_one_month_out")
+blocked = r("e3_capture_table").set_index("policy")
+months = list(dict.fromkeys(e2.held_out))
+winter = [mo for mo in months if mo >= meta["split"]["test"][0]]
 fig, ax = plt.subplots(figsize=(10, 3.8))
-ax.plot(e2.held_out, e2.auc, marker="o", label="AUC")
-ax.plot(e2.held_out, e2["capture@13%"], marker="s", label="capture @ 13% duty")
-ax.plot(e2.held_out, e2.ap, marker="^", label="AP")
-ax.set(ylim=(0, 1), ylabel="score", title="Leave-one-month-out (logistic regression, Tier A)")
-ax.legend(); plt.tight_layout(); plt.show()
-display(e2.round(3).set_index("held_out"))
-display(Markdown(f"**Takeaway.** AUC stays between {e2.auc.min():.3f} and {e2.auc.max():.3f} across "
-                 f"all {len(e2)} months (spread {e2.auc.max() - e2.auc.min():.3f})."))
+for p, g in e2.groupby("policy", sort=False):
+    line, = ax.plot(g.held_out, g.auc, marker="o", label=f"{p} (held-out month)")
+    ax.hlines(blocked.loc[p, "auc"], winter[0], winter[-1], color=line.get_color(), ls="--")
+ax.axvspan(months.index(winter[0]) - 0.5, months.index(winter[-1]) + 0.5, color="0.5", alpha=0.1)
+ax.set(ylabel="ROC-AUC", title="Leave-one-month-out vs. trained Jun–Sep only (dashed, shaded test block)")
+ax.legend(fontsize=8); plt.tight_layout(); plt.show()
+display(e2.pivot(index="held_out", columns="policy", values="auc").round(3))
+w = e2[e2.held_out.isin(winter)].groupby("policy", sort=False)[["auc", "ap"]].mean()
+season = pd.DataFrame({"AUC trained Jun–Sep": blocked.loc[w.index, "auc"],
+                       "AUC trained on other 7 months": w.auc,
+                       "AP trained Jun–Sep": blocked.loc[w.index, "ap"],
+                       "AP trained on other 7 months": w.ap})
+season["AUC gain"] = season.iloc[:, 1] - season.iloc[:, 0]
+display(season.round(3))
+rank = e2.pivot(index="held_out", columns="policy", values="auc")
+same = (rank.rank(axis=1).nunique() == 1).all()
+display(Markdown(
+    f"**Takeaway.** Putting the other winter months into training raises Nov–Jan AUC by "
+    + ", ".join(f"{g:+.3f} ({p.split()[0]})" for p, g in season['AUC gain'].items())
+    + ". That is an upper bound on the seasonal penalty, since those folds also train on 7 months "
+    "instead of 4. " + ("The ranking of the policies is the same in every held-out month, so the "
+    "time-blocked numbers are conservative." if same else "The ranking changes in some months.")))
 """)
 
     md(rf"""
@@ -755,6 +775,7 @@ print(f"CZML files in {E.czml_dir(M).relative_to(ROOT)}/")
 
     code(r"""
 e3i = e3.set_index("policy")
+e2b = e2[e2.policy == "P6 gradient boosting"]
 summary = pd.DataFrame({
     "value": [f"{len(rows):,} one-minute decisions, G5NR weather 2005-06-01 .. 2006-02-01",
               pct(curves.base_rate.iloc[0]),
@@ -762,11 +783,12 @@ summary = pd.DataFrame({
               f"{e3i.loc['P6 gradient boosting', 'auc']:.3f}",
               f"{pct(e3i.loc['P6 gradient boosting', 'mass_capture@20%'])}",
               f"{pct(t.loc['A_notau', 'retention_vs_A'])} of full skill",
-              f"{e2.auc.min():.3f} – {e2.auc.max():.3f}",
+              f"{e2b.auc.min():.3f} – {e2b.auc.max():.3f}",
               ", ".join(top[:3])]},
     index=[M.title, f"rainy minutes in test (>= 1 mm/hr, {GEOMS[0]})", "best baseline capture @ 20% duty",
            "best baseline AUC", "best baseline rain-amount capture @ 20%",
-           "without optical depth (night-capable)", "AUC range across months", "most important features"])
+           "without optical depth (night-capable)", "best baseline AUC range across held-out months",
+           "most important features"])
 display(summary)
 """)
 
