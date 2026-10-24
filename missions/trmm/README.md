@@ -17,10 +17,13 @@ Method and differences from EarthCARE: `docs/TRMM_trackwise_method.md`.
 | `exports/`, `cesium/` | CSV and Cesium CZML exports (after the run) |
 | `TRMM_trackwise.ipynb` | analysis notebook, built but not executed until the dataset exists |
 
-Run, from any working directory (the cache folder is created there):
+Run, from any working directory (the cache folder is created there). The extraction needs the
+interpreter that has TATC 3.4.10 (the `trackwise-py` kernel's Python,
+`/Library/Frameworks/Python.framework/Versions/3.13/bin/python3`); Homebrew's `python3` does not:
 
 ```
-cd ~/trackwise_run && nohup python3 -u "<repo>/extract_trackwise.py" --mission trmm > trmm.log &   # ~30-40 h
+cd ~/trackwise_run && nohup caffeinate -is /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 \
+    -u "<repo>/extract_trackwise.py" --mission trmm > trmm.log 2>&1 &                             # ~30-40 h
 python3 task_outputs/enrich_trackwise.py --mission trmm ~/trackwise_run/cache_trmm_8mo_jun2005
 python  -m baselines.run_baselines --mission trmm --mlp
 python3 task_outputs/export_trackwise.py --mission trmm                                           # optional
