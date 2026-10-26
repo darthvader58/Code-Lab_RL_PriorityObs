@@ -166,7 +166,9 @@ result, not a failure.
   capture@20% of 43.9%, against 40.1% at other hours (gradient boosting, radar label; gap 3.8
   points, 95% CI [0.8, 6.8] from resampling test days; 3.0–3.9 points for every model and label).
   EarthCARE's two sampling times therefore slightly **overstate** gating skill relative to the full
-  day. They do not over- or under-sample rain itself: the windows cover 16.7% of local hours and
+  day. The gain comes from the afternoon window alone: averaged over each window's hours,
+  capture@20% is 46.5% around 13:56 and 40.2% around 01:56, against 40.5% at the other hours
+  (`missions/comparison/E12_comparison.ipynb`, §3). They do not over- or under-sample rain itself: the windows cover 16.7% of local hours and
   hold 17.2% of the rain amount, because the land peak (16:00) and the ocean peak (03:00) fall on
   either side of them.
 - **Radar geometry.** TRMM's radar-swath base rate is 41.1% against EarthCARE's 17.7% nadir rate
