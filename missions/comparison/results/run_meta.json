@@ -1,0 +1,29 @@
+{
+  "experiment": "e12",
+  "lat_max": 35.207516611256445,
+  "seed": 0,
+  "ec_windows": {
+    "nodes_local_hour": [
+      1.9333333333333333,
+      13.933333333333334
+    ],
+    "half_width_h": 1.0
+  },
+  "data": {
+    "EarthCARE": {
+      "path": "missions/earthcare/data/EarthCare_trackwise_decisions.parquet",
+      "sha256": "9fe09a93c8b0640f73f23d8422f869573ca172c90c242a4536fdd08a3eb82424",
+      "rows_in_band": 138424
+    },
+    "TRMM": {
+      "path": "missions/trmm/data/TRMM_trackwise_decisions.parquet",
+      "sha256": "fab9c8c7ebbd5fa79ca8220fd69c3b3c1d254e60407c89f09261d7591a7e9c01",
+      "rows_in_band": 352800
+    }
+  },
+  "python": "3.12.2",
+  "numpy": "1.26.4",
+  "pandas": "2.2.2",
+  "sklearn": "1.6.1",
+  "lightgbm": "4.7.0"
+}
