@@ -4,7 +4,7 @@
 247 km swath), Visible and Infrared Scanner (VIRS, 833 km swath). Detection-prioritization
 benchmark: should the PR be on this minute, judged from VIRS-like context?
 
-**Status:** code complete and checked offline; the extraction has not been run yet.
+**Status:** extracted (2026-10-26), enriched, baselines E1-E11 with P7 run, notebook executed; E12 (cross-mission comparison) not yet built.
 Method and differences from EarthCARE: `docs/TRMM_trackwise_method.md`.
 
 | path | contents |
