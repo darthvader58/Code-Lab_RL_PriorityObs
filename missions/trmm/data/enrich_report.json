@@ -1,0 +1,31 @@
+{
+  "rows": 352800,
+  "columns": 35,
+  "sha256": "fab9c8c7ebbd5fa79ca8220fd69c3b3c1d254e60407c89f09261d7591a7e9c01",
+  "tle_file": "missions/trmm/tle/sat000025063.txt",
+  "orbit_start": "2005-06-01 15:00:00+00:00",
+  "g5_steps": [
+    803,
+    12562
+  ],
+  "locations_replaced_by_nadir": 6397,
+  "invalid_targets": {
+    "prectot_radar": 0,
+    "prectot_radar_mean": 0,
+    "prectot_swath": 0,
+    "prectot_nadir": 0,
+    "preccon_radar": 0,
+    "preccon_radar_mean": 0,
+    "preccon_swath": 0,
+    "preccon_nadir": 0
+  },
+  "nan_counts": {
+    "cldtmp_mean": 6598
+  },
+  "land_frac_mean": 0.2669771873419196,
+  "water_frac_mean": 0.7326879217569863,
+  "mixed_surface_share": 0.11386621315192744,
+  "prectot_radar_ge_1mm_hr": 0.41603174603174603,
+  "prectot_swath_ge_1mm_hr": 0.6390221088435374,
+  "prectot_nadir_ge_1mm_hr": 0.14921485260770975
+}
