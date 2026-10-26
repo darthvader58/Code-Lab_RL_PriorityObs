@@ -297,6 +297,11 @@ def process_task(fi, geoms, rgeoms, decs, times, nlats, nlons, features, labels)
             # failed download (it once left a 3-decision gap).
             if 0 in (sub.sizes["lat"], sub.sizes["lon"]):
                 raise ValueError("empty slab")
+            # It has also answered with float32 garbage (every lwtup cell 1.4e-45)
+            # that a fresh request returns correctly; outgoing longwave is never
+            # below ~60 W m-2, so treat that as a failed download too.
+            if "lwtup" in sub and (sub["lwtup"].values < 1).any():
+                raise ValueError("corrupt lwtup slab")
             break
         except Exception:
             sub = None
