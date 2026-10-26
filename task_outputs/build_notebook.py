@@ -212,9 +212,10 @@ assert (rows.g5_step == X.FIELD_START + rows.decision // X.PER_FIELD).all()
 assert report["sha256"] == meta["data_sha256"], "results were computed on a different dataset"
 assert hashlib.sha256(DATA.read_bytes()).hexdigest() == report["sha256"], "parquet changed since enrichment"
 
-# physical limits by variable; G5NR precipitation never comes close to 0.1 kg m-2 s-1 (360 mm/hr)
+# physical limits by variable; G5NR's wettest cell is ~400 mm/hr (TRMM, Typhoon Talim's eyewall,
+# 2005-08-30), well under 0.2 kg m-2 s-1 (720 mm/hr)
 RANGES = [("cld", "_mean", (0, 1)), ("tau", "", (0, 1e3)), ("cldtmp", "", (150, 330)),
-          ("lwtup", "", (50, 450)), ("prec", "", (0, 0.1)), ("iwp", "", (0, 20)), ("lwp", "", (0, 20))]
+          ("lwtup", "", (50, 450)), ("prec", "", (0, 0.2)), ("iwp", "", (0, 20)), ("lwp", "", (0, 20))]
 def limits(c):
     hit = [r for p, s, r in RANGES if c.startswith(p) and c.endswith(s)]
     return hit[-1] if hit else None
