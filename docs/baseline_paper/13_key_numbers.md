@@ -7,8 +7,8 @@ regenerated.
 season-aligned extraction, dataset SHA-256 `9fe09a93c8b0640f73f23d8422f869573ca172c90c242a4536fdd08a3eb82424`
 (`missions/earthcare/data/enrich_report.json`), and the baseline run in
 `missions/earthcare/results/` (`run_meta.json` records the same hash). The earlier extraction
-(351,639 rows, time-shifted weather) is deleted and none of its numbers are used. TRMM and GPM have
-no numbers yet.
+(351,639 rows, time-shifted weather) is deleted and none of its numbers are used. TRMM numbers are
+in the cross-mission section (E12); GPM has no numbers yet.
 
 ## Missions (fixed facts)
 
@@ -123,6 +123,23 @@ Tier A = 13 inputs (`cldtot_mean`, `cldtmp_mean`, `tautot_mean`, `tautot_max`, `
 | wall time per decision (Python, laptop CPU) | 0.8–1.3 ms for all learned policies (varies ±0.3 ms between runs) | E9 |
 | top permutation importance (AUC drop) | `tautot_max` 0.207, `tautot_mean` 0.091, `lwtup_mean` 0.052, `cldtot_mean` 0.038 | E11 |
 | best single-feature AUC | `tautot_mean` 0.834, `tautot_max` 0.812, `cldtot_mean` 0.652, `cldtmp_mean` 0.619 (inv.) | E11 |
+
+## Cross-mission comparison, EarthCARE vs. TRMM (`missions/comparison/results/`)
+
+TRMM dataset SHA-256 `fab9c8c7eb…7e9c01` (`missions/trmm/data/enrich_report.json`). Training and
+testing restricted to |lat| ≤ 35.21° (TRMM's highest latitude): 138,424 EarthCARE and 352,800 TRMM
+decisions. EarthCARE windows = ±1 h of 01:56 and 13:56 local time.
+
+| quantity | value | source |
+|---|---|---|
+| base rate, own radar label | EarthCARE 17.7% (nadir), TRMM 41.1% (PR swath) | E12 comparison |
+| swath / radar-label positive rate | EarthCARE 2.23×, TRMM 1.54× | E12 comparison |
+| P6 AUC / capture@20% | EarthCARE 0.855 / 61.2%; TRMM 0.849 / 40.7% (oracle 48.7%) | E12 comparison |
+| Tier B retention at 20% (P6) | EarthCARE 78.5%, TRMM 79.3% | E12 comparison |
+| transfer loss, capture@20%, EarthCARE → TRMM | P6 1.2 points, P5 1.9 (nadir label, shared features); largest in either direction 2.5 | E12 transfer |
+| TRMM capture@20% in EarthCARE windows vs. other hours | P6 43.9% vs. 40.1%, gap 3.8 [0.8, 6.8] points (radar label); 3.0–3.9 for every model and label | E12 local time |
+| EarthCARE windows' share of local hours / of TRMM rain amount | 16.7% / 17.2% (land 17.3%, ocean 17.1%) | E12 diurnal |
+| TRMM rain-amount peak, local time | land 16:00, ocean 03:00 | E12 diurnal |
 
 ## Earlier clustering design (`../clustering_method.md`)
 

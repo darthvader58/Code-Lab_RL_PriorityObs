@@ -16,7 +16,7 @@ earthcare` into `figures/earthcare/` and shown in `15_earthcare_results.md`.
 | Fig. 4 | Radar footprint vs. passive swath: positive-rate bars and capture gap, per mission | E4 | ◐ `fig4_label_geometry.png` (EarthCARE) |
 | Fig. 5 | Capture vs. duty cycle per feature tier, night only (or day/night panels) | E5 | ◐ `fig5_tiers_day_night.png` (EarthCARE) |
 | Fig. 6 | Skill by latitude band and surface type | E6 | ◐ `fig6_strata.png` (EarthCARE) |
-| Fig. 7 | Mission comparison: capture@d per mission at shared budgets; TRMM capture by local hour with EarthCARE's two sampling times marked | E12 | ☐ |
+| Fig. 7 | Mission comparison: capture@d per mission at shared budgets; TRMM AUC by local hour with EarthCARE's two sampling times marked; TRMM rain by local hour | E12 | ◐ `comparison/fig7_mission_comparison.png` (EarthCARE, TRMM) |
 | Fig. S1 | Bootstrap intervals per policy | E10 | ◐ `figS1_bootstrap.png` (EarthCARE) |
 | Fig. S2 | Feature importance for best policy | E11 | ◐ `figS2_feature_importance.png` (EarthCARE) |
 | Fig. S3 | AUC by held-out month for P5–P7 vs. each model's summer-trained time-blocked test | E2, E3 | ◐ `figS3_split_robustness.png` (EarthCARE) |
@@ -40,7 +40,7 @@ grey dashed reference lines; axes in percent.
 | (supp.) | Full column registry, per mission | `missions/<mission>/column_registry.yaml` | ☑ EarthCARE |
 | (supp.) | Random vs. time-blocked split; leave-one-month-out | E1, E2 | ◐ EarthCARE |
 | (supp.) | Label-threshold sensitivity | E7 | ◐ EarthCARE |
-| Table 6 | Cross-mission comparison and transfer matrix | E12 | ☐ |
+| Table 6 | Cross-mission comparison and transfer matrix | E12 | ◐ `e12_comparison.csv`, `e12_transfer.csv` (EarthCARE, TRMM) |
 
 ## Generation rule
 

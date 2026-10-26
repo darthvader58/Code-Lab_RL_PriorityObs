@@ -160,3 +160,28 @@ Discuss each difference through the property that causes it:
 
 State plainly when the missions disagree; three separate cases may give three answers, and that is a
 result, not a failure.
+
+**EarthCARE ↔ TRMM (E12, |lat| ≤ 35.2°; `missions/comparison/results/`, Fig. 7):**
+- **Orbit / local time.** On TRMM, decisions within ±1 h of 01:56 and 13:56 local time give
+  capture@20% of 43.9%, against 40.1% at other hours (gradient boosting, radar label; gap 3.8
+  points, 95% CI [0.8, 6.8] from resampling test days; 3.0–3.9 points for every model and label).
+  EarthCARE's two sampling times therefore slightly **overstate** gating skill relative to the full
+  day. They do not over- or under-sample rain itself: the windows cover 16.7% of local hours and
+  hold 17.2% of the rain amount, because the land peak (16:00) and the ocean peak (03:00) fall on
+  either side of them.
+- **Radar geometry.** TRMM's radar-swath base rate is 41.1% against EarthCARE's 17.7% nadir rate
+  in the same latitudes, and the swath-label inflation falls from 2.23× (EarthCARE, nadir vs. MSI
+  swath) to 1.54× (TRMM, PR vs. VIRS swath). With the radar label positive in 41% of minutes, even a
+  perfect TRMM gate catches only 48.7% of rainy minutes at 20% duty; the scanning radar's gate is
+  budget-limited, not skill-limited.
+- **Passive information.** EarthCARE and TRMM have the same kind of passive context (visible and
+  infrared cloud proxies), and their skill matches: AUC 0.855 and 0.849, Tier B retention 78.5% and
+  79.3%. The microwave question waits for GPM.
+- **Transfer.** A policy trained on EarthCARE loses 1.2 points of capture@20% when applied to TRMM
+  (gradient boosting, shared features, nadir label; 1.9 for logistic regression), and every
+  transfer in either direction stays within 2.5 points of the target's own policy. The two missions
+  disagree with the expectation in §5.9: a policy trained only on ~14:00/~02:00 weather covers the
+  other hours almost as well as one trained on them. In this setting the case for one policy per
+  mission rests on their different labels and budgets, not on transfer loss. Both datasets share
+  the same simulated weather and identically computed features, so real sensor differences
+  (calibration, resolution, the VIRS vs. MSI channels) could still widen the gap.
