@@ -91,6 +91,47 @@ TEXT = {
         "night": "Optical depth (`tautot`) needs reflected sunlight, so at night VIRS has only its "
                  "thermal channels.",
     },
+    "fy3g": {
+        "question": "should the Precipitation Measurement Radar (PMR) be switched on this minute, decided "
+                    "only from what the passive Medium Resolution Spectral Imager (MERSI-RM) and the "
+                    "orbit geometry can see?",
+        "orbit": "FY-3G's position every second, from a set of real TLEs (NORAD 56232) covering "
+                 "2025-06-01 → 2026-02-01: a 50° precessing orbit at ~407 km that samples every local "
+                 "time. The TLE closest in time is used for each moment, so the two orbit raises in the "
+                 "window (August and September 2025) are followed.",
+        "alignment": "The orbit runs in 2025, the weather is from 2005. Each orbit minute is paired with "
+                     "the G5NR snapshot at the **same day of year and the same UTC time** (orbit "
+                     "2025-06-01 15:00 ↔ G5NR 2005-06-01 15:00, step 803), as for EarthCARE, so the "
+                     "season and the local solar time are both correct.",
+        "features": "MERSI-RM-like cloud diagnostics averaged over the 1000 km MERSI-RM swath under the "
+                    "satellite during that minute (cloud fraction, cloud-top temperature, optical depth, "
+                    "and outgoing longwave as a stand-in for the MERSI-RM thermal-infrared window; "
+                    "FY-3G carries no broadband radiometer). The MWRI-RM microwave imager is not used, as "
+                    "TRMM's TMI was not.",
+        "targets": "Total and convective precipitation: the maximum over the 303 km **PMR swath** (what "
+                   "the PMR measures, the label), its mean over the PMR swath (the weight for "
+                   "mass-capture), and for comparison the maximum over the **MERSI-RM swath** and along "
+                   "the **nadir** line.",
+        "enrichment": "Land/water fraction under the track, cyclic longitude, solar hour, validity flags. "
+                      "No forward-view feature: MERSI-RM is a cross-track scanner.",
+        "note": "The extraction refuses to save a block unless every request succeeded, and any footprint "
+                "without a grid cell inside it stops the run. The range check in §2 verifies that no "
+                "physically impossible values reached the dataset.",
+        "label": "**\"precipitation ≥ 1 mm/hr anywhere in the PMR swath\"**, i.e. rain the scanning PMR "
+                 "would measure. The swath column counts rain anywhere in the 1000 km MERSI-RM swath, "
+                 "most of which lies outside the PMR's 303 km; the nadir column shows what a nadir-only "
+                 "radar (like EarthCARE's CPR) would see on the same track.",
+        "footprint": "in the PMR swath",
+        "e4": "The PMR measures a 303 km swath inside the 1000 km MERSI-RM swath, so a policy credited "
+              "with MERSI-RM-swath rain is credited with rain the radar never scans. The nadir line shows "
+              "how a nadir-only radar on the same orbit would score.",
+        "tiers": "| A | everything (cloud fraction, cloud-top temperature, optical depth, longwave, geometry) |\n"
+                 "| A_notau | A without optical depth (what is available at night) |\n"
+                 "| B | thermal only: cloud-top temperature and longwave, plus geometry |\n"
+                 "| C | geometry only |",
+        "night": "Optical depth (`tautot`) needs reflected sunlight, so at night MERSI-RM has only its "
+                 "thermal channels.",
+    },
 }
 
 
