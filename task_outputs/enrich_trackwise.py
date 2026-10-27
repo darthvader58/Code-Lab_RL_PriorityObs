@@ -4,13 +4,14 @@
     python3 task_outputs/fetch_g5nr_constants.py                                  # once: land/water grid
     python3 task_outputs/enrich_trackwise.py --mission earthcare ~/trackwise_run/cache_8mo_jun2005_season
     python3 task_outputs/enrich_trackwise.py --mission trmm ~/trackwise_run/cache_trmm_8mo_jun2005
+    python3 task_outputs/enrich_trackwise.py --mission fy3g ~/trackwise_run/cache_fy3g_8mo_jun2005_season
 
 Reads the extraction parts and task_outputs/const_cache/, writes
 missions/<mission>/data/<Prefix>_trackwise_decisions.parquet (columns in
 missions/<mission>/column_registry.yaml order) and missions/<mission>/data/enrich_report.json.
 Per-second nadir points come from extract_trackwise.Orbit.nadir(), the same TLE-set propagation the
-extraction used. Column definitions are documented in docs/feature_set.md (EarthCARE) and
-docs/TRMM_trackwise_method.md (TRMM).
+extraction used. Column definitions are documented in docs/feature_set.md (EarthCARE),
+docs/TRMM_trackwise_method.md (TRMM) and docs/FY3G_trackwise_method.md (FY-3G).
 """
 import argparse
 import hashlib

@@ -20,9 +20,9 @@ class Instrument:
 
 @dataclass(frozen=True)
 class TrackwiseMission:
-    name: str                      # CLI name: earthcare, trmm
-    title: str                     # display name: EarthCARE, TRMM
-    file_prefix: str               # EarthCare, TRMM (data and notebook file names)
+    name: str                      # CLI name: earthcare, trmm, fy3g
+    title: str                     # display name: EarthCARE, TRMM, FY-3G
+    file_prefix: str               # EarthCare, TRMM, FY3G (data and notebook file names)
     norad: str
     tle_file: Path
     startdate: datetime            # orbit time of decision 0; same UTC time of day and day of
@@ -31,7 +31,7 @@ class TrackwiseMission:
     altitude_m: float              # used only to convert swath widths into instrument angles
     passive: Instrument            # passive sensor: features are means over its swath
     radar: Instrument | None       # scanning radar swath; None = nadir-only radar
-    radar_name: str                # the active sensor being gated (CPR, PR)
+    radar_name: str                # the active sensor being gated (CPR, PR, PMR)
     features: tuple                # G5NR variables averaged over the passive swath -> *_mean
     labels: tuple                  # G5NR variables taken as maxima -> *_swath, *_nadir, *_radar
     cache: str                     # extraction cache folder (relative to the working directory)
@@ -97,13 +97,34 @@ TRMM = TrackwiseMission(
     sat_name="TRMM",
 )
 
-MISSIONS = {m.name: m for m in (EARTHCARE, TRMM)}
+FY3G = TrackwiseMission(
+    name="fy3g", title="FY-3G", file_prefix="FY3G", norad="56232",
+    tle_file=ROOT / "missions" / "fy3g" / "tle" / "sat000056232.txt",
+    # orbit 2025, weather 2005, aligned as for EarthCARE: same day of year and UTC time
+    startdate=datetime(2025, 6, 1, 15, 0, tzinfo=timezone.utc),
+    # the set has a 7 d 23 h 37 min gap (2025-09-16 -> 24) and a 3 d 13 h one (2025-08-05 -> 08),
+    # each spanning an orbit raise (403 -> 410 km), so the closest-TLE switch at the gap midpoint
+    # moves the track along-orbit; as for TRMM's gap, this shifts which simulated weather is
+    # sampled, not its statistics (inclination and local-time drift are unchanged)
+    max_tle_gap=timedelta(days=8),
+    altitude_m=407e3,              # nominal; TLE set: 403-411 km over the window
+    # Yang et al. (2025, AMT): PMR swath 303 km; CMA (IPWG-11, 2024): MERSI-RM swath 1000 km
+    passive=Instrument("MERSI-RM", 1000e3),
+    radar=Instrument("PMR", 303e3),
+    radar_name="PMR",
+    # same variables as TRMM: MERSI-RM is a VIS/IR imager like VIRS (no cloud-layer diagnostics,
+    # no iwp/lwp), and FY-3G carries no broadband radiometer, so lwtup stands in for the 10.8/12 um
+    # window; the MWRI-RM microwave imager is left out, as TMI was for TRMM
+    features=("tautot", "cldtot", "cldtmp", "lwtup"),
+    labels=("prectot", "preccon"),
+    cache="cache_fy3g_8mo_jun2005_season",
+    sat_name="FY-3G",
+)
+
+MISSIONS = {m.name: m for m in (EARTHCARE, TRMM, FY3G)}
 
 
 def get(name):
-    if name == "gpm":
-        raise NotImplementedError("gpm: decisions D2 (passive data source) and D3 (added-value "
-                                  "label) come first; see docs/baseline_paper/14_submission_plan.md")
     if name not in MISSIONS:
         raise ValueError(f"unknown mission {name!r}; choose from {sorted(MISSIONS)}")
     return MISSIONS[name]

@@ -1,8 +1,7 @@
 """Per-mission benchmark configuration (docs/baseline_paper/03_dataset.md, 05_baselines.md).
 
 Each mission is a separate benchmark: its own label column, comparison columns, feature tiers,
-strata and blocked split. EarthCARE and TRMM are defined; GPM fails loudly until decisions D2 and
-D3 are made.
+strata and blocked split. EarthCARE, TRMM and FY-3G are defined.
 """
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -80,13 +79,27 @@ TRMM = Mission(
 )
 
 
+# FY-3G: as TRMM (scanning radar, VIS/IR imager, same variables), with the 303 km PMR swath as
+# the label footprint and latitude bands reaching the 50-degree orbit's mid-latitudes.
+FY3G = Mission(
+    name="fy3g",
+    data_path=ROOT / "missions" / "fy3g" / "data" / "FY3G_trackwise_decisions.parquet",
+    results_dir=ROOT / "missions" / "fy3g" / "results",
+    label_col="prectot_radar",
+    swath_col="prectot_swath",
+    convective_col="preccon_radar",
+    mass_col="prectot_radar_mean",
+    label_geometries={"prectot": ("prectot_radar", "prectot_swath", "prectot_nadir"),
+                      "preccon": ("preccon_radar", "preccon_swath", "preccon_nadir")},
+    lat_strata=(("tropics |lat|<23.5", 0, 23.5), ("subtropics 23.5-35", 23.5, 35),
+                ("mid-latitudes >=35", 35, float("inf"))),
+    tiers=TRMM.tiers,
+)
+
+MISSIONS = {m.name: m for m in (EARTHCARE, TRMM, FY3G)}
+
+
 def get_mission(name):
-    if name == "earthcare":
-        return EARTHCARE
-    if name == "trmm":
-        return TRMM
-    if name == "gpm":
-        raise NotImplementedError(
-            "gpm: no dataset yet. Decisions D2 (data source) and D3 (added-value label) come "
-            "first; then define its label columns and feature tiers here.")
-    raise ValueError(f"unknown mission {name!r}")
+    if name not in MISSIONS:
+        raise ValueError(f"unknown mission {name!r}; choose from {sorted(MISSIONS)}")
+    return MISSIONS[name]

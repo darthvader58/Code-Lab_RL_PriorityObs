@@ -1,0 +1,178 @@
+# Registry for missions/fy3g/data/FY3G_trackwise_decisions.parquet.
+# Tiers describe future observation eligibility, not whether a value is stored.
+columns:
+  - name: tautot_mean
+    tier: always
+    source_instrument: MERSI-RM-like GEOS-5 diagnostic proxy
+    daylight_only: true
+    notes: Column-total optical-thickness proxy averaged over the 1000 km MERSI-RM swath; a MERSI-RM optical-depth retrieval needs daylight and describes the topmost cloud.
+  - name: cldtot_mean
+    tier: always
+    source_instrument: MERSI-RM-like GEOS-5 diagnostic proxy
+    daylight_only: false
+    notes: Total cloud-fraction proxy averaged over the MERSI-RM swath; GEOS-5 Nature Run diagnostic, not a simulated retrieval.
+  - name: cldtmp_mean
+    tier: always
+    source_instrument: MERSI-RM-like GEOS-5 diagnostic proxy
+    daylight_only: false
+    notes: Cloud-top-temperature proxy averaged over the MERSI-RM swath; stand-in for the MERSI-RM 10.8 um brightness temperature. NaN where G5NR reports no cloud top anywhere in the swath.
+  - name: lwtup_mean
+    tier: always
+    source_instrument: MERSI-RM-like GEOS-5 diagnostic proxy
+    daylight_only: false
+    notes: Outgoing-longwave diagnostic averaged over the MERSI-RM swath, used as a proxy for the MERSI-RM thermal-infrared window (10.8/12 um). FY-3G carries no broadband radiometer.
+  - name: tautot_max
+    tier: always
+    source_instrument: MERSI-RM-like GEOS-5 diagnostic proxy
+    daylight_only: true
+    notes: Maximum column optical-thickness proxy over the MERSI-RM swath.
+  - name: prectot_radar
+    tier: target
+    source_instrument: PMR truth proxy
+    daylight_only: false
+    notes: Total precipitation, maximum over the 303 km PMR swath (the radar's own footprint); primary label geometry; never an agent input.
+  - name: prectot_radar_mean
+    tier: target
+    source_instrument: PMR truth proxy
+    daylight_only: false
+    notes: Total precipitation, mean over the PMR swath; mass-capture weight (rain area x rate); never an agent input.
+  - name: prectot_swath
+    tier: target
+    source_instrument: PMR truth proxy (passive-swath comparison)
+    daylight_only: false
+    notes: Total precipitation, maximum over the 1000 km MERSI-RM swath; label-geometry comparison only; never an agent input.
+  - name: prectot_nadir
+    tier: target
+    source_instrument: PMR truth proxy (nadir-line comparison)
+    daylight_only: false
+    notes: Total precipitation, maximum over cells under the 60 one-second nadir points; comparison with a nadir-only radar such as EarthCARE's CPR; never an agent input.
+  - name: preccon_radar
+    tier: target
+    source_instrument: PMR truth proxy
+    daylight_only: false
+    notes: Convective precipitation, maximum over the 303 km PMR swath (the radar's own footprint); primary label geometry; never an agent input.
+  - name: preccon_radar_mean
+    tier: target
+    source_instrument: PMR truth proxy
+    daylight_only: false
+    notes: Convective precipitation, mean over the PMR swath; mass-capture weight (rain area x rate); never an agent input.
+  - name: preccon_swath
+    tier: target
+    source_instrument: PMR truth proxy (passive-swath comparison)
+    daylight_only: false
+    notes: Convective precipitation, maximum over the 1000 km MERSI-RM swath; label-geometry comparison only; never an agent input.
+  - name: preccon_nadir
+    tier: target
+    source_instrument: PMR truth proxy (nadir-line comparison)
+    daylight_only: false
+    notes: Convective precipitation, maximum over cells under the 60 one-second nadir points; comparison with a nadir-only radar such as EarthCARE's CPR; never an agent input.
+  - name: n_swath_cells
+    tier: metadata
+    source_instrument: extraction geometry
+    daylight_only: false
+    notes: Number of grid cells inside the MERSI-RM swath footprint.
+  - name: n_radar_cells
+    tier: metadata
+    source_instrument: extraction geometry
+    daylight_only: false
+    notes: Number of grid cells inside the PMR swath footprint.
+  - name: n_nadir_cells
+    tier: metadata
+    source_instrument: extraction geometry
+    daylight_only: false
+    notes: Number of cells used for the nadir reduction.
+  - name: decision
+    tier: metadata
+    source_instrument: extraction index
+    daylight_only: false
+    notes: One-minute decision ID, 0 to 352,799, no gaps.
+  - name: field
+    tier: metadata
+    source_instrument: G5NR metadata
+    daylight_only: false
+    notes: Weather-field identifier.
+  - name: g5_step
+    tier: metadata
+    source_instrument: G5NR metadata
+    daylight_only: false
+    notes: Thirty-minute G5NR weather-step identifier.
+  - name: time
+    tier: metadata
+    source_instrument: extraction metadata
+    daylight_only: false
+    notes: Decision timestamp in orbit time (2025-26); the G5NR weather is the same day of year and UTC time in 2005-06.
+  - name: lat
+    tier: always
+    source_instrument: orbit geometry
+    daylight_only: false
+    notes: MERSI-RM footprint centroid latitude (on the nadir track for this centred swath); |lat| <= ~50 deg.
+  - name: lon
+    tier: metadata
+    source_instrument: orbit geometry
+    daylight_only: false
+    notes: Raw longitude retained for traceability; use sin_lon/cos_lon for cyclic modelling.
+  - name: solar_hour
+    tier: always
+    source_instrument: orbit geometry/timing
+    daylight_only: false
+    notes: Local solar hour; FY-3G's precessing orbit samples all hours.
+  - name: land_frac_nadir
+    tier: always
+    source_instrument: G5NR static constants plus orbit geometry
+    daylight_only: false
+    notes: Continuous 0-1 mean over 60 one-second nadir samples; frland + frlandice because frland excludes ice.
+  - name: ocean_frac_nadir
+    tier: always
+    source_instrument: G5NR static constants plus orbit geometry
+    daylight_only: false
+    notes: Continuous 0-1 mean over 60 one-second nadir samples; frocean + frlake.
+  - name: sin_lon
+    tier: always
+    source_instrument: derived geometry
+    daylight_only: false
+    notes: sin(lon in radians), avoiding the -180/+180 seam.
+  - name: cos_lon
+    tier: always
+    source_instrument: derived geometry
+    daylight_only: false
+    notes: cos(lon in radians), avoiding the -180/+180 seam.
+  - name: prectot_radar_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: prectot_radar_mean_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: prectot_swath_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: prectot_nadir_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: preccon_radar_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: preccon_radar_mean_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: preccon_swath_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
+  - name: preccon_nadir_valid
+    tier: metadata
+    source_instrument: derived target validation
+    daylight_only: false
+    notes: False for missing or finite abs(value) >= 1e6 sentinel values.
