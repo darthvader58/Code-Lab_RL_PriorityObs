@@ -25,25 +25,24 @@ detail over three at surface level):
 | stage | mission | gate to move on |
 |---|---|---|
 | 1 | **EarthCARE** ☑ | season-aligned extraction complete (352,800 rows, no gaps); E1–E11 done (18 Oct 2026) |
-| 2 | **TRMM** ◐ | TLE set received ☑; code ready and checked offline ☑ (22 Oct 2026); dataset built with PR-swath labels and VIRS-swath features ☐; E1–E11 done ☐ |
-| 3 | **GPM** | decisions D2 and D3 made; dataset built; E1–E11 done |
-| 4 | comparison | E12 on the completed missions |
+| 2 | **TRMM** ☑ | TLE set received ☑; code ready and checked offline ☑ (22 Oct 2026); dataset built with PR-swath labels and VIRS-swath features ☑ (26 Oct 2026); E1–E11 done ☑ |
+| 3 | **FY-3G** ◐ | TLE set received ☑; code ready and checked offline ☑ (27 Oct 2026); dataset built with PMR-swath labels and MERSI-RM-swath features ☐; E1–E11 done ☐ |
+| 4 | comparison | E12 on the completed missions (EarthCARE ↔ TRMM ☑, 26 Oct 2026) |
 
 Open decisions:
 
 | ID | decision | options | recommendation |
 |---|---|---|---|
 | D1 | paper scope at submission time | three missions / EarthCARE + TRMM / EarthCARE only | submit with every mission that has reached stage gate; move the rest to a follow-up |
-| D2 | GPM passive data source | real GPM data / microwave forward model on G5NR / G5NR proxies | real GPM data (`03_dataset.md` §3.8) |
-| D3 | GPM label | added structure / precipitation GMI misses / GMI retrieval uncertainty | decide with advisor before building GPM (`05_baselines.md` §5.8) |
-| D4 | TRMM passive context | VIRS only / VIRS + TMI | VIRS only first; TMI variant only if D2 provides brightness temperatures |
+| D4 | TRMM passive context | VIRS only / VIRS + TMI | VIRS only (done); a TMI variant needs microwave brightness temperatures, future work 8 |
 
 **Fallback.** If only EarthCARE reaches its stage gate, submit the EarthCARE-only version: title
 option 2 in `00_abstract.md`, drop RQ5, contribution 5, E12, §10.8, Fig. 7, and Table 6, and keep TRMM
-and GPM as future work in §8.3. The rest of the paper is unchanged.
+and FY-3G as future work in §8.3. The rest of the paper is unchanged.
 
 **TLE requests** (CelesTrak special data request, format TLE): EarthCARE 59908, 2025-05-25 →
-2026-02-08; TRMM 25063, 2005-05-25 → 2006-02-08; GPM 39574, 2025-05-25 → 2026-02-08.
+2026-02-08; TRMM 25063, 2005-05-25 → 2006-02-08; FY-3G 56232, 2025-05-25 → 2026-02-08 (requested and received
+27 Oct 2026, 858 element sets).
 
 ## Steps to submission
 
@@ -51,7 +50,7 @@ and GPM as future work in §8.3. The rest of the paper is unchanged.
 2. ☑ Write `run_baselines.py --mission …` producing every table/figure in `11_figures_and_tables.md`.
 3. ☑ Run E2–E11 for EarthCARE; fill `07_experiments.md` and `13_key_numbers.md`. Hardware timing
    (Raspberry Pi–class or flight-representative board) is deferred: Limitation 11, future work 7.
-3a. Repeat stages 2–4 for TRMM and GPM as time allows; decide D1 before writing.
+3a. Repeat stages 2–4 for TRMM (done) and FY-3G as time allows; decide D1 before writing.
 4. Replace every **[TO RUN]** in `00_abstract.md` and `baseline_paper.md`.
 5. Write §10 from the template.
 6. Verify every reference in `09_references.md` from the original source; re-run the literature

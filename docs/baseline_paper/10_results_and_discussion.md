@@ -1,12 +1,12 @@
 # 10. Results and Discussion
 
 Each subsection says what to report. **EarthCARE paragraphs are written** from the results in
-`07_experiments.md` and `13_key_numbers.md`; the sentence templates remain for TRMM and GPM. Delete
+`07_experiments.md` and `13_key_numbers.md`; the sentence templates remain for TRMM and FY-3G. Delete
 the outcomes that did not happen.
 
 EarthCARE figures and the per-question verdict are in `15_earthcare_results.md`.
 
-Report §10.1–10.6 **per mission** (EarthCARE first; TRMM and GPM as their own subsections or as
+Report §10.1–10.6 **per mission** (EarthCARE first; TRMM and FY-3G as their own subsections or as
 columns in each table), then compare the missions in §10.8. Never pool the three datasets into one
 result.
 
@@ -152,9 +152,10 @@ Discuss each difference through the property that causes it:
   [X]%, against [Y]% at other hours; EarthCARE's two sampling times therefore [over/under]state
   gating skill relative to the full day."
 - **Radar geometry.** "The scanning radars' base rates are [higher], and the swath-label inflation
-  falls from [~2×] (EarthCARE, nadir) to [Z×] (TRMM, GPM)."
-- **Passive information.** "With microwave context, the gate [does/does not] find where the radar
-  adds value beyond GMI: capture of added value at 20% is [V]%."
+  falls from [~2×] (EarthCARE, nadir) to [Z×] (TRMM, FY-3G)."
+- **Latitude reach.** "At 35–50°, where only FY-3G samples every local time, decisions near 14:00
+  and 02:00 give capture@20% of [X]% against [Y]% at other hours, [the same as / unlike] TRMM's
+  tropical result; a policy trained on EarthCARE loses [L] points there."
 - **Transfer.** "A policy trained on EarthCARE loses [L] points of capture when applied to TRMM,
   compared with TRMM's own policy." A large loss supports training one policy per mission.
 
@@ -178,7 +179,8 @@ result, not a failure.
   budget-limited, not skill-limited.
 - **Passive information.** EarthCARE and TRMM have the same kind of passive context (visible and
   infrared cloud proxies), and their skill matches: AUC 0.855 and 0.849, Tier B retention 78.5% and
-  79.3%. The microwave question waits for GPM.
+  79.3%. FY-3G has the same kind of passive context, so all three differences in §10.8 come from
+  orbit and radar geometry.
 - **Transfer.** A policy trained on EarthCARE loses 1.2 points of capture@20% when applied to TRMM
   (gradient boosting, shared features, nadir label; 1.9 for logistic regression), and every
   transfer in either direction stays within 2.5 points of the target's own policy. The two missions

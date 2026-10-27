@@ -2,7 +2,7 @@
 
 Aim for 6–7 figures and 5–6 tables in a full paper; a 4-page conference paper (e.g., IGARSS) keeps
 Fig. 1, Fig. 3, Fig. 4, Table 2 and Table 3 only, for EarthCARE. Multi-panel figures get one panel per
-mission (EarthCARE, TRMM, GPM) with identical axes. Status ◐ = EarthCARE panel exists, other
+mission (EarthCARE, TRMM, FY-3G) with identical axes. Status ◐ = EarthCARE panel exists, other
 missions to come. EarthCARE figures are drawn by `python -m baselines.paper_figures --mission
 earthcare` into `figures/earthcare/` and shown in `15_earthcare_results.md`.
 
@@ -10,7 +10,7 @@ earthcare` into `figures/earthcare/` and shown in `15_earthcare_results.md`.
 
 | # | content | source | status |
 |---|---|---|---|
-| Fig. 1 | Concept, one panel per mission: passive swath and radar footprint (CPR nadir line; PR/DPR scanned swath), one-minute decision segments | schematic | ☐ draw |
+| Fig. 1 | Concept, one panel per mission: passive swath and radar footprint (CPR nadir line; PR/PMR scanned swath), one-minute decision segments | schematic | ☐ draw |
 | Fig. 2 | Map of decisions coloured by radar-footprint label, one panel per mission (shows TRMM's tropical band and EarthCARE's polar coverage) | new parquets | ◐ `fig2_rain_map.png` (EarthCARE; 5° cells, no coastlines) |
 | Fig. 3 | **Main result:** capture vs. duty cycle for all policies, with random diagonal and oracle curve | E3 | ◐ `fig3_capture_curves.png` (EarthCARE) |
 | Fig. 4 | Radar footprint vs. passive swath: positive-rate bars and capture gap, per mission | E4 | ◐ `fig4_label_geometry.png` (EarthCARE) |

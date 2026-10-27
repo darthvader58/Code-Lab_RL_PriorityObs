@@ -19,7 +19,7 @@ slow.
 JPL's Dynamic Targeting (DT) uses a lookahead sensor to image the scene ahead of the spacecraft,
 analyses it onboard, and retargets a primary instrument within the same overflight
 [chien2023dt, breitfeld2024isairas]. Scenarios include cloud avoidance (MODIS) and storm hunting
-(GPM precipitation). Learning-based DT policies — imitation and reinforcement learning trained
+(precipitation). Learning-based DT policies — imitation and reinforcement learning trained
 against a dynamic-programming expert — outperform the best heuristic by 10.0% and 13.7% on average
 [breitfeld2025learning]. DT has been demonstrated in flight on the CogniSAT-6 smallsat
 [dt2025cognisat6].
@@ -44,11 +44,11 @@ Two families of spaceborne radar matter here.
 - **Nadir profiling radars.** CloudSat [stephens2002cloudsat] and EarthCARE
   [illingworth2015earthcare] carry nadir-only cloud radars whose footprint is a narrow line inside the
   much wider imager swath. On EarthCARE the companion is the visible/infrared MSI.
-- **Scanning precipitation radars.** TRMM's Precipitation Radar [kummerow1998trmm] and GPM's
-  Dual-frequency Precipitation Radar [hou2014gpm] scan across track over a ~245 km swath. TRMM paired
-  the PR with a visible/infrared scanner (VIRS) and a microwave imager (TMI); GPM pairs the DPR with a
-  13-channel microwave imager (GMI) whose footprint lies ahead of the spacecraft [nasa_gmi]. Both fly
-  precessing, non-sun-synchronous orbits (35° and 65°) that sample all local times.
+- **Scanning precipitation radars.** TRMM's Precipitation Radar [kummerow1998trmm] and FY-3G's Ku/Ka
+  Precipitation Measurement Radar [yang2025fy3g] scan across track over 247 and 303 km swaths. TRMM paired the PR with a visible/infrared
+  scanner (VIRS) and a microwave imager (TMI); FY-3G likewise pairs the PMR with a visible/infrared
+  imager (MERSI-RM) and a microwave imager (MWRI-RM) [chen2024fy3g]. Both fly precessing,
+  non-sun-synchronous orbits (35° and 50°) that sample all local times.
 
 Small radar platforms such as RainCube [peral2019raincube] and the planned INCUS constellation of
 three small satellites with RainCube-heritage scanning Ka-band radars [tanelli2023incus] make
@@ -56,8 +56,9 @@ duty-cycled radar operation a realistic design question.
 
 **Points to make:** (1) studies that score targeting policies against gridded or imager-scale truth
 implicitly assume the instrument sees the whole scene; for a nadir radar it does not (Section 4).
-(2) Microwave imagers already observe precipitation, so on GPM the radar's value is its added
-detail, not detection (Section 5.8).
+(2) Microwave imagers already observe precipitation, so with microwave context the radar's
+value would be its added detail, not detection; this paper uses visible/infrared context on every
+mission and leaves that case to future work (Section 8).
 
 ## 2.5 Simulation testbeds
 
@@ -73,10 +74,10 @@ precipitation well, but has a documented split-ITCZ bias. Mission-architecture t
 |---|---|---|
 | Decision | where to point / what to image | whether an active radar fires (on/off) |
 | Constraint | slew time, pointing | power / duty-cycle budget *d* |
-| Information source | separate lookahead sensor, 60–90 s lead | co-located passive sensor: imager ~simultaneous with nadir (EarthCARE, TRMM), microwave imager ahead of the radar (GPM) |
+| Information source | separate lookahead sensor, 60–90 s lead | co-located visible/infrared imager, ~simultaneous with the radar (EarthCARE, TRMM, FY-3G) |
 | Truth | scene-scale value (cloud-free area, storm) | precipitation in the radar's own footprint (nadir line or scanned swath) |
 | Hidden information | none | radar-only features revealed after firing (future work) |
-| Platform | CogniSAT-6 (flown) | EarthCARE, TRMM, GPM geometry + G5NR (simulated); three separate cases |
+| Platform | CogniSAT-6 (flown) | EarthCARE, TRMM, FY-3G geometry + G5NR (simulated); three separate cases |
 | Learner | DP expert → IL / RL | static baselines (this paper) → RL (next paper) |
 
 ## 2.7 Gap statement (closing sentence of the section)

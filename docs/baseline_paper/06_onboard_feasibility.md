@@ -37,7 +37,7 @@ within 1.4 points of LightGBM at 1/8 of its size.
 
 **Claim for the paper:** running the policy is not the bottleneck. The bottleneck is the inputs.
 
-## 6.3 Feature cost: three tiers (EarthCARE; TRMM and GPM in §6.7)
+## 6.3 Feature cost: three tiers (EarthCARE; TRMM and FY-3G in §6.7)
 
 | tier | features | needs onboard retrieval? | works at night? |
 |---|---|---|---|
@@ -89,13 +89,12 @@ contributes most of the skill.
 
 ## 6.6 Latency budget (one paragraph in the paper)
 
-At ~7 km/s ground speed, MSI and VIRS see the scene essentially when the radar does. GMI's footprint
-lies ahead of the spacecraft, so on GPM the passive view of a scene can precede the radar's. For the
+At ~7 km/s ground speed, MSI, VIRS and MERSI-RM see the scene essentially when the radar does. For the
 gate to act on the current minute, features + policy must complete within seconds. Policy time is
 negligible (6.2); feature time depends on the tier (6.3). `lwtup_fore` is the only feature that
 looks ahead along track, and it is a proxy (see `03_dataset.md` §3.5).
 
-## 6.7 Feature tiers for TRMM and GPM
+## 6.7 Feature tiers for TRMM and FY-3G
 
 The policy cost (§6.2) is the same for every mission. The feature cost is not.
 
@@ -103,12 +102,15 @@ The policy cost (§6.2) is the same for every mission. The feature cost is not.
 |---|---|---|---|---|
 | EarthCARE | MSI-style cloud proxies + geometry (§6.3) | thermal-infrared-like proxies + geometry | geometry | Tier A no, B and C yes |
 | TRMM | VIRS-style cloud proxies (`cldtot`, `cldtmp`, `tautot` mean/max, `lwtup` as a thermal-IR window proxy) + geometry; no forward-view feature; optionally + TMI | `cldtmp_mean`, `lwtup_mean` + geometry | geometry | Tier A no, B and C yes |
-| GPM | all 13 GMI channels + geometry | a few GMI channels (e.g., 37 and 89 GHz) + geometry | geometry | yes, all tiers |
+| FY-3G | MERSI-RM-style cloud proxies, the same as TRMM's + geometry; no forward-view feature | `cldtmp_mean`, `lwtup_mean` + geometry | geometry | Tier A no, B and C yes |
 
 - **TRMM** follows EarthCARE closely. Because TRMM samples all local times, its day/night split has
   data at every hour and latitude, which EarthCARE's two fixed local times cannot provide.
-- **GPM** needs no onboard retrieval in any tier: brightness temperatures come straight from
-  calibrated counts, and microwave works day and night through cloud. The cost question for GPM is
-  therefore not "can the features be computed onboard?" but "how many channels does the gate need?"
+- **FY-3G** uses TRMM's tiers unchanged, so any difference in retention between the two comes from the
+  orbit (FY-3G adds 35–50° latitude at every local time), not the inputs. MERSI-RM's thermal channels
+  (10.8, 12.0 µm) make Tier B available day and night.
+- A microwave imager (TMI or MWRI-RM, if they were used) would need no onboard retrieval:
+  brightness temperatures come straight from calibrated counts and work day and night through cloud.
+  That case is future work (§8).
 - **Tier C** (orbit position, surface type, local time) is the floor in every mission; anything the
   passive sensor adds must beat it.

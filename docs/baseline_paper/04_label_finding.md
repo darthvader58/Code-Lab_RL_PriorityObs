@@ -11,7 +11,7 @@ does it depend on the radar's geometry?
 |---|---|---|---|
 | EarthCARE | CPR nadir line (one ~7 km model cell wide) | MSI, 150 km | ~5% |
 | TRMM | PR scanned swath, 247 km | VIRS, 833 km | ~30% |
-| GPM | DPR scanned swath, ~245 km | GMI, ~885 km | ~28% |
+| FY-3G | PMR scanned swath, 303 km | MERSI-RM, 1000 km | ~30% |
 
 The effect should be largest for EarthCARE. For the scanning radars the radar sees a large part of
 the passive swath, but a swath-scored policy is still rewarded for precipitation outside it.
@@ -46,12 +46,21 @@ From the EarthCARE dataset (352,800 decisions, all finite):
 - The gap widens with the threshold: nadir positives are 74% of swath positives at 0.1 mm/hr, 46%
   at 1 mm/hr, and 26% at 10 mm/hr (`../EarthCare_trackwise_method.md` §4.2).
 
-## 4.4 TRMM and GPM [TO RUN]
+## 4.4 TRMM (done) and FY-3G [TO RUN]
 
-The same comparison for the scanning radars: label = maximum over cells in the PR or DPR swath vs.
-maximum over cells in the VIRS or GMI swath. For GPM, the comparison applies to the precipitation
-label used in the secondary analysis; the primary GPM label measures the radar's added value
-(`05_baselines.md` §5.8).
+The same comparison for the scanning radars: label = maximum over cells in the PR or PMR swath vs.
+maximum over cells in the VIRS or MERSI-RM swath, with the nadir line as a third geometry.
+
+**TRMM** (352,800 decisions, `missions/trmm/data/enrich_report.json`, E4 in
+`missions/trmm/results/e4_label_geometry.csv`): positive rates at ≥ 1 mm/hr are 41.6% in the PR swath,
+63.9% in the VIRS swath and 14.9% on the nadir line, so swath labelling inflates the class **1.54×**
+against EarthCARE's 2.2×. For the gradient-boosting gate trained on the PR-swath label, scoring
+against the VIRS swath raises precision@20% from 80.4% to 96.4% and lowers capture@20% from 40.7% to
+31.8%; ranking barely moves (AUC 0.849 vs. 0.894). The direction is the same as on EarthCARE, the size
+smaller, because the PR scans 30% of the VIRS swath instead of one model cell.
+
+**FY-3G** [TO RUN]: the PMR covers ~30% of the MERSI-RM swath, so an inflation close to TRMM's is
+expected.
 
 ## 4.5 Effect on policy evaluation (E4, EarthCARE)
 

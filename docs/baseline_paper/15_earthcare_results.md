@@ -33,7 +33,7 @@ those belong in the paper.
 | **RQ2:** how much rain does a gate catch under a budget? | 66.4% of rainy minutes at 20% duty: 3.4× random (19.7%), 2.4× geometry-only (27.5%) | E3, E10 | ✅ answered: strong skill, with 33.6 points of headroom left for RL |
 | **RQ3:** does scoring against the imager swath distort results? | positive class 2.2× larger (13.7% → 30.0%); precision inflated from 44.7% to 75.0% | E4 | ✅ answered: yes, strongly |
 | **RQ4:** is it feasible onboard, and does it work at night? | night-capable inputs keep 89–90% of capture; policies need 16–18,300 parameters, ~1 ms per decision | E5, E9 | ✅ answered: yes, timed on a laptop only (§15.9) |
-| **RQ5:** how do the missions compare? | vs. TRMM in shared latitudes: same AUC (0.855 vs. 0.849); transfer costs ≤ 2.5 points of capture@20%; TRMM skill is 3.8 points higher inside EarthCARE's local-time windows than outside | E12 | ◐ answered for TRMM; GPM pending |
+| **RQ5:** how do the missions compare? | vs. TRMM in shared latitudes: same AUC (0.855 vs. 0.849); transfer costs ≤ 2.5 points of capture@20%; TRMM skill is 3.8 points higher inside EarthCARE's local-time windows than outside | E12 | ◐ answered for TRMM; FY-3G pending |
 
 What counts as success here: the paper is a **benchmark** paper. It succeeds when it gives a clean,
 leakage-free bar for an RL policy to beat and explains what sets that bar. It does not need the
@@ -213,7 +213,7 @@ These are limits on the claims, not failures of the experiment. State them in th
    this is future work.
 6. **Independent decisions.** Each minute is scored on its own, with no battery state or switching
    cost. That is deliberate (it is the static bar) and is what the RL follow-up adds.
-7. **Cross-mission comparison (E12)** covers TRMM only; GPM waits on decisions D2 and D3.
+7. **Cross-mission comparison (E12)** covers TRMM only; FY-3G is pending its extraction.
 
 ## 15.10 Headline numbers for the abstract and talks
 

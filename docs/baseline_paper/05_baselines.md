@@ -7,13 +7,12 @@ evaluation period the policy may fire on at most a fraction *d* of decisions (th
 budget). Each decision is scored independently (contextual bandit); sequential effects are left to
 the RL follow-up.
 
-The gate is an onboard observation-prioritization policy. On EarthCARE and TRMM it performs
-**detection prioritization** (find precipitation the passive sensors see only as cloud); on GPM it
-performs **value prioritization** (find where the radar adds information beyond GMI).
+The gate is an onboard observation-prioritization policy. On all three missions it performs
+**detection prioritization**: find precipitation the passive sensors see only as cloud.
 
 The task is defined and solved **separately for each mission**: each has its own features, label,
 splits, and fitted policies. The formal statement below is written for EarthCARE; TRMM uses the same
-form with the PR-swath label, and GPM uses the added-value label of §5.8.
+form with the PR-swath label, and FY-3G with the PMR-swath label (§5.8).
 
 ### Formal statement (LaTeX-ready)
 
@@ -48,8 +47,9 @@ future state (battery, switching cost) or future observations (`cpr_conditional`
   the test block).
 - **TRMM primary:** *y_t* = 1 if `prectot_radar` (maximum `prectot` in the PR swath) ≥ 1 mm/hr;
   mass-capture is weighted by `prectot_radar_mean`, the mean over the PR swath (rain area × rate)
-  **[dataset pending]**.
-- **GPM primary:** the radar's added value beyond GMI (§5.8) **[TO BUILD]**.
+  (base rate 41.6% overall).
+- **FY-3G primary:** *y_t* = 1 if `prectot_radar` (maximum `prectot` in the PMR swath) ≥ 1 mm/hr,
+  weighted the same way (§5.8) **[dataset pending]**.
 - **Secondary (all):** convective, `preccon` ≥ 1 mm/hr in the radar footprint (EarthCARE 1.2%).
 - **Sensitivity:** thresholds 0.1 and 5 mm/hr, and the median-split `fire` label used by the
   CZML export (0.097 mm/hr on EarthCARE, ~47% positive in the test block).
@@ -122,30 +122,28 @@ The learned policies are only worth reporting as a contribution if:
 - they beat P2/P3 (geometry) clearly, showing the imager adds value beyond orbit position, and
 - the gap to P8 (oracle) is reported honestly, since that gap is the room left for RL.
 
-## 5.8 GPM: value prioritization — scoring the radar's added value
+## 5.8 FY-3G: the same detection label on a third orbit
 
-GMI already detects precipitation, so "fire when it rains" is the wrong objective for GPM: a gate
-could score well by repeating what GMI already knows, and the radar would add nothing. The GPM label
-must measure what DPR adds beyond GMI. Candidate definitions, to be fixed before building the GPM
-dataset (decision D3 in `14_submission_plan.md`):
+FY-3G uses TRMM's label form: *y_t* = 1 if `prectot_radar` (maximum `prectot` in the 303 km PMR
+swath) ≥ 1 mm/hr, with mass-capture weighted by `prectot_radar_mean`. The threshold stays 1 mm/hr on
+all three missions so they remain comparable, although the PMR's Ka band detects lighter rain than
+TRMM's PR; a lower threshold is part of E7, not the primary label. Feature tiers are TRMM's
+(`06_onboard_feasibility.md` §6.7), since MERSI-RM-like and VIRS-like inputs are the same G5NR
+proxies. E6 uses bands < 23.5°, 23.5–35° and ≥ 35°; the last is the latitude range FY-3G adds over
+TRMM.
 
-1. **Structure the passive sensor cannot resolve.** Fire where DPR reveals vertical structure that
-   matters (e.g., convective cores, bright-band height, echo-top height above a threshold).
-2. **Precipitation GMI handles poorly.** Fire on light rain and falling snow that KaPR detects but
-   GMI-based retrievals miss or underestimate.
-3. **Retrieval uncertainty.** Fire where the GMI-only precipitation estimate is most uncertain or
-   disagrees most with DPR.
-
-Whichever is chosen, the gate's input must be GMI only, and any combined DPR + GMI product contains
-the withheld radar measurement and must not be used as an input. GMI's footprint lies ahead of the
-spacecraft, so its view of a scene can come before the radar reaches it; the analysis must confirm
-that each input is available before the decision it informs.
+**Why there is no value-prioritization label.** All three gates see clouds through visible/infrared
+channels, so detecting rain is the right objective. A gate fed by a microwave imager, which already
+sees rain, would instead have to score what the radar adds beyond it (vertical structure, light rain
+and snow, or the passive retrieval's uncertainty); that case is future work
+(`08_limitations_future_work.md`).
 
 ## 5.9 One policy set per mission; cross-mission transfer
 
 The policies P0–P8 are fitted and evaluated separately for each mission. A single model trained on
-all three missions is not used: their observation spaces (visible/infrared vs. microwave), label
-footprints, and objectives differ, and pooling would reduce them to their shared features. Transfer is
+all three missions is not used: their label footprints (nadir line vs. 247 or 303 km swath), base
+rates, latitude ranges and feature sets differ, and pooling would reduce them to their shared
+features. Transfer is
 measured separately in E12, after each mission's own results exist: train on one mission's data,
 apply to another's with the shared features (geometry tier, cloud proxies), and report the loss
 relative to that mission's own policy. A large loss when transferring from EarthCARE to TRMM, for

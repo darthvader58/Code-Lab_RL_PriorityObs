@@ -4,8 +4,8 @@
 built by `extract_trackwise.py` and `task_outputs/enrich_trackwise.py`, and analysed in
 `missions/earthcare/EarthCare_trackwise.ipynb`. Baseline results are in `missions/earthcare/results/`
 (produced by `python -m baselines.run_baselines --mission earthcare`). The feature tiers and
-validation rules are documented in [`feature_set.md`](./feature_set.md). TRMM and GPM will get their
-own datasets with the same method (`missions/trmm/`, `missions/gpm/`).
+validation rules are documented in [`feature_set.md`](./feature_set.md). TRMM and FY-3G get their
+own datasets with the same method (`missions/trmm/`, `missions/fy3g/`).
 
 This method replaces the clustering approach described in
 [`clustering_method.md`](./clustering_method.md), for the reasons given there — in short, clustering
@@ -477,8 +477,8 @@ one of those two windows only. As a result:
 - **Results may not transfer to orbits with different local times.** A policy trained here has only
   seen ~14:00 and ~02:00 weather. A radar in a different sun-synchronous orbit, or in a
   non-sun-synchronous (precessing) orbit that samples all local times, faces a different mix of
-  weather. That would need retraining or validation. TRMM and GPM, which sample all local times, are
-  the planned test (`missions/trmm/`, `missions/gpm/`).
+  weather. That would need retraining or validation. TRMM and FY-3G, which sample all local times, are
+  the test (`missions/trmm/`, `missions/fy3g/`; E12).
 
 G5NR provides weather at every half hour, so this limitation can be measured in this setup: comparing
 the precipitation sampled at the satellite's times with the precipitation at all hours along the

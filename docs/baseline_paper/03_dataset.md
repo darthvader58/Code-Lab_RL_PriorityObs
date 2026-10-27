@@ -101,7 +101,7 @@ test. This holds for every mission and is why Section 7 requires a time-blocked 
 EarthCARE the effect on logistic regression turned out small: AUC 0.833 random vs. 0.837
 time-blocked; E1.)
 
-## 3.7 TRMM **[code ready; dataset pending]**
+## 3.7 TRMM **[done]**
 
 | item | value |
 |---|---|
@@ -123,37 +123,37 @@ features are the same kind of cloud proxies, and the swath widths, the radar foo
 variable list change. `solar_hour` now takes all values, so day/night splits (Section 6) have data
 on both sides at every latitude.
 
-## 3.8 GPM Core Observatory **[TO BUILD; data source open]**
+## 3.8 FY-3G **[code ready; dataset pending]**
 
 | item | value |
 |---|---|
-| NORAD ID | 39574 |
-| orbit window | 2025-06-01 15:00 – 2026-02-01 15:00 UTC, day-of-year matched (historical TLE set, 2025-05-25 – 2026-02-08) |
-| orbit | 65°, precessing, ~407 km; samples all local times |
-| passive context | GMI, 13 channels 10–183 GHz, conical scan, ~885 km swath, footprint ahead of the spacecraft |
-| radar footprint | DPR (KuPR 13.6 GHz + KaPR 35.5 GHz), cross-track scanning, ~245 km swath |
-| comparison truth | max over cells in the GMI swath |
+| NORAD ID | 56232 |
+| orbit window | 2025-06-01 15:00 – 2026-02-01 15:00 UTC, day-of-year matched as for EarthCARE (historical TLE set, 858 element sets, 2025-05-25 – 2026-02-08; largest gap 7 d 23 h across an orbit raise, allowed by an 8-day limit) |
+| orbit | 49.99°, precessing; samples all local times; 403–411 km in the window (nominal 407 km) |
+| passive context | MERSI-RM (8 visible/infrared channels, **1000 km** swath, centred) → the same cloud proxies as TRMM over the MERSI-RM swath; `lwtup_mean` stands in for the thermal-infrared window (FY-3G has no broadband radiometer); no forward-view feature; MWRI-RM microwave imager not used |
+| radar footprint | PMR, Ku 13.6 + Ka 35.5 GHz, cross-track scanning, **303 km** swath, 5 km resolution → label `prectot_radar` = max over cells in the PMR swath; `prectot_radar_mean` weights mass-capture |
+| comparison truth | max over the MERSI-RM swath (`*_swath`) and along the nadir line (`*_nadir`) |
+| G5NR variables | 6, the same as TRMM |
+| coverage | nadir to 50.15° latitude; the MERSI-RM swath reaches ~55° |
 
-The GPM case cannot simply reuse the cloud proxies, because GMI measures microwave brightness
-temperatures, which respond directly to rain (emission, low frequencies) and ice (scattering, high
-frequencies). G5NR does not produce brightness temperatures. Three options, decided before building
-(`14_submission_plan.md`, decision D2):
+Sources: Yang et al. (2025) for the PMR swath, resolution and orbit; the CMA FY-3G presentation at
+IPWG-11 (2024) for the MERSI-RM swath; NSMC for the MERSI-RM channels. Offline checks with the real
+TLE set and grid (`../FY3G_trackwise_method.md` §7): measured MERSI-RM width 964–1065 km (it widens
+with latitude, as a fixed scan angle does over an oblate Earth), PMR 292–321 km, every footprint
+covers grid cells.
 
-1. **Real GPM data.** GMI brightness temperatures and DPR products are public and already collocated
-   on one spacecraft. No simulation; the label comes from DPR itself. Preferred.
-2. **Microwave forward model on G5NR** (e.g., RTTOV or CRTM) to simulate GMI brightness temperatures.
-   Consistent with the other two cases, but substantial work.
-3. **G5NR proxies** (column water vapour, liquid and ice water paths). Cheapest, but these are closer
-   to what the radar measures than to what GMI sees, so they make the task too easy; usable only as a
-   clearly labelled upper bound.
-
-The GPM label is also different: see `05_baselines.md` §5.8.
+**Why FY-3G.** MERSI-RM is a visible/infrared imager like VIRS, so the pipeline, features and label
+carry over unchanged; G5NR produces no microwave brightness temperatures, so a mission whose only
+passive context is microwave would need real data or a forward model. Its 50° orbit also extends
+TRMM's all-local-time sampling from ±35° to ±50°, the latitudes where EarthCARE alone samples only
+two local times.
 
 ## 3.9 Optional: TRMM with TMI
 
 TRMM carried both a visible/infrared scanner and a microwave imager. Running TRMM twice — VIRS only,
 then VIRS + TMI — measures directly how much passive microwave information changes gating skill. TMI
-faces the same brightness-temperature problem as GMI (§3.8), so this variant inherits decision D2.
+measures microwave brightness temperatures, which G5NR does not produce, so this variant needs real
+data or a forward model.
 
 ## 3.10 Release
 

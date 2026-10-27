@@ -82,7 +82,7 @@ for geometry vs. 66.4% with the passive features. **Where:** §5.4, Table 4.
 ~14:00 and ~02:00 local time, so every reported rate is conditional on precipitation at those times,
 not on daily precipitation. The labels remain correct for the task, because a radar can only gate
 what is beneath it when it passes over. The open question is transfer to orbits with different local
-times. The paper measures this directly: TRMM and GPM sample all local times, and E12 compares
+times. The paper measures this directly: TRMM and FY-3G sample all local times, and E12 compares
 TRMM's skill near 14:00/02:00 with its skill at other hours and tests transfer from EarthCARE. G5NR
 also has every half hour, so the fraction of daily precipitation EarthCARE's two windows miss can be
 measured, which real EarthCARE data cannot do. **Where:** §3.3; Limitation 8; E12; §8.2 future
@@ -90,20 +90,22 @@ work 5.
 
 ### O12. "Why three missions? Why not one model trained on all of them?"
 
-**Response:** The missions differ in orbit (sun-synchronous vs. precessing), radar geometry (nadir
-line vs. scanning swath), and passive information (cloud-only vs. microwave). One pooled model would
+**Response:** The missions differ in orbit (sun-synchronous vs. precessing; ±82°, ±35° and ±50°
+reach), radar geometry (nadir line vs. 247 or 303 km scanning swath), and base rate. One pooled model would
 have to drop to the features they share and would hide exactly these differences. Each mission is
 therefore a separate case with its own dataset, training, and validation; transfer between missions
 is measured separately (E12). If a reviewer prefers depth over breadth: EarthCARE is the primary case
 and is reported in full, and the other two use the identical method. **Where:** §1.2, §5.9, E12,
 §8.3, Limitation 7.
 
-### O13. "GMI already sees rain. Isn't the GPM gate trivial?"
+### O13. "TRMM and FY-3G carry microwave imagers. Why not use them?"
 
-**Response:** It would be if the target were rain detection, which is why the GPM label is the
-radar's added value beyond GMI (vertical structure, light rain and snow, or the GMI retrieval's
-uncertainty), not rain occurrence. Combined DPR + GMI products contain the withheld radar
-measurement and are never used as inputs. **Where:** §5.8, §3.8.
+**Response:** The nature run does not produce microwave brightness temperatures, so using TMI or
+MWRI-RM would need real data or a microwave forward model. A microwave imager also already sees rain,
+which turns the gate into a different question (what the radar adds beyond a sensor that sees rain)
+needing a different label. Using the visible/infrared imager on every mission keeps the passive
+context the same in kind, so the comparison isolates orbit and radar geometry. The microwave case is
+stated as future work. **Where:** §3.8, §5.8, §8.2 future work 8.
 
 ### O14. "TRMM only covers the tropics. Is the comparison fair?"
 

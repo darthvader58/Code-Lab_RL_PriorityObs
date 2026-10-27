@@ -8,23 +8,23 @@ season-aligned extraction, dataset SHA-256 `9fe09a93c8b0640f73f23d8422f869573ca1
 (`missions/earthcare/data/enrich_report.json`), and the baseline run in
 `missions/earthcare/results/` (`run_meta.json` records the same hash). The earlier extraction
 (351,639 rows, time-shifted weather) is deleted and none of its numbers are used. TRMM numbers are
-in the cross-mission section (E12); GPM has no numbers yet.
+in the cross-mission section (E12); FY-3G has no numbers yet.
 
 ## Missions (fixed facts)
 
-| quantity | EarthCARE | TRMM | GPM Core | source |
+| quantity | EarthCARE | TRMM | FY-3G | source |
 |---|---|---|---|---|
-| NORAD ID | 59908 | 25063 | 39574 | celestrak_satcat (checked Oct 2026) |
-| international ID | 2024-101A | 1997-074A | 2014-009C | same |
-| launch / end | 2024-05-28 / operating | 1997-11-27 / re-entered 2015-06-16 | 2014-02-27 / operating | same |
-| inclination | ~97° (sun-synchronous) | ~35° | ~65° | same |
+| NORAD ID | 59908 | 25063 | 56232 | celestrak_satcat (checked Oct 2026) |
+| international ID | 2024-101A | 1997-074A | 2023-055A | same |
+| launch / end | 2024-05-28 / operating | 1997-11-27 / re-entered 2015-06-16 | 2023-04-16 / operating | same |
+| inclination | ~97° (sun-synchronous) | ~35° | 49.99° | same; FY-3G from its TLE set |
 | orbit window used | 2025-06-01 → 2026-02-01 15:00 UTC | 2005-06-01 → 2006-02-01 15:00 UTC | 2025-06-01 → 2026-02-01 15:00 UTC | `03_dataset.md` |
 | TLE set requested | 2025-05-25 → 2026-02-08 | 2005-05-25 → 2006-02-08 | 2025-05-25 → 2026-02-08 | CelesTrak special request |
 | local-time nodes | 13:56–13:57 / 01:56–01:57 | all local times | all local times | equator crossings of the nadir track over the window (EarthCARE) |
-| radar swath | nadir only | 247 km (PR, post-boost) | ~245 km | trmm_instruments (verified), gpm_instruments (verify) |
-| passive swath | MSI 150 km | VIRS 833 km | GMI ~885 km | trmm_instruments (verified), gpm_instruments (verify) |
-| altitude in window | ~394 km | 398.5–400.6 km | ~407 km | TLE sets (EarthCARE, TRMM); gpm_instruments |
-| TLEs / largest gap | 593 / 2 d 13.7 h | 380 / 3 d 0 h 23 min | — | TLE sets |
+| radar swath | nadir only | 247 km (PR, post-boost) | 303 km (PMR, Ku/Ka) | trmm_instruments (verified), yang2025fy3g |
+| passive swath | MSI 150 km | VIRS 833 km | MERSI-RM 1000 km | trmm_instruments (verified), chen2024fy3g |
+| altitude in window | ~394 km | 398.5–400.6 km | 403–411 km (nominal 407) | TLE sets; yang2025fy3g |
+| TLEs / largest gap | 593 / 2 d 13.7 h | 380 / 3 d 0 h 23 min | 823 / 7 d 23 h 37 min (across an orbit raise) | TLE sets |
 | decisions per dataset | 352,800 | 352,800 | 352,800 | 11,760 G5NR steps × 30 |
 
 ## EarthCARE dataset
