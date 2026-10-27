@@ -3,8 +3,8 @@
 50° precessing orbit at ~407 km (all local times), scanning Precipitation Measurement Radar (PMR,
 Ku 13.6 / Ka 35.5 GHz, 303 km swath), Medium Resolution Spectral Imager (MERSI-RM, 8 VIS/IR
 channels, 1000 km swath). Detection-prioritization benchmark: should the PMR be on this minute,
-judged from MERSI-RM-like context? Replaces GPM as the third mission: it samples every local time
-to ±50°, beyond TRMM's ±35°, with a VIS/IR imager the G5NR proxies can represent.
+judged from MERSI-RM-like context? The third mission: it samples every local time to ±50°, beyond
+TRMM's ±35°, with a VIS/IR imager the G5NR proxies can represent.
 
 **Status:** code complete and checked offline (2026-10-27); extraction not run yet.
 Method and differences from EarthCARE and TRMM: `docs/FY3G_trackwise_method.md`.

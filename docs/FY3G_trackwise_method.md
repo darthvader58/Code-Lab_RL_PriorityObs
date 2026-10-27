@@ -13,13 +13,11 @@ This document lists only what differs and why.
 
 ---
 
-## 1. Why FY-3G (and not GPM)
+## 1. Why FY-3G
 
-FY-3G replaces GPM as the third mission. GPM's only passive imager, GMI, is a microwave radiometer:
-G5NR has no microwave brightness temperatures (decision D2), and because microwave channels see
-rain directly, GPM's label would have had to score the radar's added value beyond GMI (decision
-D3). FY-3G carries a visible/infrared imager next to its radar, so the G5NR cloud proxies and the
-"rain under the radar" label carry over unchanged, as they did from EarthCARE to TRMM.
+FY-3G carries a visible/infrared imager next to its radar, so the G5NR cloud proxies and the "rain
+under the radar" label carry over unchanged, as they did from EarthCARE to TRMM. G5NR has no
+microwave brightness temperatures, so the microwave imager (MWRI-RM) is not used.
 
 It also fills the gap the first two missions leave together. EarthCARE samples all latitudes to
 ±82° but only near 01:56 and 13:56 local time; TRMM samples every local time but only to ±35°.
@@ -41,7 +39,7 @@ precipitation-measurement satellite:
 | broadband radiometer | none | — |
 
 Both swaths are taken as centred on the ground track. The PMR swath is the one published value
-(303 km); the Ka beam is treated as matched to Ku, as for GPM's DPR after 2018. Using the Ku swath
+(303 km); the Ka beam is treated as matched to Ku. Using the Ku swath
 only would not change the label geometry.
 
 ## 3. What changes, and why
