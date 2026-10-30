@@ -611,9 +611,9 @@ same = (rank.rank(axis=1).nunique() == 1).all()
 display(Markdown(
     f"**Takeaway.** Putting the other winter months into training raises Nov–Jan AUC by "
     + ", ".join(f"{g:+.3f} ({p.split()[0]})" for p, g in season['AUC gain'].items())
-    + ". That is an upper bound on the seasonal penalty, since those folds also train on 7 months "
+    + ". This is not an isolated seasonal penalty: those folds also train on 7 months "
     "instead of 4. " + ("The ranking of the policies is the same in every held-out month, so the "
-    "time-blocked numbers are conservative." if same else "The ranking changes in some months.")))
+    "chronological and seasonal evaluations still answer different questions." if same else "The ranking changes in some months.")))
 """)
 
     md(rf"""
@@ -848,7 +848,8 @@ into `exports/` (not in git); the Cesium CZML files go to `cesium/` (see the exp
     nb.cells = cells
     nb.metadata = {"kernelspec": {"display_name": "trackwise-py", "language": "python", "name": "trackwise-py"},
                    "language_info": {"name": "python"}}
-    return nb
+    from baselines.notebook_seasonal import attach
+    return attach(nb, m.name) if m.name in ("earthcare", "trmm") else nb
 
 
 def main():

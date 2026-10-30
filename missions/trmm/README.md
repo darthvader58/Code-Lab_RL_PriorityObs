@@ -30,3 +30,20 @@ python3 task_outputs/export_trackwise.py --mission trmm                         
 jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=trackwise-py \
     missions/trmm/TRMM_trackwise.ipynb
 ```
+
+## Seasonal robustness evaluation
+
+The historical CSVs in `results/` are preserved as the **Chronological future-season stress test**
+(June–September train, October validation, November–January test including the existing February
+tail). The primary seasonal evaluation lives separately in `results/seasonal_lomo/`.
+
+```sh
+python -m baselines.run_baselines --protocol seasonal --mission trmm
+python -m baselines.paper_figures --protocol seasonal --mission trmm
+```
+
+The seasonal command includes P1–P8, including MLP and oracle reference, and records eight G5NR
+weather-month folds with February merged into January. Preprocessing and thresholds use only the
+other seven months. Every score includes nominal and realized duty. See
+`docs/baseline_paper/07_experiments.md` for tests, smoke runs, provenance, resuming and output definitions.
+The notebook retains the historical section and displays the new monthly results separately.

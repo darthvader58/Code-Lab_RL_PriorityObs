@@ -304,7 +304,10 @@ display(summary)
     nb["metadata"]["kernelspec"] = {"name": "trackwise-py", "display_name": "trackwise-py",
                                     "language": "python"}
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    nbf.write(nb, OUT)
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from baselines.notebook_seasonal import attach
+    nbf.write(attach(nb, "comparison"), OUT)
     print(f"wrote {OUT.relative_to(ROOT)} ({len(cells)} cells)")
 
 
