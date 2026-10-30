@@ -163,4 +163,4 @@ def write_report(missions, destination):
     lines += ['### Transfer: monthly mean and range at nominal 20%', '',
               'Thresholds use target-side **other-seven-month unlabeled scores**, never held-out labels. Compare each cross-mission row with the corresponding own-mission row using the same features and label setting.',
               '', markdown_table(stats.reset_index()), '']
-    dest=Path(destination); dest.write_text('\n'.join(lines)+'\n')
+    dest=Path(destination); dest.write_text('\n'.join(lines).rstrip()+'\n')

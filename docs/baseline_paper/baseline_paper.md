@@ -1,5 +1,14 @@
 # Baseline Paper — Master Outline
 
+**Evaluation scope.** Seasonal leave-one-month-out is the primary seasonal robustness evaluation
+for EarthCARE and TRMM, separately. See [07_experiments.md](07_experiments.md) for the common fold
+protocol and [16_seasonal_results.md](16_seasonal_results.md) for generated monthly results.
+The legacy figures and numbers below describe the **Chronological future-season stress test**
+(June–September training, October calibration, November–January testing including the partial
+February tail), except explicitly labeled legacy E2 LOMO results. A fixed later-season test does
+not establish all-season reliability.
+
+
 **Working title:** *Benchmarks for Autonomous Prioritization of Spaceborne Radar Observations:
 EarthCARE, TRMM, and FY-3G*
 
@@ -139,8 +148,8 @@ RQ1–RQ4 answer it for each mission separately; RQ5 answers it across missions.
    no rain under the radar; for TRMM's scanning radar the inflation falls to 1.54×; FY-3G
    **[TO RUN]**.
 3. **Budget-constrained baselines per mission.** Capture-vs-duty-cycle curves for random,
-   geometry-only, single-threshold, logistic-regression, gradient-boosting, and oracle gates, under a
-   time-blocked split. EarthCARE done: LightGBM AUC 0.893, 66.4% capture at 20% duty; TRMM done:
+   geometry-only, single-threshold, logistic-regression, gradient-boosting, and oracle gates, under both seasonal LOMO and the chronological future-season stress test. The following numbers
+   are historical chronological results, not seasonal averages. EarthCARE done: LightGBM AUC 0.893, 66.4% capture at 20% duty; TRMM done:
    LightGBM AUC 0.849, 40.7% capture (logistic regression 43.2%; oracle 48.7%); FY-3G **[TO RUN]**.
 4. **Onboard feasibility per mission.** The same curves for cheap feature tiers, day and night, with
    the compute and memory cost of each policy. EarthCARE done: night-capable inputs keep 89% of
@@ -184,7 +193,8 @@ passive swath is smaller: 1.54× on TRMM; FY-3G **[TO RUN]**.
   regression; gradient-boosted trees (LightGBM); small MLP; oracle. One set per mission.
 - **EarthCARE bar for RL:** LightGBM, AUC 0.893 [0.891, 0.896], capture@20% 66.4%.
 - **Threshold rule:** each learned score is turned into a gate by picking the threshold that fires on
-  exactly a fraction *d* of validation minutes.
+  a nominal fraction *d* of training-month scores (seasonal) or October validation scores
+  (chronological); report realized duty because deployment drift and ties can violate the target.
 
 ## 7. Onboard feasibility (→ `06_onboard_feasibility.md`)
 
@@ -214,10 +224,15 @@ future work. Policy timing was measured on a laptop, not on flight-like hardware
 (Raspberry Pi–class or LEON-class timing is future work). Follow-ups: validation on real data,
 hardware timing, and sequential RL per mission.
 
-## 10. One-sentence claim of the paper
+## 10. Claim and evidence
 
-> Using only passive-sensor observations, an onboard prioritization policy can capture **66%** of radar-measurable
-> precipitation on EarthCARE while the radar runs **20%** of the time (TRMM: **43%**, against an
-> oracle bound of 49% for its 247 km swath; FY-3G: **[TO RUN]%**); night-capable inputs keep **89%** of that
-> skill; and scoring a nadir radar against swath truth would have more than doubled the positive
-> class.
+Passive-context gates are evaluated separately for EarthCARE and TRMM under two distinct
+protocols: seasonal LOMO measures consistency across the sampled weather regimes, while the
+chronological future-season stress test measures transfer from earlier to later months. Per-month
+results, realized duty, uncertainty and feature importance are required to support the claim;
+fixed November–January numbers alone do not establish all-season performance. Numerical claims
+come from [16_seasonal_results.md](16_seasonal_results.md), generated from the seasonal CSVs.
+
+The datasets contain a limited number of G5NR model-weather months, so conclusions are restricted
+to that simulated period. The historical numbers elsewhere in this outline retain their
+chronological stress-test scope.

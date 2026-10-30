@@ -1,5 +1,14 @@
 # 13. Key Numbers and Where They Come From
 
+**Evaluation scope.** Seasonal leave-one-month-out is the primary seasonal robustness evaluation
+for EarthCARE and TRMM, separately. See [07_experiments.md](07_experiments.md) for the common fold
+protocol and [16_seasonal_results.md](16_seasonal_results.md) for generated monthly results.
+The legacy figures and numbers below describe the **Chronological future-season stress test**
+(June–September training, October calibration, November–January testing including the partial
+February tail), except explicitly labeled legacy E2 LOMO results. A fixed later-season test does
+not establish all-season reliability.
+
+
 Every number used in the paper, with its source. Update this file whenever a dataset is
 regenerated.
 
@@ -81,7 +90,7 @@ Reproduce with the snippet in `04_label_finding.md`.
 | `cldtot_mean` | 0.651 | 3 decisions |
 | `lwtup_mean` | 0.838 | 6 decisions |
 
-## EarthCARE baseline results (time-blocked test, Nov 2005 – Jan 2006; `missions/earthcare/results/`)
+## Historical EarthCARE chronological future-season stress test (Nov 2005 – Jan 2006; `missions/earthcare/results/`)
 
 Split: train Jun–Sep 2005, validation Oct 2005, test Nov 2005 – Jan 2006 (G5NR time), one weather
 step dropped at each boundary. Train / val / test rows: 174,750 / 44,580 / 133,350 (120 dropped).
@@ -106,7 +115,7 @@ Tier A = 13 inputs (`cldtot_mean`, `cldtmp_mean`, `tautot_mean`, `tautot_max`, `
 | P6 − P5 paired difference | AUC +0.056 [+0.054, +0.059]; capture@20% +6.1 pts [+5.3, +7.0] | E10 |
 | random vs. time-blocked split (P5, d = 13%) | AUC 0.833 vs. 0.837; capture 43.9% vs. 45.5% | E1 |
 | leave-one-month-out AUC (P5 / P6 / P7) | 0.811 – 0.844 / 0.887 – 0.907 / 0.879 – 0.905 over 8 months | E2 |
-| Nov–Jan AUC, trained Jun–Sep vs. on the other 7 months (P5 / P6 / P7) | 0.837 → 0.843 / 0.893 → 0.905 / 0.889 → 0.903 (gain +0.006 / +0.012 / +0.014; upper bound on the seasonal penalty) | E2, E3 |
+| Nov–Jan AUC, trained Jun–Sep vs. on the other 7 months (P5 / P6 / P7) | 0.837 → 0.843 / 0.893 → 0.905 / 0.889 → 0.903 (gain +0.006 / +0.012 / +0.014; descriptive protocol difference; confounded by training size and calibration) | E2, E3 |
 | nadir-trained policy, capture@20% on nadir / swath labels | 66.4% / 51.1% | E4 |
 | swath-trained policy, capture@20% on nadir / swath labels | 64.7% / 50.7% | E4 |
 | precision@20%, nadir-trained, on nadir / swath labels (`prectot`) | 44.7% / 75.0% | E4 |

@@ -1,5 +1,14 @@
 # 15. EarthCARE Results Report
 
+**Evaluation scope.** Seasonal leave-one-month-out is the primary seasonal robustness evaluation
+for EarthCARE and TRMM, separately. See [07_experiments.md](07_experiments.md) for the common fold
+protocol and [16_seasonal_results.md](16_seasonal_results.md) for generated monthly results.
+The legacy figures and numbers below describe the **Chronological future-season stress test**
+(June–September training, October calibration, November–January testing including the partial
+February tail), except explicitly labeled legacy E2 LOMO results. A fixed later-season test does
+not establish all-season reliability.
+
+
 This section collects the finished EarthCARE results in one place: the figures, the summary tables,
 what each experiment showed, and whether it answered its research question. All numbers come from
 `missions/earthcare/results/` (run of E1–E11 with P7, seed 0, dataset SHA-256
@@ -29,7 +38,7 @@ those belong in the paper.
 
 | research question | outcome | evidence | verdict |
 |---|---|---|---|
-| **RQ1:** can passive context predict rain under the nadir radar without temporal leakage? | AUC 0.893 [0.891, 0.896]; random vs. time-blocked split differ by only 0.004 AUC; every held-out month 0.887–0.907 (LightGBM); summer-only training costs ≤ 0.014 AUC on winter | E1, E2, E10 | ✅ answered: yes |
+| **RQ1:** can passive context predict rain under the nadir radar without temporal leakage? | AUC 0.893 [0.891, 0.896]; random vs. time-blocked split differ by only 0.004 AUC; every held-out month 0.887–0.907 (LightGBM); historical protocol comparisons differ in training size and calibration | E1, E2, E10 | ✅ answered: yes |
 | **RQ2:** how much rain does a gate catch under a budget? | 66.4% of rainy minutes at 20% duty: 3.4× random (19.7%), 2.4× geometry-only (27.5%) | E3, E10 | ✅ answered: strong skill, with 33.6 points of headroom left for RL |
 | **RQ3:** does scoring against the imager swath distort results? | positive class 2.2× larger (13.7% → 30.0%); precision inflated from 44.7% to 75.0% | E4 | ✅ answered: yes, strongly |
 | **RQ4:** is it feasible onboard, and does it work at night? | night-capable inputs keep 89–90% of capture; policies need 16–18,300 parameters, ~1 ms per decision | E5, E9 | ✅ answered: yes, timed on a laptop only (§15.9) |
@@ -171,11 +180,10 @@ nothing. This matches the physics: thick, cold, high clouds are where a radar fi
 **Figure S3.** AUC for each held-out month (solid; trained on the other seven) for P5–P7, against
 each model's time-blocked test score (dashed; trained Jun–Sep only, scored Nov–Jan, shaded).
 
-- **No leakage inflation (E1).** A random split gives AUC 0.833 against 0.837 time-blocked, as
-  expected from the short memory of nadir rain (lag-1 autocorrelation 0.106).
-- **A small seasonal penalty, larger for flexible models (E2).** Training only on Jun–Sep and testing
+- **Historical split comparison (E1).** A random split gives AUC 0.833 against 0.837 time-blocked, but the comparison also changes seasonal composition and cannot prove absence of leakage.
+- **Historical seasonal comparison (legacy E2).** Training only on Jun–Sep and testing
   on Nov–Jan crosses a season. Holding out each winter month instead, with the other winter months
-  in training, shows what that costs:
+  in training, gives the following descriptive comparison:
 
   | policy | Nov–Jan AUC, trained Jun–Sep | Nov–Jan AUC, trained on the other 7 months | gain | AP gain | AUC over all 8 held-out months |
   |---|---|---|---|---|---|
@@ -183,12 +191,11 @@ each model's time-blocked test score (dashed; trained Jun–Sep only, scored Nov
   | P6 gradient boosting | 0.893 | 0.905 | +0.012 | 0.544 → 0.581 | 0.887–0.907 |
   | P7 MLP | 0.889 | 0.903 | +0.014 | 0.527 → 0.569 | 0.879–0.905 |
 
-  The flexible models gain about twice as much as LR from seeing winter, consistent with them
-  learning some season-specific latitude patterns on top of the cloud physics. The gain is an upper
-  bound on the seasonal effect: the month-held-out models also train on 7 months instead of 4. The
-  penalty does not change the ranking (P6 ≥ P7 > P5 in every month), and the time-blocked numbers
-  reported elsewhere are the conservative ones. The northern summer months are the hardest to
-  predict for every model.
+  These are historical results retained for reproduction. The differences are not an isolated
+  seasonal effect or a justified upper bound: folds also train on more months, use different
+  calibration and average monthly scores rather than the pooled chronological score. Matching
+  policy rankings does not establish that the chronological result is conservative in every
+  month or metric. The primary seasonal evaluation is now reported in §16 for both missions.
 - **Threshold-independent ranking (E7).** LightGBM beats logistic regression on all five labels (AUC
   0.893–0.957). Rare targets rank well but are hard to catch: at a budget equal to their frequency
   the gate catches 41.1% of ≥ 5 mm/hr minutes and 30.4% of convective minutes.
@@ -218,7 +225,7 @@ These are limits on the claims, not failures of the experiment. State them in th
 ## 15.10 Headline numbers for the abstract and talks
 
 - **66%** of rainy minutes caught with the radar on **20%** of the time (random: 20%; geometry: 28%).
-- **AUC 0.893** [0.891, 0.896], robust to the split and to the held-out month.
+- **AUC 0.893** [0.891, 0.896], in the chronological stress test; seasonal results are reported separately in §16.
 - **2.2×** inflation of the positive class, and precision inflated from **45% to 75%**, if the nadir
   radar is scored against swath truth.
 - **89–90%** of skill kept with night-capable inputs; **~1 ms** and **3 kB–1 MB** per policy.

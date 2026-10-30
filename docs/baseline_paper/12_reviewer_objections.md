@@ -1,5 +1,25 @@
 # 12. Anticipated Objections and Responses
 
+## “Is poor winter performance a weak model or seasonal distribution shift?”
+
+The original chronological protocol cannot distinguish those causes by itself. We retain it as
+the **Chronological future-season stress test**, and use eight seasonal LOMO folds as the primary
+robustness evaluation for EarthCARE and TRMM separately. Each fold trains on the other seven G5NR
+weather months, merges the partial February tail into January, and purges adjacent weather steps.
+Preprocessing and thresholds are fitted on training-side data only.
+
+Every held-out month is reported, including base rate, nominal and realized duty, AUC/AP, capture,
+mass capture and precision; summaries give mean, SD, minimum and maximum. Label geometry, feature
+tiers, geographic strata, rare labels, missingness, bootstrap uncertainty and feature importance
+are repeated per fold. E12 matches months and latitude range. The protocols answer different
+questions and have different training sizes/calibration: their difference is not a pure seasonal
+effect. Eight simulated months do not establish general all-season performance. See generated
+[seasonal results](16_seasonal_results.md) and the [protocol](07_experiments.md).
+
+The answers below retain historical chronological examples; any unqualified historical performance
+number must be read within that stress-test scope.
+
+
 Use these to pre-empt reviewers in the text (each response says where it belongs) and to prepare
 for advisor and conference questions.
 
@@ -37,10 +57,11 @@ real EarthCARE MSI/CPR data is the first follow-up. **Where:** §3.5, Limitation
 
 ### O5. "Your AUC is inflated by temporal leakage."
 
-**Response:** All headline results use a time-blocked split with a buffer of at least one weather
-step, and the random-split numbers are shown only for comparison. On EarthCARE the split barely
-matters (logistic regression AUC 0.833 random vs. 0.837 time-blocked), and leave-one-month-out gives
-0.811–0.844. **Where:** §7 E1, E2.
+**Response:** Primary seasonal results use weather-month holdouts with buffers on both sides of
+each boundary. Fitting and calibration exclude the held-out month. E1 retains the random versus
+chronological comparison, but the comparison changes both local temporal dependence and seasonal
+composition; a small score difference does not establish absence of leakage. **Where:** §7 E1/E2,
+§16 generated monthly results.
 
 ### O6. "One year of one model; does it generalise?"
 
@@ -116,9 +137,9 @@ which isolates the effect of the orbit. **Where:** §3.7, E12, Limitation 9.
 
 ### O15. "You train on summer and test on winter. Isn't the test unfair?"
 
-**Response:** Partly, and it is measured. The orbit is global, so June–September already holds
-southern-hemisphere winter, and most inputs describe cloud physics that does not change with the
-season. Leave-one-month-out puts the other winter months into training: Nov–Jan AUC rises by 0.006
-(logistic regression), 0.012 (LightGBM) and 0.014 (MLP), an upper bound because those folds also
-train on more months. The ranking P6 ≥ P7 > P5 holds in every held-out month, so the time-blocked
-numbers are a conservative, not a distorted, estimate. **Where:** §7 E2, §15.8, Fig. S3.
+**Response:** The chronological test intentionally measures future-season transfer, not neutral
+all-season skill. LOMO is the primary seasonal robustness analysis: each omitted month is scored
+after training on the other seven. Report every month and budget drift for both missions. A
+protocol difference also changes training size, calibration and test composition, so it is not a
+pure seasonal effect or a justified upper bound. Similar rankings do not make one protocol a
+conservative substitute for the other. **Where:** §7, §10, §16.

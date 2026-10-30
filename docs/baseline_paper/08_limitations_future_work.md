@@ -1,5 +1,22 @@
 # 8. Limitations and Future Work
 
+## Seasonal evaluation limitations
+
+LOMO is primary for seasonal robustness; the chronological split is a future-season stress test.
+Neither a fixed November–January test nor eight held-out months establish year-round or multi-year
+reliability. The dataset is a limited G5NR model-weather period, not independent observed climates.
+LOMO trains on months on both sides of its test month, shares training data across folds, and uses
+seven months rather than four. Differences from chronological results therefore confound season,
+training size and calibration; they are not a causal seasonal penalty.
+
+Training-score quantiles avoid held-out-label leakage but are in-sample calibration. Base rates,
+score thresholds, realized duty, missingness and feature importance can shift across months. A
+nominal duty target is not a hard on-orbit budget. Report each fold and its whole-day bootstrap
+interval separately; averages of interval endpoints are descriptive, not pooled confidence limits.
+EarthCARE and TRMM are evaluated separately under compatible folds, and their shared G5NR weather
+limits the independence of E12. Real-data, longer-period and hard-budget studies remain future work.
+
+
 ## 8.1 Limitations (state each one in the paper)
 
 1. **Model diagnostics, not retrievals.** Features are G5NR diagnostics used as idealized proxies for

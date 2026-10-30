@@ -1,191 +1,93 @@
 # 10. Results and Discussion
 
-Each subsection says what to report. **EarthCARE paragraphs are written** from the results in
-`07_experiments.md` and `13_key_numbers.md`; the sentence templates remain for TRMM and FY-3G. Delete
-the outcomes that did not happen.
+The primary seasonal robustness evidence is the generated, per-mission report
+[16_seasonal_results.md](16_seasonal_results.md), sourced from
+`missions/earthcare/results/seasonal_lomo/` and `missions/trmm/results/seasonal_lomo/`.
+The historical numerical tables in [13_key_numbers.md](13_key_numbers.md) and
+[15_earthcare_results.md](15_earthcare_results.md) describe the **Chronological future-season stress
+test**, except their explicitly labeled legacy E2 month-held-out tables. They are retained as
+historical evidence, not substituted for the new seasonal results.
 
-EarthCARE figures and the per-question verdict are in `15_earthcare_results.md`.
+## 10.1 Distinguish the two scientific questions
 
-Report §10.1–10.6 **per mission** (EarthCARE first; TRMM and FY-3G as their own subsections or as
-columns in each table), then compare the missions in §10.8. Never pool the three datasets into one
-result.
+The chronological test asks how well a model trained on June–September and calibrated on October
+transfers to November–January (including the existing partial February tail). It deliberately
+mixes model quality with transfer into later-season weather. A fixed November–January result is
+not sufficient evidence of all-season performance.
 
-## 10.1 Leakage and the evaluation split (E1, E2)
+LOMO asks whether the model remains reliable across the eight sampled weather months. A model
+is fitted on the other seven months and tested on the omitted month. These folds may train on
+future months relative to the held-out month: they estimate seasonal robustness, not operational
+forecasting performance. Report every month, plus equal-weight mean, standard deviation and range.
+Do not interpret a difference from the chronological score as a causal seasonal penalty: training
+size, calibration and evaluation populations also differ.
 
-Report: AUC/AP/capture@13% under random vs. time-blocked splits; leave-one-month-out mean and range.
+E1's random split places nearby decisions from shared weather snapshots on both sides of the
+split, but its comparison with the chronological test also changes seasonal composition. Similar
+scores do not prove absence of leakage, and a decline cannot be attributed exclusively to leakage.
 
-- *If the time-blocked AUC drops noticeably:* "A random split overstates skill by [Δ] AUC because
-  consecutive decisions share a 30-minute weather field; all further results use the time-blocked
-  split." This is itself a methodological finding worth a sentence in the abstract.
-- *If it barely changes:* "Skill is robust to the split ([Δ] AUC), consistent with nadir
-  precipitation decorrelating within one decision (lag-1 ACF [value for the mission])."
-- Separate leakage from seasonal shift with E2: if June–September months score well in LOMO but
-  the Nov–Jan test block does not, the drop is seasonal, not leakage.
+## 10.2 Gating value under seasonal budgets (E2, E3, E10)
 
-**EarthCARE (written):** "Skill is robust to the split: logistic regression scores AUC 0.833 on a
-random 30% split and 0.837 on the time-blocked split, consistent with nadir precipitation
-decorrelating within one decision (lag-1 autocorrelation 0.106). Holding out each month in turn gives
-AUC 0.811–0.844 for logistic regression and 0.887–0.907 for gradient boosting, so the skill is not
-tied to one season. Training on summer only does cost the flexible models a little on winter:
-with the other winter months in training, Nov–Jan AUC rises by 0.006 (LR), 0.012 (LightGBM) and
-0.014 (MLP), an upper bound since those folds also train on 7 months instead of 4. The ranking is
-the same in every month, so the time-blocked numbers are conservative. All further results use the
-time-blocked split."
+Read the monthly capture curves alongside monthly base rate and realized duty. A nominal 20%
+training quantile does not enforce a 20% hard operational budget in a new month. Higher event
+capture may accompany increased radar use; distinguish ranking quality (AUC/AP), event capture,
+mass capture, precision and budget drift. P8 is an unattainable reference with truth available.
+Its ceiling depends on the month's base rate, and its primary rain-rate ordering is not necessarily
+a mass-optimal ordering for scanning-radar mean-rain weights.
 
-## 10.2 Gating value under a budget (E3) — the main result
+Report within-month whole-day bootstrap intervals, including paired comparisons against the
+prespecified P6 reference. An interval endpoint averaged across months is a descriptive summary,
+not an all-season confidence interval. Avoid choosing a winning policy from a test month and
+then presenting it as a prespecified inference.
 
-Report: Fig. 3 and the capture table (Table 4).
+## 10.3 Geometry, feature tiers and deployment regimes (E4–E6)
 
-Sentence template: "At a 20% duty cycle, the best imager-driven gate captures [X]% of nadir
-precipitation events ([lift]× random), compared with [Y]% for geometry-only gating; the oracle
-captures 100%. The remaining gap of [100 − X] points is the headroom available to a sequential
-policy."
+Repeat the footprint/swath train-score comparison for each month: changing storm structure can
+change positive-rate inflation and event capture. Keep the mission's actual radar label as the
+primary task. In E4, mass metrics follow the scored geometry; in primary E2/E3/E6 results, they
+follow the mission's existing mass column.
 
-Also discuss:
-- Which simple policy is closest to the learned one. If the single `tautot_mean` threshold is within
-  a few points of gradient boosting, say so plainly — it means the decision is nearly one-dimensional.
-- Mass-capture vs. event-capture: does the gate preferentially catch heavy precipitation?
+Compare day, night and switched policies across months. Optical-depth tiers are unavailable for
+night-only evaluation, and diagnostic G5NR proxies are not real onboard retrievals. E6 keeps one
+global training-fold threshold when reporting each latitude and land/ocean stratum. Duty drift in
+a stratum is deployment evidence; retuning locally would hide it. Retain the existing E9 cost
+measurements and the limitation that laptop timings are not flight-hardware measurements.
 
-**EarthCARE (written):** "At a 20% duty cycle, the best passive-driven gate (LightGBM) captures 66.4%
-of nadir precipitation events (3.4× random; AUC 0.893 [0.891, 0.896]), compared with 27.5% for
-geometry-only gating and 28.0% for a latitude-band rule; the oracle captures 100% because only 12.8%
-of test minutes are rainy. The remaining gap of 33.6 points is the headroom available to a
-sequential policy. The decision is not one-dimensional: the best single-feature rule reaches 41.8%,
-24.6 points below LightGBM. Optical depth alone ranks rain about as well as logistic regression on
-all features (AUC 0.834 vs. 0.837), and the remaining gain comes from non-linear models: a small MLP
-reaches 65.1% (AUC 0.889), within 1.4 points of LightGBM, though LightGBM is ahead in every bootstrap
-resample. The gate catches 72.7% of the precipitation amount, more than its 66.4% of events, so it
-favours heavier precipitation; the oracle, which fires on every rainy minute regardless of
-intensity, reaches 91.7% of the amount."
+## 10.4 Label difficulty, availability and interpretation (E7, E8, E11)
 
-## 10.3 Label geometry (E4)
+Compare the 0.1, 1 and 5 mm/hr labels, convective precipitation and training-median labels month by
+month. AUC alone can look strong for rare events while precision or capture at a fixed budget
+remains poor. Missingness and feature availability are reported separately for training and held-out
+rows. Imputation, indicator selection and scaling are fitted exclusively on the training months.
 
-Report: the 2 × 2 grid.
+Permutation importance uses P6, selected in advance, in each held-out month. Discuss its monthly
+mean and range rather than declaring a single winter feature ranking universal. Single-feature
+score directions are fitted on training data, so a reversed association in a new month is retained
+as a possible failure instead of being corrected with held-out labels.
 
-EarthCARE result (filled): "Scoring against the imager swath more than doubles the positive class
-(13.7% → 30.0% of minutes) and inflates precision at a 20% budget from 44.7% to 75.0%: a
-swath-scored study would claim the radar finds rain on most of its on-time when it does so on fewer
-than half. For convective precipitation the inflation is larger: 77% of swath-convective minutes have
-none at nadir, and precision rises from 5.9% to 25.5%.
-Under the same budget, capture moves the other way (51% on the swath label vs. 66% on the nadir
-label), because the larger swath class cannot be covered by 20% of minutes. Ranking quality is
-unaffected (AUC 0.89–0.90 in all four train/score combinations), so the label choice changes the
-reported numbers, not which scenes the policy prefers."
+## 10.5 EarthCARE versus TRMM (E12)
 
-Connect to prior work carefully: "Studies that evaluate targeting for nadir instruments against
-scene-scale truth may overstate achievable capture; footprint-scale labels avoid this." Do not claim
-any specific published study is wrong unless you have checked its labels.
+Use `missions/comparison/results/seasonal_lomo/` for the seasonal comparison: match the omitted
+weather month and use `|lat| <= 35.2°` for fitting, calibration and testing in both missions.
+EarthCARE and TRMM keep their distinct labels, footprint definitions and fitted policies.
+Cross-mission transfer additionally reports a common nadir-label setting and shared features.
+The target calibration scores come from the other seven months, never the held-out month.
 
-## 10.4 Onboard feasibility (E5, E9)
+Report the source and target dataset hashes. The missions sample the same G5NR weather, so this
+is not independent meteorological replication. Different footprints, local times and passive
+features remain relevant even after matching months and latitudes. Historical E12 chronological
+results remain separately labeled; do not mix them into seasonal means.
 
-Report: Fig. 5, tier and cost table (Table 5).
+## 10.6 Scope of the conclusions and the RL follow-up
 
-- *If Tier B retains most of Tier A:* "Useful gating does not require onboard cloud retrievals:
-  thermal-infrared-like quantities and orbit geometry retain [R]% of full-feature capture, day and
-  night, with a policy of [N] operations per decision."
-- *If Tier B retains little:* "Gating value depends on optical-depth information, which is
-  daylight-only and requires onboard retrieval; this sets a concrete processing requirement for
-  future missions."
-- Either way, answer the compute objection directly: policy cost is negligible; feature cost
-  decides feasibility.
+These experiments measure robustness across a limited set of G5NR model-weather months, not a
+complete annual cycle, multiple years, real sensor distributions, or future climates. Base rates,
+thresholds, realized duty and feature importance may vary by month and mission.
 
-**EarthCARE (written):** "Useful gating does not require onboard cloud retrievals: thermal-infrared-like
-quantities and orbit geometry (Tier B) retain 90% of full-feature capture when the gate switches
-between day and night inputs, and at night they match the richer feature set exactly (49.8% at 20%
-duty). Optical depth adds about 12 points by day. Geometry alone retains 57%. The policies cost
-16 to 18,300 parameters (3 kB to 1 MB) and about 1 ms per decision in Python, against a 60-second
-decision interval, so policy cost is negligible and feature cost decides feasibility."
+A future sequential policy should be evaluated under both protocols, with its state/reset rules,
+budget constraints and observable inputs explicit. Compare its capture at comparable **realized**
+radar use and its monthly worst-case performance as well as its mean. A gap to the oracle is not
+a guarantee that RL can close it. The two retained answers remain distinct:
 
-## 10.5 Where the gate works and fails (E6, E11)
-
-Report: stratified table, feature importance.
-
-Expected discussion points (verify against results):
-- Tropics vs. mid-latitudes: convective vs. frontal precipitation regimes.
-- Ocean vs. land.
-- Polar decisions: cold surfaces confuse infrared-based features (the same failure that broke the
-  earlier clustering design).
-- G5NR's split-ITCZ bias may shape where tropical skill appears; mention it when discussing the
-  tropics.
-
-**EarthCARE (written):** "Ranking is weakest in the tropics (AUC 0.846), where precipitation is most
-frequent (19.3% of minutes), and strongest over land (0.950) and poleward of 60° (0.940), where it is
-rarest (6.7% and 4.4%). With one global threshold, the gate spends 30.2% duty in the tropics and
-6.2% in polar regions, so the budget follows where rain is frequent; polar capture (54.6%) is the
-lowest of any region despite its high AUC, which a per-region threshold could improve.
-Optical depth dominates the model (permutation AUC drop 0.207 for `tautot_max`, 0.091 for
-`tautot_mean`), followed by outgoing longwave (0.052) and cloud fraction (0.038)."
-
-## 10.6 Sensitivity (E7)
-
-One paragraph: does the ranking of policies change with the precipitation threshold or for
-convective-only targets? If convective (1.2% base rate) is much harder, say so — it motivates
-better features rather than a better learner.
-
-**EarthCARE (written):** "LightGBM beats logistic regression on all five labels (AUC 0.893–0.957),
-so the ranking of policies does not depend on the threshold. Rare targets are ranked well but are
-hard to catch within a matching budget: with the radar on as often as the event occurs, the gate
-catches 41.1% of ≥ 5 mm/hr minutes (3.6% of minutes) and 30.4% of convective minutes (1.2%), against
-54.9% at 1 mm/hr."
-
-## 10.7 Implications for a sequential RL policy
-
-Close the section with what RL would need to do to be worthwhile:
-- beat the best static gate at the same duty cycle on the time-blocked test set;
-- use something static gates cannot: battery state, switching costs, or `cpr_conditional` features
-  revealed after firing;
-- note that lag-1 precipitation autocorrelation is only 0.106 for EarthCARE's nadir label, so the
-  gain from simply remembering the last minute is likely small — any RL gain has to come from the
-  budget dynamics or the revealed features. The observed features persist longer (lag-1 0.64 for
-  optical depth, 0.84 for longwave), so recent observations can still carry information. Scanning
-  radars see a wider area, so their labels may be more persistent; check per mission.
-- **EarthCARE bar:** at the same duty cycle on the Nov–Jan test block, beat LightGBM's capture (66.4%
-  at 20%, 50.8% at 13%; AUC 0.893). A policy that adapts its duty cycle to the scene could also be
-  judged on capture per unit of radar on-time over the whole period.
-
-## 10.8 Comparing the missions (E12)
-
-Report: the side-by-side comparison table and the transfer matrix.
-
-Discuss each difference through the property that causes it:
-- **Orbit / local time.** "On TRMM, decisions near 14:00 and 02:00 local time give capture@20% of
-  [X]%, against [Y]% at other hours; EarthCARE's two sampling times therefore [over/under]state
-  gating skill relative to the full day."
-- **Radar geometry.** "The scanning radars' base rates are [higher], and the swath-label inflation
-  falls from [~2×] (EarthCARE, nadir) to [Z×] (TRMM, FY-3G)."
-- **Latitude reach.** "At 35–50°, where only FY-3G samples every local time, decisions near 14:00
-  and 02:00 give capture@20% of [X]% against [Y]% at other hours, [the same as / unlike] TRMM's
-  tropical result; a policy trained on EarthCARE loses [L] points there."
-- **Transfer.** "A policy trained on EarthCARE loses [L] points of capture when applied to TRMM,
-  compared with TRMM's own policy." A large loss supports training one policy per mission.
-
-State plainly when the missions disagree; three separate cases may give three answers, and that is a
-result, not a failure.
-
-**EarthCARE ↔ TRMM (E12, |lat| ≤ 35.2°; `missions/comparison/results/`, Fig. 7):**
-- **Orbit / local time.** On TRMM, decisions within ±1 h of 01:56 and 13:56 local time give
-  capture@20% of 43.9%, against 40.1% at other hours (gradient boosting, radar label; gap 3.8
-  points, 95% CI [0.8, 6.8] from resampling test days; 3.0–3.9 points for every model and label).
-  EarthCARE's two sampling times therefore slightly **overstate** gating skill relative to the full
-  day. The gain comes from the afternoon window alone: averaged over each window's hours,
-  capture@20% is 46.5% around 13:56 and 40.2% around 01:56, against 40.5% at the other hours
-  (`missions/comparison/E12_comparison.ipynb`, §3). They do not over- or under-sample rain itself: the windows cover 16.7% of local hours and
-  hold 17.2% of the rain amount, because the land peak (16:00) and the ocean peak (03:00) fall on
-  either side of them.
-- **Radar geometry.** TRMM's radar-swath base rate is 41.1% against EarthCARE's 17.7% nadir rate
-  in the same latitudes, and the swath-label inflation falls from 2.23× (EarthCARE, nadir vs. MSI
-  swath) to 1.54× (TRMM, PR vs. VIRS swath). With the radar label positive in 41% of minutes, even a
-  perfect TRMM gate catches only 48.7% of rainy minutes at 20% duty; the scanning radar's gate is
-  budget-limited, not skill-limited.
-- **Passive information.** EarthCARE and TRMM have the same kind of passive context (visible and
-  infrared cloud proxies), and their skill matches: AUC 0.855 and 0.849, Tier B retention 78.5% and
-  79.3%. FY-3G has the same kind of passive context, so all three differences in §10.8 come from
-  orbit and radar geometry.
-- **Transfer.** A policy trained on EarthCARE loses 1.2 points of capture@20% when applied to TRMM
-  (gradient boosting, shared features, nadir label; 1.9 for logistic regression), and every
-  transfer in either direction stays within 2.5 points of the target's own policy. The two missions
-  disagree with the expectation in §5.9: a policy trained only on ~14:00/~02:00 weather covers the
-  other hours almost as well as one trained on them. In this setting the case for one policy per
-  mission rests on their different labels and budgets, not on transfer loss. Both datasets share
-  the same simulated weather and identically computed features, so real sensor differences
-  (calibration, resolution, the VIRS vs. MSI channels) could still widen the gap.
+- Future-season transfer: how well does preparation on earlier months transfer into later weather?
+- Seasonal robustness: how consistently does a policy work across the sampled weather regimes?

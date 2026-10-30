@@ -1,10 +1,19 @@
 # 5. Gating Policies and Evaluation
 
+**Evaluation scope.** Seasonal leave-one-month-out is the primary seasonal robustness evaluation
+for EarthCARE and TRMM, separately. See [07_experiments.md](07_experiments.md) for the common fold
+protocol and [16_seasonal_results.md](16_seasonal_results.md) for generated monthly results.
+The legacy figures and numbers below describe the **Chronological future-season stress test**
+(June–September training, October calibration, November–January testing including the partial
+February tail), except explicitly labeled legacy E2 LOMO results. A fixed later-season test does
+not establish all-season reliability.
+
+
 ## 5.1 Task
 
-At each decision *t* with passive-sensor features *x_t*, a policy outputs fire ∈ {0, 1}. Over an
-evaluation period the policy may fire on at most a fraction *d* of decisions (the duty-cycle
-budget). Each decision is scored independently (contextual bandit); sequential effects are left to
+At each decision *t* with passive-sensor features *x_t*, a policy outputs fire ∈ {0, 1}. The nominal duty-cycle
+budget is a target fraction *d*. Fixed score quantiles do not enforce a hard held-out budget;
+report the realized fraction alongside all capture scores. Each decision is scored independently (contextual bandit); sequential effects are left to
 the RL follow-up.
 
 The gate is an onboard observation-prioritization policy. On all three missions it performs
@@ -25,13 +34,15 @@ the budget
 $$\frac{1}{T}\sum_{t=1}^{T} \pi(x_t) \le d .$$
 
 For a scoring model $s(x)$, the gate is $\pi_d(x) = \mathbb{1}[s(x) \ge \theta_d]$, where
-$\theta_d$ is the $(1-d)$ quantile of $s$ on the validation block. The metrics are
+$\theta_d$ is the $(1-d)$ training-score quantile for seasonal folds, or the October validation-score
+quantile for the preserved chronological stress test. The constraint above is an operational
+objective; the fixed-threshold benchmark may exceed it under distribution shift or score ties. The metrics are
 
 $$\mathrm{capture}@d = \frac{\sum_t \pi_d(x_t)\, y_t}{\sum_t y_t}, \qquad
 \mathrm{mass\text{-}capture}@d = \frac{\sum_t \pi_d(x_t)\, r_t}{\sum_t r_t},$$
 
 $$\mathrm{precision}@d = \frac{\sum_t \pi_d(x_t)\, y_t}{\sum_t \pi_d(x_t)}, \qquad
-\mathrm{lift}@d = \frac{\mathrm{capture}@d}{d}.$$
+\mathrm{lift}@d = \frac{\mathrm{capture}@d}{\widehat{d}_{test}}.$$
 
 Reference values: random gating gives $\mathrm{capture}@d = d$; the oracle gives
 $\min(1, d/\bar{y})$ with base rate $\bar{y}$ (0.128 on the EarthCARE test block).
@@ -65,7 +76,7 @@ budget metric is meant to expose.
 | **capture@d** (primary) | fraction of positive decisions on which the policy fires, when it fires on a fraction *d* of decisions | directly answers "how much precipitation does the radar get for its budget?" |
 | **mass-capture@d** | fraction of total nadir precipitation (sum of `prectot_nadir`) in fired decisions | rewards catching heavy events, not just any event |
 | **precision@d** | fraction of fired decisions that are positive | how much of the radar's on-time is wasted |
-| **lift@d** | capture@d ÷ *d* | improvement over random gating (random = 1.0) |
+| **lift@d** | capture@d ÷ realized duty | improvement over random gating (random = 1.0) |
 | ROC-AUC, AP | threshold-free ranking quality | comparability with earlier numbers and other studies |
 
 Reference curves:
@@ -90,9 +101,11 @@ Report capture@d as a curve over *d* ∈ [0, 1] and as a table at *d* ∈ {5, 10
 | P7 | small MLP | Tier A | 15-64-64-1 (13 features + 2 missing-value indicators), early stopping; costs the "neural policy" option in Section 6 |
 | P8 | oracle | true label | fires on positives first |
 
-**Threshold rule (all learned policies):** pick the score threshold that fires on exactly a
-fraction *d* of the **validation** block, then apply that threshold unchanged to the test block.
-Report the realized test duty cycle next to capture, since it will drift slightly.
+**Threshold rule (deployable policies):** use the $(1-d)$ quantile of the seven training months’
+scores in seasonal LOMO, preserving the original E2 calibration rule. The chronological stress test
+retains October validation-score quantiles. Apply thresholds unchanged to held-out rows. Quantile
+ties and seasonal distribution shifts can cause substantial duty drift; neither exact calibration
+duty nor exact test duty is guaranteed. P8 alone uses held-out truth as an oracle reference.
 
 ## 5.5 Missing values
 
@@ -104,13 +117,13 @@ Report the realized test duty cycle next to capture, since it will drift slightl
 - `tautot` at night: see Section 6. Do not silently feed nighttime optical depth to a policy that
   claims to be onboard-realistic.
 
-## 5.6 EarthCARE results (time-blocked test, Nov 2005 – Jan 2006)
+## 5.6 Historical EarthCARE results: Chronological future-season stress test
 
 Full tables in `13_key_numbers.md` and `missions/earthcare/results/`. At 20% duty, capture of rainy
 minutes: random 19.7%, geometry LR 27.5%, latitude band 28.0%, single threshold 41.8%, logistic
 regression 60.3%, MLP 65.1%, **LightGBM 66.4% (AUC 0.893 [0.891, 0.896], AP 0.544)**, oracle 100%.
 Single features (E11): `tautot_mean` AUC 0.834, `tautot_max` 0.812, `cldtot_mean` 0.652,
-`cldtmp_mean` 0.619 (inverted). Both §5.7 conditions are met: the learned policies beat geometry by
+`cldtmp_mean` 0.619 (inverted). Within this chronological stress test, both §5.7 conditions are met: the learned policies beat geometry by
 33–39 capture points, and the gap to the oracle at 20% duty (33.6 points) is the room left for RL.
 
 **The EarthCARE bar for an RL policy:** at the same duty cycle on the same test block, catch more

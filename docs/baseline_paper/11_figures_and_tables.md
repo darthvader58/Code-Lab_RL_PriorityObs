@@ -1,5 +1,14 @@
 # 11. Figures and Tables Plan
 
+**Evaluation scope.** Seasonal leave-one-month-out is the primary seasonal robustness evaluation
+for EarthCARE and TRMM, separately. See [07_experiments.md](07_experiments.md) for the common fold
+protocol and [16_seasonal_results.md](16_seasonal_results.md) for generated monthly results.
+The legacy figures and numbers below describe the **Chronological future-season stress test**
+(June–September training, October calibration, November–January testing including the partial
+February tail), except explicitly labeled legacy E2 LOMO results. A fixed later-season test does
+not establish all-season reliability.
+
+
 Aim for 6–7 figures and 5–6 tables in a full paper; a 4-page conference paper (e.g., IGARSS) keeps
 Fig. 1, Fig. 3, Fig. 4, Table 2 and Table 3 only, for EarthCARE. Multi-panel figures get one panel per
 mission (EarthCARE, TRMM, FY-3G) with identical axes. Status ◐ = EarthCARE panel exists, other
@@ -46,3 +55,22 @@ grey dashed reference lines; axes in percent.
 
 Every figure and table is produced by the baseline script from the parquet, with the parquet hash
 written into the figure metadata or caption footnote. No hand-edited numbers.
+
+## Primary seasonal figures (separate from historical numbering)
+
+Generate via `python -m baselines.paper_figures --protocol seasonal --mission <mission>`. All
+values come from generated result CSVs, with separate EarthCARE/TRMM figures under
+`figures/<mission>/seasonal_lomo/`. The generated report supplies the corresponding captions.
+
+| file | caption and source |
+|---|---|
+| `monthly_auc.png` | AUC by held-out month and P1–P8; oracle marked as reference. `e2_monthly.csv`. |
+| `monthly_capture.png` | Capture at nominal 20% budget per month; read alongside realized duty. `e2_monthly.csv`. |
+| `seasonal_capture_curves.png` | One panel per month, all policies; nominal budget on x-axis. `e3_capture_curves.csv`. |
+| `chronological_vs_seasonal.png` | Historical pooled stress test versus equal-weight seasonal mean and min–max; different estimands, not a causal penalty. Historical E3 and seasonal E2 summary. |
+| `monthly_base_rate_and_duty.png` | Monthly primary-label base rate and realized held-out duty at nominal 20%. `e2_monthly.csv`. |
+| `monthly_feature_importance.png` | Fixed P6 permutation AUC loss by feature and month. `e11_permutation_importance.csv`. |
+
+The primary tables are generated in `16_seasonal_results.md`: every monthly score and equal-weight
+mean, sample SD and range. `e10_bootstrap.csv` supplies within-month whole-day intervals; do not
+label across-fold interval-endpoint summaries as a pooled confidence interval.
