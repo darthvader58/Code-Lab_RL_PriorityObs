@@ -60,7 +60,20 @@ def main(argv=None):
     ap.add_argument("--experiments", nargs="+", default=ALL, choices=ALL)
     ap.add_argument("--mlp", action="store_true", help="include P7 (small MLP) in E2/E3/E9")
     ap.add_argument("--n-boot", type=int, default=1000)
+    ap.add_argument("--protocol", choices=("chronological", "seasonal"), default="chronological",
+                    help="seasonal runs P1-P8 in separate seasonal_lomo/ outputs")
+    ap.add_argument("--smoke", action="store_true", help="seasonal: sampled rows; requires --out")
+    ap.add_argument("--resume", action="store_true", help="seasonal: reuse verified completed folds")
+    ap.add_argument("--threads", type=int, default=4)
     a = ap.parse_args(argv)
+
+    if a.protocol == "seasonal":
+        if a.experiments != ALL:
+            ap.error("seasonal runs the complete suite; --experiments is chronological-only")
+        from .run_seasonal import run
+        return run(a)
+    if a.smoke or a.resume:
+        ap.error("--smoke and --resume require --protocol seasonal")
 
     mission = get_mission(a.mission)
     a.data = a.data or mission.data_path

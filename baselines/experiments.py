@@ -13,7 +13,7 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 
 from .core import (BUDGETS, SEED, LatitudeBandPolicy, LearnedPolicy, RandomPolicy,
                    SingleFeaturePolicy, SwitchedPolicy, blocked_split, evaluate, gate_metrics,
-                   oracle_rows, random_split, threshold_for, valid)
+                   oracle_rows, random_split, seasonal_folds, threshold_for, valid)
 
 D_MAIN = 0.20          # budget used for single-number comparisons (07_experiments.md E4-E6)
 
@@ -65,17 +65,13 @@ def e2_lomo(df, mission, include_mlp=False):
     col = mission.label_col
     lab = label_fn(col, mission.threshold)
     d = df[valid(df, col)]
-    # the window ends 2006-02-01 15:00; fold that partial day into January so no "month" is tiny
-    month = d["g5_month"].replace({"2006-02": "2006-01"})
     learned = {k: p for k, p in policies(mission, include_mlp).items()
                if k.split()[0] in ("P5", "P6", "P7")}
     rows = []
     for policy, proto in learned.items():
-        for m in sorted(month.unique()):
-            held = month == m
-            lo, hi = d.loc[held, "g5_step"].min(), d.loc[held, "g5_step"].max()
-            buffer = d["g5_step"].isin([lo - 1, lo, hi, hi + 1])
-            tr, te = d[~held & ~buffer], d[held & ~buffer]
+        for fold in seasonal_folds(df):
+            m = fold.held_out_month
+            tr, te = fold.frames(df, [col])
             pol = LearnedPolicy(proto.kind, proto.features).fit(tr, lab(tr))
             s_tr, s_te = pol.score(tr), pol.score(te)
             base = lab(tr).mean()

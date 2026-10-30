@@ -317,7 +317,12 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=str(OUT))
     ap.add_argument("--fig", default=str(FIG))
+    ap.add_argument("--protocol", choices=("chronological", "seasonal"), default="chronological")
+    ap.add_argument("--smoke", action="store_true")
     a = ap.parse_args(argv)
+    if a.protocol == "seasonal":
+        from .seasonal_comparison import run
+        return run(Path(a.out)/"seasonal_lomo", smoke=a.smoke)
     out, fig = Path(a.out), Path(a.fig)
     out.mkdir(parents=True, exist_ok=True)
     fig.mkdir(parents=True, exist_ok=True)

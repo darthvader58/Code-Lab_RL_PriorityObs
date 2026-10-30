@@ -4,6 +4,8 @@ Definitions follow docs/baseline_paper/05_baselines.md: a policy produces a scor
 gate fires on scores at or above the (1 - d) quantile of the *validation* scores (§5.4), and that
 threshold is applied unchanged to the test block.
 """
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -60,6 +62,60 @@ def random_split(df, frac_test=0.3, frac_val=0.1, seed=SEED):
     u = np.random.default_rng(seed).random(len(df))
     return pd.Series(np.where(u < frac_test, "test", np.where(u < frac_test + frac_val, "val",
                                                                  "train")), index=df.index)
+
+
+@dataclass(frozen=True)
+class SeasonalFold:
+    """One weather-month holdout. Indices refer to the original loaded frame."""
+    held_out_month: str
+    train_months: tuple
+    train_index: pd.Index
+    test_index: pd.Index
+    dropped_index: pd.Index
+    buffer_steps: tuple
+
+    def frames(self, df, columns=()):
+        # Boundaries are defined before filtering invalid labels or geographic strata.
+        ok = pd.Series(True, index=df.index)
+        for col in columns:
+            ok &= valid(df, col)
+        return (df.loc[self.train_index.intersection(df.index[ok], sort=False)],
+                df.loc[self.test_index.intersection(df.index[ok], sort=False)])
+
+
+def seasonal_folds(df):
+    """Eight G5NR folds, Feb 2006 joined to Jan; purge both sides of each holdout edge.
+
+    This is seasonal interpolation, not forward-only forecasting. No label or feature value
+    determines fold membership. The four-step exclusion matches the original E2 protocol.
+    """
+    month = df["g5_month"].replace({"2006-02": "2006-01"})
+    months = tuple(sorted(month.unique()))
+    expected = tuple(pd.period_range("2005-06", "2006-01", freq="M").astype(str))
+    if months != expected:
+        raise ValueError(f"expected eight weather months {expected}, got {months}")
+    if not df.index.is_unique:
+        raise ValueError("seasonal fold indices must be unique")
+    for m in months:
+        held = month == m
+        lo, hi = df.loc[held, "g5_step"].agg(["min", "max"])
+        steps = (int(lo - 1), int(lo), int(hi), int(hi + 1))
+        buffer = df["g5_step"].isin(steps)
+        yield SeasonalFold(m, tuple(x for x in months if x != m),
+                           df.index[~held & ~buffer], df.index[held & ~buffer],
+                           df.index[buffer], steps)
+
+
+def fit_seasonal_policy(policy, train, test, label):
+    """Fit the entire pipeline only on seven training months; calibrate on training scores.
+
+    In-sample score quantiles deliberately reproduce E2. They need no held-out labels, but
+    can give imperfect deployed budgets; callers must report realized held-out duty.
+    """
+    if len(train.index.intersection(test.index)):
+        raise ValueError("training and held-out rows overlap")
+    policy.fit(train, label(train))
+    return policy, policy.score(train), policy.score(test)
 
 
 # ---- policies --------------------------------------------------------------------------------
@@ -130,10 +186,11 @@ class LatitudeBandPolicy:
 
     def fit(self, X, y):
         self.rate = pd.Series(np.asarray(y, float)).groupby(self._band(X)).mean().to_dict()
+        self.fallback_rate = float(np.mean(y))
         return self
 
     def score(self, X):
-        s = np.array([self.rate[b] for b in self._band(X)])
+        s = np.array([self.rate.get(b, self.fallback_rate) for b in self._band(X)])
         return s + 1e-9 * self.rng.random(len(s))      # break ties so the budget is met exactly
 
 
@@ -192,13 +249,15 @@ def gate_metrics(fire, y, r, scores=None):
     """capture@d, mass-capture@d, precision@d, lift@d, realized duty, (AUC, AP)."""
     fire, y = np.asarray(fire, bool), np.asarray(y, bool)
     r = np.clip(np.nan_to_num(np.asarray(r, float)), 0, None)
-    out = {"duty": fire.mean(), "capture": fire[y].mean(),
-           "mass_capture": r[fire].sum() / r.sum(), "precision": y[fire].mean(),
-           "base_rate": y.mean()}
-    out["lift"] = out["capture"] / out["duty"]
+    out = {"duty": fire.mean() if len(y) else np.nan,
+           "capture": fire[y].mean() if y.any() else np.nan,
+           "mass_capture": r[fire].sum() / r.sum() if r.sum() else np.nan,
+           "precision": y[fire].mean() if fire.any() else np.nan,
+           "base_rate": y.mean() if len(y) else np.nan}
+    out["lift"] = out["capture"] / out["duty"] if out["duty"] else np.nan
     if scores is not None:
-        out["auc"] = roc_auc_score(y, scores)
-        out["ap"] = average_precision_score(y, scores)
+        out["auc"] = roc_auc_score(y, scores) if len(np.unique(y)) == 2 else np.nan
+        out["ap"] = average_precision_score(y, scores) if y.any() else np.nan
     return out
 
 

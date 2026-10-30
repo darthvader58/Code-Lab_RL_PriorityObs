@@ -280,8 +280,17 @@ def fig_supplementary(m, res, out, log):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mission", default="earthcare")
+    ap.add_argument("--protocol", choices=("chronological", "seasonal"), default="chronological")
+    ap.add_argument("--report", action="store_true", help="generate both missions' seasonal manuscript tables")
     a = ap.parse_args(argv)
     m = get_mission(a.mission)
+    if a.protocol == "seasonal":
+        from .seasonal_figures import render, write_report
+        render(m)
+        if a.report:
+            write_report([get_mission("earthcare"), get_mission("trmm")],
+                         ROOT/"docs"/"baseline_paper"/"16_seasonal_results.md")
+        return
     res = Path(m.results_dir)
     out = ROOT / "docs" / "baseline_paper" / "figures" / m.name
     out.mkdir(parents=True, exist_ok=True)
