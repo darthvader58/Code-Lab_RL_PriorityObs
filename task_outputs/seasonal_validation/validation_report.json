@@ -1,0 +1,79 @@
+{
+  "original_files_unchanged": 48,
+  "missions": {
+    "earthcare": {
+      "dataset_hash": "9fe09a93c8b0640f73f23d8422f869573ca172c90c242a4536fdd08a3eb82424",
+      "folds": [
+        "2005-06",
+        "2005-07",
+        "2005-08",
+        "2005-09",
+        "2005-10",
+        "2005-11",
+        "2005-12",
+        "2006-01"
+      ],
+      "monthly_rows": 448,
+      "policies": 8,
+      "bootstrap_draws_per_month": 1000,
+      "original_e2_replay_max_error": 0.0,
+      "generalized_e2_max_errors": {
+        "auc": 0.0,
+        "average_precision": 0.0,
+        "capture": 0.0,
+        "n_test": 0.0
+      },
+      "base_rate_budget_capture_max_error": 0.0
+    },
+    "trmm": {
+      "dataset_hash": "fab9c8c7ebbd5fa79ca8220fd69c3b3c1d254e60407c89f09261d7591a7e9c01",
+      "folds": [
+        "2005-06",
+        "2005-07",
+        "2005-08",
+        "2005-09",
+        "2005-10",
+        "2005-11",
+        "2005-12",
+        "2006-01"
+      ],
+      "monthly_rows": 448,
+      "policies": 8,
+      "bootstrap_draws_per_month": 1000,
+      "original_e2_replay_max_error": 0.0,
+      "generalized_e2_max_errors": {
+        "auc": 0.0,
+        "average_precision": 0.0,
+        "capture": 0.0,
+        "n_test": 0.0
+      },
+      "base_rate_budget_capture_max_error": 0.0
+    }
+  },
+  "checks": [
+    "eight weather-month holdouts; February merged into January",
+    "train/test weather months and indices disjoint; both sides of boundary purged",
+    "preprocessing isolation and threshold label-invariance tested by tests/test_seasonal.py",
+    "every policy reports nominal and realized held-out duty",
+    "global fold thresholds preserved for E6 strata",
+    "original E2 replay and generalized P5-P7 scores compared to saved E2",
+    "P8 marked as a truth-using reference, including bootstrap metadata",
+    "1000 whole-day bootstrap draws within each held-out month",
+    "dataset hashes and recorded code hashes match current source"
+  ],
+  "comparison": {
+    "matched_months": [
+      "2005-06",
+      "2005-07",
+      "2005-08",
+      "2005-09",
+      "2005-10",
+      "2005-11",
+      "2005-12",
+      "2006-01"
+    ],
+    "latitude_limit": 35.2,
+    "rows": 64,
+    "transfer_rows": 512
+  }
+}

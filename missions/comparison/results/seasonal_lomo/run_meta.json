@@ -1,0 +1,22 @@
+{
+  "protocol": "seasonal_lomo_v1",
+  "smoke": false,
+  "dataset_hashes": {
+    "earthcare": "9fe09a93c8b0640f73f23d8422f869573ca172c90c242a4536fdd08a3eb82424",
+    "trmm": "fab9c8c7ebbd5fa79ca8220fd69c3b3c1d254e60407c89f09261d7591a7e9c01"
+  },
+  "latitude_limit": 35.2,
+  "seed": 0,
+  "folds": [
+    "2005-06",
+    "2005-07",
+    "2005-08",
+    "2005-09",
+    "2005-10",
+    "2005-11",
+    "2005-12",
+    "2006-01"
+  ],
+  "threshold_source": "own: training scores; transfer: target other-seven-month unlabeled scores",
+  "interpretation": "matched weather months; separate mission labels and shared G5NR weather, not independent climate realizations"
+}
