@@ -1,0 +1,202 @@
+{
+  "protocol": "seasonal_lomo_v1",
+  "mission": "trmm",
+  "dataset_hash": "fab9c8c7ebbd5fa79ca8220fd69c3b3c1d254e60407c89f09261d7591a7e9c01",
+  "data": "/Users/shashwatraj/Desktop/FURI Spring 2025/Code-Lab_RL_PriorityObs/missions/trmm/data/TRMM_trackwise_decisions.parquet",
+  "seed": 0,
+  "rows": 352800,
+  "full_dataset_rows": 352800,
+  "smoke": false,
+  "threshold_source": "training_months_in_sample_score_quantile",
+  "n_boot": 1000,
+  "threads": 2,
+  "python": "3.12.2",
+  "numpy": "1.26.4",
+  "pandas": "2.2.2",
+  "sklearn": "1.6.1",
+  "lightgbm": "4.7.0",
+  "code_hashes": {
+    "missions.py": "af483e74a91eed5009d155db32da5fc1c6f8473fdc2c7decfe078ae6c6faa53a",
+    "core.py": "06d26d86bb8dde3c433ca304c529c75c1e5ff19b9b9350b8ac5fa95cc40b9a9b",
+    "seasonal.py": "40ce2ccf4d4876e582520e4f83a385d0df1c2d2b4fef1921ee898c308c22c50a",
+    "experiments.py": "49ac220d177920cd5110a2d62eccd8150e86c50472607b402174ce3cd1546bab",
+    "run_seasonal.py": "19ad30490b6d08d07499d4bbd6dea832a272f2bd3d93f08bb16642cb53b7ac65"
+  },
+  "label": "prectot_radar",
+  "label_threshold": 0.0002777777777777778,
+  "mass_column": "prectot_radar_mean",
+  "models": "unchanged P1-P7; P8 oracle reference only",
+  "preprocessing": "fit only on the seven training months, including MLP internal validation",
+  "e1": "preserved chronological leakage comparison: ../e1_split.csv",
+  "e9": "preserved architecture cost measurements: ../e9_policy_cost.csv",
+  "folds": [
+    {
+      "held_out_month": "2005-06",
+      "train_months": [
+        "2005-07",
+        "2005-08",
+        "2005-09",
+        "2005-10",
+        "2005-11",
+        "2005-12",
+        "2006-01"
+      ],
+      "n_train_before_label_filter": 310470,
+      "n_test_before_label_filter": 42240,
+      "n_buffer": 90,
+      "buffer_steps": [
+        802,
+        803,
+        2212,
+        2213
+      ]
+    },
+    {
+      "held_out_month": "2005-07",
+      "train_months": [
+        "2005-06",
+        "2005-08",
+        "2005-09",
+        "2005-10",
+        "2005-11",
+        "2005-12",
+        "2006-01"
+      ],
+      "n_train_before_label_filter": 308100,
+      "n_test_before_label_filter": 44580,
+      "n_buffer": 120,
+      "buffer_steps": [
+        2212,
+        2213,
+        3700,
+        3701
+      ]
+    },
+    {
+      "held_out_month": "2005-08",
+      "train_months": [
+        "2005-06",
+        "2005-07",
+        "2005-09",
+        "2005-10",
+        "2005-11",
+        "2005-12",
+        "2006-01"
+      ],
+      "n_train_before_label_filter": 308100,
+      "n_test_before_label_filter": 44580,
+      "n_buffer": 120,
+      "buffer_steps": [
+        3700,
+        3701,
+        5188,
+        5189
+      ]
+    },
+    {
+      "held_out_month": "2005-09",
+      "train_months": [
+        "2005-06",
+        "2005-07",
+        "2005-08",
+        "2005-10",
+        "2005-11",
+        "2005-12",
+        "2006-01"
+      ],
+      "n_train_before_label_filter": 309540,
+      "n_test_before_label_filter": 43140,
+      "n_buffer": 120,
+      "buffer_steps": [
+        5188,
+        5189,
+        6628,
+        6629
+      ]
+    },
+    {
+      "held_out_month": "2005-10",
+      "train_months": [
+        "2005-06",
+        "2005-07",
+        "2005-08",
+        "2005-09",
+        "2005-11",
+        "2005-12",
+        "2006-01"
+      ],
+      "n_train_before_label_filter": 308100,
+      "n_test_before_label_filter": 44580,
+      "n_buffer": 120,
+      "buffer_steps": [
+        6628,
+        6629,
+        8116,
+        8117
+      ]
+    },
+    {
+      "held_out_month": "2005-11",
+      "train_months": [
+        "2005-06",
+        "2005-07",
+        "2005-08",
+        "2005-09",
+        "2005-10",
+        "2005-12",
+        "2006-01"
+      ],
+      "n_train_before_label_filter": 309540,
+      "n_test_before_label_filter": 43140,
+      "n_buffer": 120,
+      "buffer_steps": [
+        8116,
+        8117,
+        9556,
+        9557
+      ]
+    },
+    {
+      "held_out_month": "2005-12",
+      "train_months": [
+        "2005-06",
+        "2005-07",
+        "2005-08",
+        "2005-09",
+        "2005-10",
+        "2005-11",
+        "2006-01"
+      ],
+      "n_train_before_label_filter": 308100,
+      "n_test_before_label_filter": 44580,
+      "n_buffer": 120,
+      "buffer_steps": [
+        9556,
+        9557,
+        11044,
+        11045
+      ]
+    },
+    {
+      "held_out_month": "2006-01",
+      "train_months": [
+        "2005-06",
+        "2005-07",
+        "2005-08",
+        "2005-09",
+        "2005-10",
+        "2005-11",
+        "2005-12"
+      ],
+      "n_train_before_label_filter": 307230,
+      "n_test_before_label_filter": 45480,
+      "n_buffer": 90,
+      "buffer_steps": [
+        11044,
+        11045,
+        12562,
+        12563
+      ]
+    }
+  ]
+}
